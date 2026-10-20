@@ -235,3 +235,153 @@
 2026-10-18 00:23:50.404: [INFO] BookmarksLoadDropped droppedNodes=0
 2026-10-18 00:23:50.404: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
 2026-10-18 00:29:44.848: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 03:31:06.467: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 03:31:06.467: [INFO] Profiles total count: 1
+2026-10-19 03:31:06.468: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 03:31:06.468: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 03:31:06.468: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 03:31:06.468: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 03:31:06.468: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 03:31:06.468: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 03:31:06.468: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 03:31:50.482: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 04:10:24.158: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 04:10:24.158: [INFO] Profiles total count: 1
+2026-10-19 04:10:24.158: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 04:10:24.158: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 04:10:24.158: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 04:10:24.158: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 04:10:24.159: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 04:10:24.159: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 04:10:24.159: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 04:15:55.902: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 04:20:00.696: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 04:20:00.696: [INFO] Profiles total count: 1
+2026-10-19 04:20:00.696: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 04:20:00.696: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 04:20:00.696: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 04:20:00.696: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 04:20:00.696: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 04:20:00.696: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 04:20:00.696: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 04:20:31.645: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 04:22:53.784: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 04:22:53.784: [INFO] Profiles total count: 1
+2026-10-19 04:22:53.784: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 04:22:53.784: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 04:22:53.784: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 04:22:53.784: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 04:22:53.784: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 04:22:53.784: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 04:22:53.784: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 04:24:04.513: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 05:09:44.952: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 05:09:44.952: [INFO] Profiles total count: 1
+2026-10-19 05:09:44.952: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 05:09:44.952: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 05:09:44.952: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 05:09:44.952: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 05:09:44.952: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 05:09:44.952: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 05:09:44.952: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 05:10:22.798: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 05:14:32.297: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 05:14:32.297: [INFO] Profiles total count: 1
+2026-10-19 05:14:32.297: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 05:14:32.297: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 05:14:32.297: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 05:14:32.297: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 05:14:32.297: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 05:14:32.297: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 05:14:32.297: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 05:14:55.140: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:29:11.059: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:29:11.059: [INFO] Profiles total count: 1
+2026-10-19 19:29:11.059: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:29:11.059: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:29:11.059: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:29:11.059: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 19:29:11.059: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 19:29:11.059: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 19:29:11.059: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:31:23.957: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:35:04.633: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:35:04.633: [INFO] Profiles total count: 1
+2026-10-19 19:35:04.634: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:35:04.634: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:35:04.634: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:35:04.634: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 19:35:04.634: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 19:35:04.634: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 19:35:04.634: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:36:24.332: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:38:55.779: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:38:55.780: [INFO] Profiles total count: 1
+2026-10-19 19:38:55.780: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:38:55.780: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:38:55.780: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:38:55.780: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 19:38:55.780: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 19:38:55.780: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 19:38:55.780: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:39:15.346: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:42:21.075: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:42:21.075: [INFO] Profiles total count: 1
+2026-10-19 19:42:21.075: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:42:21.075: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:42:21.075: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:42:21.075: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 19:42:21.075: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 19:42:21.075: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 19:42:21.075: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:43:29.973: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:46:07.366: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:46:07.366: [INFO] Profiles total count: 1
+2026-10-19 19:46:07.366: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:46:07.366: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:46:07.366: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:46:07.366: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 19:46:07.366: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 19:46:07.366: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 19:46:07.366: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:51:00.461: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:51:48.228: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:51:48.228: [INFO] Profiles total count: 1
+2026-10-19 19:51:48.228: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:51:48.228: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:51:48.228: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:51:48.228: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 19:51:48.228: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 19:51:48.228: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 19:51:48.228: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:55:29.166: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:58:09.864: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:58:09.864: [INFO] Profiles total count: 1
+2026-10-19 19:58:09.864: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:58:09.864: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 19:58:09.864: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 19:58:09.864: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 19:58:09.864: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 19:58:09.864: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 19:58:09.864: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 19:59:03.861: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 20:00:42.168: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 20:00:42.168: [INFO] Profiles total count: 1
+2026-10-19 20:00:42.168: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 20:00:42.168: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 20:00:42.168: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 20:00:42.168: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 20:00:42.168: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 20:00:42.168: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 20:00:42.168: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 20:01:00.288: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 20:05:24.482: [INFO] CurrentProfilePath: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 20:05:24.482: [INFO] Profiles total count: 1
+2026-10-19 20:05:24.482: [INFO] Profile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 20:05:24.482: [INFO] LastUsedProfileDir: C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default
+2026-10-19 20:05:24.482: [INFO] MostRecentlyActiveProfile: name=Perfil 1 path=C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\net8.0-windows\TransparentChatFilter.exe.WebView2\EBWebView\Default lastActive=2026-10-18T00:15:13.703Z
+2026-10-19 20:05:24.482: [INFO] OnDoneLoading sync enabled: 0
+2026-10-19 20:05:24.482: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-19 20:05:24.482: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-19 20:05:24.482: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-19 20:08:29.010: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1

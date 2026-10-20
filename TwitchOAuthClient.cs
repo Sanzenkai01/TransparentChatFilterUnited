@@ -24,7 +24,7 @@ internal sealed class TwitchOAuthException(HttpStatusCode statusCode, string mes
 
 internal sealed class TwitchOAuthClient
 {
-    private const string ClientId = "7mox2f8l2mu54i5pirpz2w0lfa1gdg";
+    internal const string ClientId = "7mox2f8l2mu54i5pirpz2w0lfa1gdg";
     private const string DeviceCodeGrantType = "urn:ietf:params:oauth:grant-type:device_code";
     private static readonly HttpClient HttpClient = new();
 

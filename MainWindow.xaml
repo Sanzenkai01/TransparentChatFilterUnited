@@ -27,7 +27,6 @@
         <SolidColorBrush x:Key="AccentBrush" Color="#A970FF"/>
         <SolidColorBrush x:Key="MutedTextBrush" Color="#9EADC2"/>
         <DropShadowEffect x:Key="ChatTextOutline" Color="#000000" BlurRadius="3" ShadowDepth="1" Direction="315" Opacity="0.95"/>
-
         <Style TargetType="{x:Type Button}">
             <Setter Property="Foreground" Value="#EAF2FF"/>
             <Setter Property="Background" Value="#202D40"/>
@@ -270,7 +269,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Border x:Name="Toolbar" Grid.Row="0" CornerRadius="10" Background="#1A2330" Margin="0,0,0,6" Opacity="0.92">
+            <Border x:Name="Toolbar" Grid.Row="0" CornerRadius="10" Background="#1A2330" Margin="0,0,0,6" Opacity="0.92" PreviewMouseLeftButtonDown="Toolbar_PreviewMouseLeftButtonDown">
                 <Grid Margin="6,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -309,7 +308,7 @@
                             </ToggleButton.ToolTip>
                         </ToggleButton>
                     </StackPanel>
-                    <Border Grid.Column="1" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Border Grid.Column="1" Background="Transparent">
                         <TextBlock Text="Chat" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#E5F0FF" FontWeight="SemiBold" Margin="12,0"/>
                     </Border>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
@@ -354,18 +353,19 @@
                 </Grid>
             </Border>
 
-            <Border x:Name="ChatContainer" Grid.Row="1" CornerRadius="12" Background="#0D1420" BorderBrush="#2D3747" BorderThickness="1" ClipToBounds="True">
+            <Border x:Name="ChatContainer" Grid.Row="1" CornerRadius="12" BorderBrush="#2D3747" BorderThickness="1" ClipToBounds="True">
+                <Border.Style>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="Background" Value="#0D1420"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAuthenticatedIrc}" Value="True">
+                                <Setter Property="Background" Value="#18181B"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid>
-                    <ScrollViewer x:Name="ChatMessagesScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True">
-                        <ScrollViewer.Style>
-                            <Style TargetType="{x:Type ScrollViewer}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsTransparent}" Value="True">
-                                        <Setter Property="VerticalScrollBarVisibility" Value="Hidden"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ScrollViewer.Style>
+                    <ScrollViewer x:Name="ChatMessagesScrollViewer" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True">
                         <ItemsControl ItemsSource="{Binding Messages}">
                         <ItemsControl.ItemContainerStyle>
                             <Style TargetType="{x:Type ContentPresenter}">
@@ -393,61 +393,57 @@
                         </ItemsControl.ItemContainerStyle>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border HorizontalAlignment="Left">
+                                <Border Margin="{Binding RowMargin}" Opacity="{Binding RowOpacity}">
                                     <Border.Style>
                                         <Style TargetType="{x:Type Border}">
-                                            <Setter Property="Margin" Value="0,0,0,5"/>
+                                            <Setter Property="HorizontalAlignment" Value="Left"/>
                                             <Setter Property="Padding" Value="8,5"/>
                                             <Setter Property="CornerRadius" Value="7"/>
-                                            <Setter Property="Background" Value="#161D2C"/>
+                                            <Setter Property="Background" Value="{Binding MessageBackgroundBrush}"/>
                                             <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.IsAuthenticatedIrc, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
+                                                    <Setter Property="Padding" Value="6,2"/>
+                                                    <Setter Property="CornerRadius" Value="0"/>
+                                                    <Setter Property="Background" Value="{Binding MessageBackgroundBrush}"/>
+                                                </DataTrigger>
                                                 <DataTrigger Binding="{Binding DataContext.IsTransparent, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
-                                                    <Setter Property="Margin" Value="0,0,0,2"/>
                                                     <Setter Property="Padding" Value="5,3"/>
                                                     <Setter Property="CornerRadius" Value="4"/>
-                                                    <Setter Property="Background" Value="#B8000000"/>
+                                                    <Setter Property="Background" Value="{Binding MessageBackgroundBrush}"/>
                                                     <Setter Property="Effect">
                                                         <Setter.Value>
                                                             <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="1" Direction="315" Opacity="0.7"/>
                                                         </Setter.Value>
                                                     </Setter>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSystemEvent}" Value="True">
+                                                    <Setter Property="Padding" Value="8,5"/>
+                                                    <Setter Property="CornerRadius" Value="6"/>
+                                                    <Setter Property="Background" Value="{Binding MessageBackgroundBrush}"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                                                <TextBlock MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollViewer}}}" TextWrapping="Wrap" VerticalAlignment="Center" Effect="{StaticResource ChatTextOutline}">
+                                <TextBlock MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollViewer}}}"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"
+                                           Loaded="ChatMessageTextBlock_Loaded"
+                                           Opacity="{Binding DataContext.TextOpacity, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
                                                                     <TextBlock.Style>
                                                                         <Style TargetType="{x:Type TextBlock}">
                                                                             <Setter Property="FontSize" Value="{Binding DataContext.FontSize, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
+                                                                            <Setter Property="Effect" Value="{StaticResource ChatTextOutline}"/>
+                                                                            <Style.Triggers>
+                                                                                <MultiDataTrigger>
+                                                                                    <MultiDataTrigger.Conditions>
+                                                                                        <Condition Binding="{Binding DataContext.IsAuthenticatedIrc, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True"/>
+                                                                                        <Condition Binding="{Binding DataContext.IsTransparent, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="False"/>
+                                                                                    </MultiDataTrigger.Conditions>
+                                                                                    <Setter Property="Effect" Value="{x:Null}"/>
+                                                                                </MultiDataTrigger>
+                                                                            </Style.Triggers>
                                                                         </Style>
                                                                     </TextBlock.Style>
-                                        <Run Text="{Binding TimestampText, Mode=OneWay}" Foreground="#9BB0C8" FontSize="10"/>
-                                        <InlineUIContainer BaselineAlignment="Center">
-                                            <Image Source="{Binding PlatformImage}"
-                                                   Width="14"
-                                                   Height="14"
-                                                   Stretch="Uniform"
-                                                   ToolTip="{Binding PlatformName}"/>
-                                        </InlineUIContainer>
-                                        <InlineUIContainer BaselineAlignment="Center">
-                                            <Image Source="{Binding BadgeImage}"
-                                                   Width="14"
-                                                   Height="14"
-                                                   Stretch="Uniform"
-                                                   Visibility="{Binding BadgeVisibility, Mode=OneWay}"
-                                                   ToolTip="{Binding BadgeName}"/>
-                                        </InlineUIContainer>
-                                        <InlineUIContainer BaselineAlignment="Center">
-                                            <Image Source="{Binding SubscriberBadgeImage}"
-                                                   Width="14"
-                                                   Height="14"
-                                                   Stretch="Uniform"
-                                                   Visibility="{Binding SubscriberBadgeVisibility, Mode=OneWay}"
-                                                   ToolTip="{Binding SubscriberBadgeName}"/>
-                                        </InlineUIContainer>
-                                        <Run Text="{Binding DisplayName}" FontWeight="Bold" Foreground="{Binding NameBrush}"/>
-                                        <Run Text="{Binding NameSeparator}" Foreground="#EEF4FF"/>
-                                        <Run Text="{Binding Text}" Foreground="#EEF4FF"/>
                                     </TextBlock>
                                 </Border>
                             </DataTemplate>
@@ -461,10 +457,6 @@
                           Opacity="0"
                           IsHitTestVisible="False">
                         <wv2:WebView2 x:Name="TwitchPopoutView"
-                                      HorizontalAlignment="Stretch"
-                                      VerticalAlignment="Stretch"
-                                      DefaultBackgroundColor="Transparent"/>
-                        <wv2:WebView2 x:Name="YouTubePublicChatView"
                                       HorizontalAlignment="Stretch"
                                       VerticalAlignment="Stretch"
                                       DefaultBackgroundColor="Transparent"/>
@@ -543,7 +535,7 @@
                    PopupAnimation="Fade"
                    DataContext="{Binding DataContext, ElementName=RootWindow}"
                    Closed="SettingsPopup_Closed">
-                <Border x:Name="SettingsPanel" Width="420" Height="390" CornerRadius="12" Background="#121B29" BorderBrush="#47566C" BorderThickness="1" Padding="12" PreviewMouseDown="SettingsPopup_PreviewMouseDown">
+                <Border x:Name="SettingsPanel" Width="420" MinHeight="320" MaxHeight="{Binding ActualHeight, ElementName=RootWindow}" CornerRadius="12" Background="#121B29" BorderBrush="#47566C" BorderThickness="1" Padding="12" PreviewMouseDown="SettingsPopup_PreviewMouseDown">
                     <Border.Effect>
                         <DropShadowEffect Color="#000000" BlurRadius="22" ShadowDepth="4" Opacity="0.55"/>
                     </Border.Effect>
@@ -552,20 +544,36 @@
                         <ColumnDefinition Width="94"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="26"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Column="0" Margin="0,0,7,0">
+                    <Border Grid.Row="0" Grid.ColumnSpan="2"
+                            Background="Transparent"
+                            Cursor="SizeAll"
+                            ToolTip="Arraste para mover as configurações"
+                            MouseLeftButtonDown="SettingsPopupDrag_MouseLeftButtonDown"
+                            MouseMove="SettingsPopupDrag_MouseMove"
+                            MouseLeftButtonUp="SettingsPopupDrag_MouseLeftButtonUp">
+                        <TextBlock Text="CONFIGURAÇÕES  ·  arraste para mover"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   FontSize="10"
+                                   FontWeight="SemiBold"
+                                   IsHitTestVisible="False"/>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,7,0">
                         <TextBlock Text="TWITCH" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="4,4,0,6"/>
                         <Button x:Name="ChatPreferencesButton" Content="Chat e filtros" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Background="#302544" BorderBrush="#8054C5" Foreground="#F1E8FF" Margin="0,0,0,4" Click="ChatPreferencesButton_Click"/>
                         <Button x:Name="ConnectionsPreferencesButton" Content="Conexões" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,10" Click="ConnectionsPreferencesButton_Click"/>
-                        <TextBlock Text="YOUTUBE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="4,0,0,6"/>
-                        <Button x:Name="YouTubePreferencesButton" Content="Chat ao vivo" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,10" Click="YouTubePreferencesButton_Click"/>
-                        <Button x:Name="YouTubeConnectionsPreferencesButton" Content="Conexões" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,10" Click="YouTubeConnectionsPreferencesButton_Click"/>
                         <TextBlock Text="GERAL" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="4,0,0,6"/>
                         <Button x:Name="WidgetsPreferencesButton" Content="Widgets" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,4" Click="WidgetsPreferencesButton_Click"/>
                         <Button x:Name="AboutPreferencesButton" Content="Sobre" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,4" Click="AboutPreferencesButton_Click"/>
                     </StackPanel>
 
-                    <Grid Grid.Column="1">
+                    <Grid Grid.Row="1" Grid.Column="1">
                         <ScrollViewer x:Name="ChatPreferencesPage" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                         <TextBlock Text="CHAT E FILTRO" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
@@ -616,6 +624,13 @@
                                 <ComboBoxItem Content="Meu Chat"/>
                                 <ComboBoxItem Content="Chat Unido"/>
                             </ComboBox>
+                            <CheckBox x:Name="DimOtherChannelsCheckBox"
+                                      Content="Deixar mensagens de outros canais mais transparentes"
+                                      IsChecked="{Binding DimOtherChannelMessages}"
+                                      Checked="SavePreferences_Changed"
+                                      Unchecked="SavePreferences_Changed"
+                                      Margin="0,0,0,8"
+                                      ToolTip="Mantém as mensagens no chat com 50% de opacidade. Disponível enquanto conectado pelo IRC."/>
 
                             <TextBlock Text="Canais adicionais para unir · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
                             <TextBox Text="{Binding SelectedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
@@ -630,26 +645,11 @@
                             <Button Content="Aplicar filtro e conectar canais" HorizontalAlignment="Left" Margin="0,3,0,0" Click="ApplyChannelButton_Click"/>
                             <TextBlock Text="Meu Chat mostra apenas o canal principal. Chat Unido mostra o canal principal e os canais adicionais; os canais ignorados continuam excluídos. Reconecte após alterar os canais." TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedTextBrush}" Margin="0,10,0,0"/>
                         </StackPanel>
-                            </StackPanel>
-                        </ScrollViewer>
-
-                        <ScrollViewer x:Name="YouTubePreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="YOUTUBE" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                                <TextBlock Text="Configurações independentes do chat ao vivo do YouTube." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,13"/>
-                                <TextBlock Text="Link ou ID do vídeo ao vivo" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                                <TextBox Text="{Binding YouTubeVideoId, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,10" TextChanged="SaveTextPreference_Changed"/>
-                                <Border Background="#182333" BorderBrush="#47566C" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
-                                    <StackPanel>
-                                        <TextBlock Text="CHAT DO YOUTUBE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,5"/>
-                                        <TextBlock x:Name="YouTubePublicChatStatus" Text="Chat público desconectado" TextWrapping="Wrap" FontSize="10" Foreground="#D7E5FF"/>
-                                        <TextBlock Text="Abrir o chat público apenas exibe as mensagens sem fazer login no Google. Para conectar o chat do YouTube pela API e integrá-lo ao feed, use Conexões na categoria YouTube. A opção pública não autoriza nem inicia essa conexão."
-                                                   TextWrapping="Wrap" FontSize="10" Foreground="#B7C6DB" Margin="0,7,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                                <WrapPanel>
-                                    <Button x:Name="YouTubePublicChatButton" Content="Abrir chat público · sem login" Margin="0,0,8,8" Click="OpenYouTubePublicChatButton_Click"/>
-                                </WrapPanel>
+                        <TextBlock Text="Ignorar mensagens que contenham estes termos" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,12,0,5"/>
+                        <TextBox Text="{Binding BlockedTermsText, UpdateSourceTrigger=PropertyChanged}" Height="48" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
+                        <TextBlock Text="Destacar termos no chat · separados por vírgula ou linha" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,2,0,5"/>
+                        <TextBox Text="{Binding HighlightTermsText, UpdateSourceTrigger=PropertyChanged}" Height="48" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,6" TextChanged="SaveTextPreference_Changed"/>
+                        <TextBlock Text="As regras valem para o feed integrado; mensagens bloqueadas somem e os termos destacados podem emitir alerta sonoro." TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,8"/>
                             </StackPanel>
                         </ScrollViewer>
 
@@ -694,43 +694,56 @@
                             </StackPanel>
                         </ScrollViewer>
 
-                        <ScrollViewer x:Name="YouTubeConnectionsPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="CONEXÕES · YOUTUBE" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                                <TextBlock Text="Autorize sua conta Google para receber mensagens do chat ao vivo do YouTube no feed unificado. Esta conexão é independente da integração IRC da Twitch."
-                                           FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,13"/>
-                                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="9" Padding="10">
-                                    <StackPanel>
-                                        <TextBlock Text="CONTA GOOGLE · CHAT AO VIVO" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}"/>
-                                        <TextBlock x:Name="YouTubeConnectionStatus" Text="YouTube desconectado" TextWrapping="Wrap" Foreground="#D7E5FF" Margin="0,4,0,8"/>
-                                        <TextBlock Text="A autorização Google é gerenciada pelo aplicativo. O acesso é somente leitura para o chat ao vivo."
-                                                   FontSize="10" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,8"/>
-                                        <WrapPanel>
-                                            <Button Content="Conectar YouTube ao feed" Margin="0,0,8,8" Click="ConnectYouTubeButton_Click"/>
-                                            <Button x:Name="CancelYouTubeConnectionButton" Content="Cancelar" Margin="0,0,8,8" Visibility="Collapsed" Click="CancelYouTubeConnectionButton_Click"/>
-                                            <Button Content="Desconectar YouTube" Margin="0,0,8,8" Click="DisconnectYouTubeButton_Click"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </ScrollViewer>
-
                         <ScrollViewer x:Name="WidgetsPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <TextBlock Text="WIDGETS" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
                                 <TextBlock Text="Ajustes rápidos da sobreposição." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,16"/>
                                 <CheckBox Content="Permitir cliques atravessando o overlay" IsChecked="{Binding ClickThroughEnabled}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <CheckBox Content="Mostrar nomes de usuários" IsChecked="{Binding ShowUserNames}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <CheckBox Content="Usar cores individuais dos nomes" IsChecked="{Binding UseTwitchNameColors}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <CheckBox Content="Mostrar timestamps" IsChecked="{Binding ShowTimestamps}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <CheckBox Content="Mostrar badges" IsChecked="{Binding ShowBadges}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <CheckBox Content="Mostrar badges de moderadores" IsChecked="{Binding ShowModerators}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <CheckBox Content="Mostrar badges VIP" IsChecked="{Binding ShowVips}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <CheckBox Content="Iniciar minimizado" IsChecked="{Binding StartMinimized}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <CheckBox Content="Som ao receber termo destacado" IsChecked="{Binding EnableSound}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <Button Content="Ocultar overlay" HorizontalAlignment="Left" Margin="0,0,0,8" Click="ToggleOverlayButton_Click"/>
                                 <TextBlock Text="{Binding FontSize, StringFormat=Fonte do chat: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
                                 <Slider Minimum="10" Maximum="32" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="FontSizeSlider_ValueChanged"/>
                                 <TextBlock Text="Opacidade do fundo" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Slider Minimum="0.15" Maximum="1" Value="{Binding Settings.BackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="OpacitySlider_ValueChanged"/>
+                                <Slider Minimum="0.15" Maximum="1" Value="{Binding BackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="OpacitySlider_ValueChanged"/>
+                                <TextBlock Text="{Binding TextOpacity, StringFormat=Opacidade do texto: {0:P0}}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
+                                <Slider Minimum="0.2" Maximum="1" Value="{Binding TextOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
+                                <TextBlock Text="{Binding MessageSpacing, StringFormat=Espaçamento entre mensagens: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
+                                <Slider Minimum="0" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding MessageSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
+                                <TextBlock Text="Cor dos termos destacados" Foreground="#D7E5FF" Margin="0,10,0,6"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="AccentColorInput" Text="{Binding AccentColor, UpdateSourceTrigger=PropertyChanged}" Height="30" TextChanged="AccentColor_TextChanged"/>
+                                    <Button x:Name="AccentColorPaletteButton" Grid.Column="1" Content="Paleta..." Margin="6,0,0,0" Click="ChooseAccentColorButton_Click" ToolTip="Escolher a cor dos termos destacados"/>
+                                </Grid>
+                                <TextBlock x:Name="AccentColorStatus" Foreground="#F0A5A5" FontSize="10" Margin="0,3,0,0" Visibility="Collapsed"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,4,0,0">
+                                    <Border x:Name="AccentColorPreviewDot" Width="12" Height="12" CornerRadius="6" BorderBrush="#9EADC2" BorderThickness="1" Margin="0,0,6,0"/>
+                                    <TextBlock x:Name="AccentColorPreviewText" Foreground="{StaticResource MutedTextBrush}" FontSize="10"/>
+                                </StackPanel>
+                                <TextBlock Text="Cor do fundo das mensagens" Foreground="#D7E5FF" Margin="0,10,0,6"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="MessageBackgroundColorInput" Text="{Binding MessageBackgroundColor, UpdateSourceTrigger=PropertyChanged}" Height="30" TextChanged="MessageBackgroundColor_TextChanged"/>
+                                    <Button x:Name="MessageBackgroundColorPaletteButton" Grid.Column="1" Content="Paleta..." Margin="6,0,0,0" Click="ChooseMessageBackgroundColorButton_Click" ToolTip="Escolher o fundo das mensagens"/>
+                                </Grid>
+                                <TextBlock x:Name="MessageBackgroundColorStatus" Foreground="#F0A5A5" FontSize="10" Margin="0,3,0,0" Visibility="Collapsed"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,4,0,0">
+                                    <Border x:Name="MessageBackgroundColorPreviewDot" Width="12" Height="12" CornerRadius="6" BorderBrush="#9EADC2" BorderThickness="1" Margin="0,0,6,0"/>
+                                    <TextBlock x:Name="MessageBackgroundColorPreviewText" Foreground="{StaticResource MutedTextBrush}" FontSize="10"/>
+                                </StackPanel>
                                 <TextBlock Text="As alterações são guardadas automaticamente." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
                             </StackPanel>
                         </ScrollViewer>
@@ -746,6 +759,38 @@
                         </ScrollViewer>
                     </Grid>
                     </Grid>
+                </Border>
+            </Popup>
+            <Popup x:Name="ColorPalettePopup"
+                   Placement="Bottom"
+                   AllowsTransparency="True"
+                   StaysOpen="False">
+                <Border Background="#121B29" BorderBrush="#53647D" BorderThickness="1" CornerRadius="8" Padding="8">
+                    <StackPanel>
+                        <TextBlock Text="Escolha uma cor" Foreground="#EAF2FF" FontWeight="SemiBold" Margin="2,0,2,6"/>
+                        <WrapPanel Width="224">
+                            <Button Background="#000000" Tag="#000000" ToolTip="Preto" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#FFFFFF" Tag="#FFFFFF" ToolTip="Branco" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#808080" Tag="#808080" ToolTip="Cinza" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#C0C0C0" Tag="#C0C0C0" ToolTip="Cinza claro" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#7F0000" Tag="#7F0000" ToolTip="Vinho" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#FF0000" Tag="#FF0000" ToolTip="Vermelho" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#FF7F00" Tag="#FF7F00" ToolTip="Laranja" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#FFFF00" Tag="#FFFF00" ToolTip="Amarelo" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#7F7F00" Tag="#7F7F00" ToolTip="Oliva" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#00FF00" Tag="#00FF00" ToolTip="Verde" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#007F00" Tag="#007F00" ToolTip="Verde escuro" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#00FFFF" Tag="#00FFFF" ToolTip="Ciano" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#007FFF" Tag="#007FFF" ToolTip="Azul claro" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#0000FF" Tag="#0000FF" ToolTip="Azul" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#00007F" Tag="#00007F" ToolTip="Azul escuro" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#7F00FF" Tag="#7F00FF" ToolTip="Violeta" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#FF00FF" Tag="#FF00FF" ToolTip="Magenta" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#FF007F" Tag="#FF007F" ToolTip="Rosa" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#5EA2FF" Tag="#5EA2FF" ToolTip="Azul Twitch Filter" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                            <Button Background="#A970FF" Tag="#A970FF" ToolTip="Violeta Twitch" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
+                        </WrapPanel>
+                    </StackPanel>
                 </Border>
             </Popup>
         </Grid>

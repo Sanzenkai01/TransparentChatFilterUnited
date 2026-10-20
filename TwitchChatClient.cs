@@ -6,9 +6,24 @@ using System.Threading.Tasks;
 
 namespace TransparentChatFilter;
 
+public enum ChatMessageKind
+{
+    Chat,
+    Subscription,
+    Resubscription,
+    GiftSubscription,
+    Raid,
+    Bits,
+    Announcement
+}
+
+public sealed record TwitchEmoteRange(string Id, int Start, int End);
+public sealed record TwitchBadgeReference(string SetId, string Version);
+public sealed record TwitchChatBadge(string SetId, string Version, string Title, string ImageUrl);
+public sealed record TwitchChatClear(string Channel, string? Username);
+
 public sealed class ChatMessage
 {
-    public ChatPlatform Platform { get; set; } = ChatPlatform.Twitch;
     public string DisplayName { get; set; } = string.Empty;
     public string LoginName { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
@@ -16,7 +31,14 @@ public sealed class ChatMessage
     public string OriginChannel { get; set; } = string.Empty;
     public string RoomId { get; set; } = string.Empty;
     public string SourceRoomId { get; set; } = string.Empty;
+    public string ChannelImageUrl { get; set; } = string.Empty;
     public string RawMetadata { get; set; } = string.Empty;
+    public string MessageId { get; set; } = string.Empty;
+    public string SystemText { get; set; } = string.Empty;
+    public ChatMessageKind Kind { get; set; }
+    public List<TwitchEmoteRange> Emotes { get; set; } = new();
+    public List<TwitchBadgeReference> BadgeReferences { get; set; } = new();
+    public List<TwitchChatBadge> Badges { get; set; } = new();
     public bool IsModerator { get; set; }
     public bool IsVip { get; set; }
     public bool IsSubscriber { get; set; }
@@ -30,6 +52,8 @@ public sealed class ChatMessage
 public sealed class TwitchChatClient : IDisposable
 {
     public event EventHandler<ChatMessage>? MessageReceived;
+    public event EventHandler<string>? MessageDeleted;
+    public event EventHandler<TwitchChatClear>? UserMessagesCleared;
     public event EventHandler<string>? StatusChanged;
     public event EventHandler<string>? ErrorReported;
 
@@ -243,25 +267,63 @@ public sealed class TwitchChatClient : IDisposable
                     continue;
                 }
 
-                if (line.Contains(" 001 ", StringComparison.Ordinal))
+                if (HasIrcCommand(line, "001"))
                 {
                     authentication.TrySetResult();
                     continue;
                 }
 
-                if (line.Contains("NOTICE", StringComparison.OrdinalIgnoreCase))
+                if (HasIrcCommand(line, "NOTICE"))
                 {
                     var notice = line.Contains(" :")
                         ? line[(line.LastIndexOf(" :", StringComparison.Ordinal) + 2)..]
                         : "A Twitch recusou a autenticação.";
-                    authentication.TrySetException(new InvalidOperationException(
-                        $"A Twitch recusou a conexão: {notice}. Confira usuário e token com permissão chat:read."));
-                    break;
+                    if (authentication.TrySetException(new InvalidOperationException(
+                            $"A Twitch recusou a conexão: {notice}. Confira usuário e token com permissão chat:read.")))
+                    {
+                        break;
+                    }
+
+                    StatusChanged?.Invoke(this, $"Aviso da Twitch: {notice}");
+                    continue;
                 }
 
-                if (line.Contains("PRIVMSG", StringComparison.OrdinalIgnoreCase))
+                if (HasIrcCommand(line, "CLEARMSG"))
+                {
+                    var tags = ParseLineTags(line);
+                    var messageId = tags.GetValueOrDefault("target-msg-id", string.Empty);
+                    if (!string.IsNullOrWhiteSpace(messageId))
+                    {
+                        MessageDeleted?.Invoke(this, messageId);
+                    }
+                }
+                else if (HasIrcCommand(line, "CLEARCHAT"))
+                {
+                    var payload = GetPayload(line);
+                    var parts = payload.Split(' ', 4, StringSplitOptions.None);
+                    if (parts.Length >= 3)
+                    {
+                        var channel = NormalizeChannel(parts[2]);
+                        var targetUser = parts.Length >= 4 ? parts[3].TrimStart(':').Trim() : string.Empty;
+                        if (!string.IsNullOrWhiteSpace(channel))
+                        {
+                            UserMessagesCleared?.Invoke(
+                                this,
+                                new TwitchChatClear(channel, string.IsNullOrWhiteSpace(targetUser) ? null : targetUser));
+                        }
+                    }
+                }
+                else if (HasIrcCommand(line, "PRIVMSG"))
                 {
                     var message = ParsePrivMessage(line);
+                    if (message is not null)
+                    {
+                        MessageReceived?.Invoke(this, message);
+                    }
+                }
+                else if (HasIrcCommand(line, "USERNOTICE"))
+                {
+                    var message = ParseUserNotice(line);
                     if (message is not null)
                     {
                         MessageReceived?.Invoke(this, message);
@@ -315,19 +377,8 @@ public sealed class TwitchChatClient : IDisposable
     {
         try
         {
-            var tagsText = string.Empty;
-            var payload = rawLine;
-
-            if (rawLine.StartsWith("@", StringComparison.Ordinal))
-            {
-                var firstSpace = rawLine.IndexOf(' ');
-                if (firstSpace > 0)
-                {
-                    tagsText = rawLine[..firstSpace].TrimStart('@');
-                    payload = rawLine[(firstSpace + 1)..];
-                }
-            }
-
+            var tags = ParseLineTags(rawLine);
+            var payload = GetPayload(rawLine);
             var parts = payload.Split(' ', 4, StringSplitOptions.None);
             if (parts.Length < 4)
             {
@@ -344,16 +395,20 @@ public sealed class TwitchChatClient : IDisposable
                 return null;
             }
 
-            var metadata = ParseTagMap(tagsText);
+            var metadata = tags;
             var displayName = metadata.TryGetValue("display-name", out var name) ? name : "Unknown";
             var channelName = NormalizeChannel(channelToken);
-            var roomId = metadata.GetValueOrDefault("room-id", string.Empty);
-            var sourceRoomId = metadata.GetValueOrDefault("source-room-id", string.Empty);
-            var originChannel = channelName;
-            var color = metadata.TryGetValue("color", out var rawColor) ? rawColor : string.Empty;
             var isVip = metadata.TryGetValue("vip", out var vipValue) && string.Equals(vipValue, "1", StringComparison.Ordinal);
             var isMod = metadata.TryGetValue("mod", out var modValue) && string.Equals(modValue, "1", StringComparison.Ordinal);
             var isSubscriber = metadata.TryGetValue("subscriber", out var subValue) && string.Equals(subValue, "1", StringComparison.Ordinal);
+            var isBroadcaster = string.Equals(
+                metadata.GetValueOrDefault("room-id"),
+                metadata.GetValueOrDefault("user-id"),
+                StringComparison.Ordinal);
+            var badgeReferences = ParseMessageBadgeReferences(metadata, isMod, isVip, isSubscriber, isBroadcaster);
+            var bits = metadata.GetValueOrDefault("bits", string.Empty);
+            var isCheer = int.TryParse(bits, out var bitCount) && bitCount > 0;
+            var author = string.IsNullOrWhiteSpace(displayName) ? "Alguém" : displayName;
 
             return new ChatMessage
             {
@@ -363,21 +418,250 @@ public sealed class TwitchChatClient : IDisposable
                     : string.Empty,
                 Message = messageText,
                 Channel = channelName,
-                OriginChannel = originChannel,
-                RoomId = roomId,
-                SourceRoomId = sourceRoomId,
+                OriginChannel = channelName,
+                RoomId = metadata.GetValueOrDefault("room-id", string.Empty),
+                SourceRoomId = metadata.GetValueOrDefault("source-room-id", string.Empty),
                 RawMetadata = string.Join("; ", metadata.Select(item => $"{item.Key}={item.Value}")),
+                MessageId = metadata.GetValueOrDefault("id", string.Empty),
+                Emotes = ParseEmoteRanges(metadata.GetValueOrDefault("emotes", string.Empty)),
+                BadgeReferences = badgeReferences,
+                Kind = isCheer ? ChatMessageKind.Bits : ChatMessageKind.Chat,
+                SystemText = isCheer ? $"{author} enviou {bitCount} Bits!" : string.Empty,
                 IsVip = isVip,
                 IsModerator = isMod,
                 IsSubscriber = isSubscriber,
-                IsBroadcaster = string.Equals(metadata.GetValueOrDefault("room-id"), metadata.GetValueOrDefault("user-id"), StringComparison.Ordinal),
-                TimestampUtc = DateTimeOffset.UtcNow
+                IsBroadcaster = isBroadcaster,
+                TimestampUtc = ParseTimestamp(metadata.GetValueOrDefault("tmi-sent-ts"))
             };
         }
         catch
         {
             return null;
         }
+    }
+
+    private static ChatMessage? ParseUserNotice(string rawLine)
+    {
+        try
+        {
+            var metadata = ParseLineTags(rawLine);
+            var payload = GetPayload(rawLine);
+            var parts = payload.Split(' ', 4, StringSplitOptions.None);
+            if (parts.Length < 3)
+            {
+                return null;
+            }
+
+            var channel = NormalizeChannel(parts[2]);
+            var displayName = metadata.GetValueOrDefault("display-name", string.Empty);
+            var loginName = metadata.GetValueOrDefault("login", string.Empty);
+            var eventId = metadata.GetValueOrDefault("msg-id", string.Empty);
+            var comment = parts.Length == 4 ? parts[3].TrimStart(':') : string.Empty;
+            var (kind, systemText) = CreateNoticeText(eventId, displayName, metadata);
+            if (string.IsNullOrWhiteSpace(systemText))
+            {
+                return null;
+            }
+
+            return new ChatMessage
+            {
+                DisplayName = displayName,
+                LoginName = loginName,
+                Message = comment,
+                SystemText = systemText,
+                Kind = kind,
+                Channel = channel,
+                OriginChannel = channel,
+                RoomId = metadata.GetValueOrDefault("room-id", string.Empty),
+                SourceRoomId = metadata.GetValueOrDefault("source-room-id", string.Empty),
+                RawMetadata = string.Join("; ", metadata.Select(item => $"{item.Key}={item.Value}")),
+                MessageId = metadata.GetValueOrDefault("id", string.Empty),
+                Emotes = ParseEmoteRanges(metadata.GetValueOrDefault("emotes", string.Empty)),
+                BadgeReferences = ParseMessageBadgeReferences(
+                    metadata,
+                    metadata.GetValueOrDefault("mod") == "1",
+                    metadata.GetValueOrDefault("vip") == "1",
+                    metadata.GetValueOrDefault("subscriber") == "1",
+                    metadata.GetValueOrDefault("room-id") == metadata.GetValueOrDefault("user-id")),
+                IsModerator = metadata.GetValueOrDefault("mod") == "1",
+                IsVip = metadata.GetValueOrDefault("vip") == "1",
+                IsSubscriber = metadata.GetValueOrDefault("subscriber") == "1",
+                IsBroadcaster = metadata.GetValueOrDefault("room-id") == metadata.GetValueOrDefault("user-id"),
+                TimestampUtc = ParseTimestamp(metadata.GetValueOrDefault("tmi-sent-ts"))
+            };
+        }
+        catch (Exception ex) when (ex is ArgumentException or FormatException)
+        {
+            return null;
+        }
+    }
+
+    private static (ChatMessageKind Kind, string Text) CreateNoticeText(
+        string eventId,
+        string displayName,
+        IReadOnlyDictionary<string, string> metadata)
+    {
+        var author = string.IsNullOrWhiteSpace(displayName) ? "Alguém" : displayName;
+        var recipient = metadata.GetValueOrDefault("msg-param-recipient-display-name", "alguém");
+        var months = metadata.GetValueOrDefault("msg-param-months", string.Empty);
+        var viewers = metadata.GetValueOrDefault("msg-param-viewerCount", string.Empty);
+        var gifts = metadata.GetValueOrDefault("msg-param-mass-gift-count", string.Empty);
+        var bits = metadata.GetValueOrDefault("bits", metadata.GetValueOrDefault("msg-param-amount", string.Empty));
+
+        return eventId switch
+        {
+            "sub" =>
+                (ChatMessageKind.Subscription, $"{author} se inscreveu no canal!"),
+            "resub" =>
+                (ChatMessageKind.Resubscription, $"{author} renovou a inscrição{FormatCount(months, " por {0} meses")}!"),
+            "subgift" or "anonsubgift" =>
+                (ChatMessageKind.GiftSubscription, $"{(eventId == "anonsubgift" ? "Alguém" : author)} presenteou {recipient} com uma inscrição!"),
+            "submysterygift" or "anonsubmysterygift" =>
+                (ChatMessageKind.GiftSubscription, $"{author} presenteou a comunidade{FormatCount(gifts, " com {0} inscrições")}!"),
+            "raid" =>
+                (ChatMessageKind.Raid, $"{author} chegou em raid{FormatCount(viewers, " com {0} espectadores")}!"),
+            "bitsbadger" or "bitscharity" =>
+                (ChatMessageKind.Bits, $"{author} enviou{FormatCount(bits, " {0}")} Bits!"),
+            "charity_donation" =>
+                (ChatMessageKind.Bits, $"{author} doou{FormatCount(metadata.GetValueOrDefault("msg-param-amount", string.Empty), " {0}")} para a caridade!"),
+            "giftpaidupgrade" or "primepaidupgrade" =>
+                (ChatMessageKind.Subscription, $"{author} voltou a apoiar o canal!"),
+            "communitypayforward" or "standardpayforward" =>
+                (ChatMessageKind.GiftSubscription, $"{author} encaminhou uma inscrição para a comunidade!"),
+            "announcement" =>
+                (ChatMessageKind.Announcement, $"{author} anunciou:"),
+            _ => (ChatMessageKind.Chat, string.Empty)
+        };
+    }
+
+    private static string FormatCount(string value, string format)
+    {
+        return int.TryParse(value, out var count) && count > 0
+            ? string.Format(System.Globalization.CultureInfo.InvariantCulture, format, count)
+            : string.Empty;
+    }
+
+    private static DateTimeOffset ParseTimestamp(string? value)
+    {
+        if (long.TryParse(value, out var milliseconds) &&
+            milliseconds >= DateTimeOffset.MinValue.ToUnixTimeMilliseconds() &&
+            milliseconds <= DateTimeOffset.MaxValue.ToUnixTimeMilliseconds())
+        {
+            return DateTimeOffset.FromUnixTimeMilliseconds(milliseconds);
+        }
+
+        return DateTimeOffset.UtcNow;
+    }
+
+    private static List<TwitchEmoteRange> ParseEmoteRanges(string rawValue)
+    {
+        var ranges = new List<TwitchEmoteRange>();
+        foreach (var emote in rawValue.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = emote.IndexOf(':');
+            if (separator <= 0)
+            {
+                continue;
+            }
+
+            var id = emote[..separator];
+            foreach (var rangeText in emote[(separator + 1)..].Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var bounds = rangeText.Split('-', 2);
+                if (bounds.Length == 2 &&
+                    int.TryParse(bounds[0], out var start) &&
+                    int.TryParse(bounds[1], out var end) &&
+                    start >= 0 && end >= start)
+                {
+                    ranges.Add(new TwitchEmoteRange(id, start, end));
+                }
+            }
+        }
+
+        return ranges.OrderBy(range => range.Start).ToList();
+    }
+
+    private static List<TwitchBadgeReference> ParseBadgeReferences(string rawValue)
+    {
+        var badges = new List<TwitchBadgeReference>();
+        foreach (var badge in rawValue.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = badge.IndexOf('/');
+            if (separator <= 0 || separator == badge.Length - 1)
+            {
+                continue;
+            }
+
+            badges.Add(new TwitchBadgeReference(badge[..separator], badge[(separator + 1)..]));
+        }
+
+        return badges;
+    }
+
+    private static List<TwitchBadgeReference> ParseMessageBadgeReferences(
+        IReadOnlyDictionary<string, string> metadata,
+        bool isModerator,
+        bool isVip,
+        bool isSubscriber,
+        bool isBroadcaster)
+    {
+        var badges = ParseBadgeReferences(metadata.GetValueOrDefault("badges", string.Empty));
+        AddBadgeIfMissing(badges, "moderator", isModerator ? "1" : null);
+        AddBadgeIfMissing(badges, "vip", isVip ? "1" : null);
+        AddBadgeIfMissing(badges, "broadcaster", isBroadcaster ? "1" : null);
+
+        if (isSubscriber)
+        {
+            var subscriberInfo = ParseBadgeReferences(metadata.GetValueOrDefault("badge-info", string.Empty))
+                .FirstOrDefault(badge => string.Equals(badge.SetId, "subscriber", StringComparison.OrdinalIgnoreCase));
+            var subscriberBadge = badges.FirstOrDefault(
+                badge => string.Equals(badge.SetId, "subscriber", StringComparison.OrdinalIgnoreCase));
+            AddBadgeIfMissing(badges, "subscriber", subscriberBadge?.Version ?? subscriberInfo?.Version ?? "0");
+        }
+
+        return badges;
+    }
+
+    private static void AddBadgeIfMissing(
+        ICollection<TwitchBadgeReference> badges,
+        string setId,
+        string? version)
+    {
+        if (version is not null &&
+            !badges.Any(badge => string.Equals(badge.SetId, setId, StringComparison.OrdinalIgnoreCase)))
+        {
+            badges.Add(new TwitchBadgeReference(setId, version));
+        }
+    }
+
+    private static Dictionary<string, string> ParseLineTags(string rawLine)
+    {
+        if (!rawLine.StartsWith('@'))
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var firstSpace = rawLine.IndexOf(' ');
+        return firstSpace > 1
+            ? ParseTagMap(rawLine[1..firstSpace])
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string GetPayload(string rawLine)
+    {
+        if (!rawLine.StartsWith('@'))
+        {
+            return rawLine;
+        }
+
+        var firstSpace = rawLine.IndexOf(' ');
+        return firstSpace >= 0 ? rawLine[(firstSpace + 1)..] : string.Empty;
+    }
+
+    private static bool HasIrcCommand(string rawLine, string command)
+    {
+        var parts = GetPayload(rawLine).Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2 && string.Equals(parts[1], command, StringComparison.OrdinalIgnoreCase);
     }
 
     private static Dictionary<string, string> ParseTagMap(string rawTags)
@@ -393,7 +677,7 @@ public sealed class TwitchChatClient : IDisposable
             var pair = part.Split('=', 2, StringSplitOptions.None);
             if (pair.Length == 2)
             {
-                result[pair[0]] = pair[1];
+                result[pair[0]] = UnescapeTagValue(pair[1]);
             }
             else if (pair.Length == 1)
             {
@@ -402,6 +686,15 @@ public sealed class TwitchChatClient : IDisposable
         }
 
         return result;
+    }
+
+    private static string UnescapeTagValue(string value)
+    {
+        return value.Replace("\\s", " ", StringComparison.Ordinal)
+            .Replace("\\:", ";", StringComparison.Ordinal)
+            .Replace("\\\\", "\\", StringComparison.Ordinal)
+            .Replace("\\r", "\r", StringComparison.Ordinal)
+            .Replace("\\n", "\n", StringComparison.Ordinal);
     }
 
     private static string NormalizeChannel(string value)

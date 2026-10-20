@@ -2,10 +2,12 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -31,6 +33,8 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         SelectedChannelsText = string.Join(", ", settings.SelectedChannels);
         BlockedChannelsText = string.Join(", ", settings.BlockedChannels);
         BlockedUsersText = string.Join(", ", settings.BlockedUsers);
+        BlockedTermsText = settings.BlockedTerms;
+        HighlightTermsText = settings.HighlightTerms;
         SettingsVisibility = settings.ShowSettingsPanel ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -56,31 +60,16 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 
     public string MainChannel
     {
-        get => _settings.MainChannel;
+        get => _mainChannelText;
         set
         {
-            if (string.Equals(_settings.MainChannel, value, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(_mainChannelText, value, StringComparison.Ordinal))
             {
                 return;
             }
 
+            _mainChannelText = value;
             _settings.MainChannel = NormalizedChannel(value);
-            OnPropertyChanged();
-        }
-    }
-
-    public string YouTubeVideoId
-    {
-        get => _settings.YouTubeVideoId;
-        set
-        {
-            var normalized = value.Trim();
-            if (string.Equals(_settings.YouTubeVideoId, normalized, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            _settings.YouTubeVideoId = normalized;
             OnPropertyChanged();
         }
     }
@@ -113,40 +102,154 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 
             _settings.ConnectionMode = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAuthenticatedIrc));
         }
     }
 
+    public bool IsAuthenticatedIrc => _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc;
+
     public string SelectedChannelsText
     {
-        get => string.Join(", ", _settings.SelectedChannels);
+        get => _selectedChannelsText;
         set
         {
+            _selectedChannelsText = value;
             _settings.SelectedChannels = ParseList(value);
-            OnPropertyChanged();
         }
     }
 
     public string BlockedChannelsText
     {
-        get => string.Join(", ", _settings.BlockedChannels);
+        get => _blockedChannelsText;
         set
         {
+            _blockedChannelsText = value;
             _settings.BlockedChannels = ParseList(value);
-            OnPropertyChanged();
         }
     }
 
     public string BlockedUsersText
     {
-        get => string.Join(", ", _settings.BlockedUsers);
+        get => _blockedUsersText;
         set
         {
+            _blockedUsersText = value;
             _settings.BlockedUsers = ParseUserList(value);
+        }
+    }
+
+    public string BlockedTermsText
+    {
+        get => _settings.BlockedTerms;
+        set
+        {
+            _settings.BlockedTerms = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string HighlightTermsText
+    {
+        get => _settings.HighlightTerms;
+        set
+        {
+            _settings.HighlightTerms = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool EnableSound
+    {
+        get => _settings.EnableSound;
+        set
+        {
+            _settings.EnableSound = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool DimOtherChannelMessages
+    {
+        get => _settings.DimOtherChannelMessages;
+        set
+        {
+            if (_settings.DimOtherChannelMessages == value)
+            {
+                return;
+            }
+
+            _settings.DimOtherChannelMessages = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public double TextOpacity
+    {
+        get => Math.Clamp(_settings.TextOpacity, 0.2, 1.0);
+        set
+        {
+            var opacity = Math.Clamp(value, 0.2, 1.0);
+            if (Math.Abs(_settings.TextOpacity - opacity) < 0.001)
+            {
+                return;
+            }
+
+            _settings.TextOpacity = opacity;
+            OnPropertyChanged();
+        }
+    }
+
+    public int MessageSpacing
+    {
+        get => Math.Clamp(_settings.MessageSpacing, 0, 20);
+        set
+        {
+            var spacing = Math.Clamp(value, 0, 20);
+            if (_settings.MessageSpacing == spacing)
+            {
+                return;
+            }
+
+            _settings.MessageSpacing = spacing;
+            OnPropertyChanged();
+        }
+    }
+
+    public string AccentColor
+    {
+        get => _settings.AccentColor;
+        set
+        {
+            if (!IsValidColor(value))
+            {
+                return;
+            }
+
+            _settings.AccentColor = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string MessageBackgroundColor
+    {
+        get => _settings.MessageBackgroundColor;
+        set
+        {
+            if (!IsValidColor(value))
+            {
+                return;
+            }
+
+            _settings.MessageBackgroundColor = value;
             OnPropertyChanged();
         }
     }
 
     private string _connectionStatus = string.Empty;
+    private string _mainChannelText = string.Empty;
+    private string _selectedChannelsText = string.Empty;
+    private string _blockedChannelsText = string.Empty;
+    private string _blockedUsersText = string.Empty;
     private bool _isConnected;
     private bool _isTwitchConnected;
 
@@ -241,6 +344,16 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool UseTwitchNameColors
+    {
+        get => _settings.UseTwitchNameColors;
+        set
+        {
+            _settings.UseTwitchNameColors = value;
+            OnPropertyChanged();
+        }
+    }
+
     public bool ShowModerators
     {
         get => _settings.ShowModerators;
@@ -305,11 +418,24 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 
     public double BackgroundOpacity
     {
-        get => _settings.BackgroundOpacity;
+        get => Math.Clamp(_settings.BackgroundOpacity, 0.15, 1.0);
         set
         {
-            _settings.BackgroundOpacity = value;
+            _settings.BackgroundOpacity = Math.Clamp(value, 0.15, 1.0);
             OnPropertyChanged();
+        }
+    }
+
+    private static bool IsValidColor(string value)
+    {
+        try
+        {
+            return value.StartsWith('#') && value.Length == 7 &&
+                   ColorConverter.ConvertFromString(value) is Color;
+        }
+        catch (FormatException)
+        {
+            return false;
         }
     }
 
@@ -374,21 +500,21 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 
 public sealed class ChatRowView : INotifyPropertyChanged
 {
-    private static readonly Brush TransparentNameBrush = new SolidColorBrush(Color.FromRgb(0, 157, 255));
     private Brush _nameBrush = Brushes.White;
     private string _timestampText = string.Empty;
 
     public static ImageSource TwitchImage { get; } = new BitmapImage(new Uri("pack://application:,,,/twitch.png"));
-    public static ImageSource YouTubeImage { get; } = new BitmapImage(new Uri("pack://application:,,,/youtube.png"));
-    public static ImageSource ModeratorImage { get; } = new BitmapImage(new Uri("pack://application:,,,/mod.png"));
-    public static ImageSource SubscriberImage { get; } = new BitmapImage(new Uri("pack://application:,,,/sub.png"));
-    public static ImageSource VipImage { get; } = new BitmapImage(new Uri("pack://application:,,,/vip.png"));
     public ImageSource PlatformImage { get; set; } = TwitchImage;
-    public ImageSource? BadgeImage { get; set; }
-    public ImageSource? SubscriberBadgeImage { get; set; }
-    public string BadgeName { get; set; } = string.Empty;
-    public string SubscriberBadgeName { get; set; } = string.Empty;
+    public string ChannelImageUrl { get; set; } = string.Empty;
+    public Brush MessageBackgroundBrush { get; set; } = Brushes.Transparent;
+    public IReadOnlyList<TwitchChatBadge> Badges { get; set; } = Array.Empty<TwitchChatBadge>();
     public string PlatformName { get; set; } = "Twitch";
+    public ChatMessage SourceMessage { get; set; } = new();
+    public IReadOnlyList<TwitchEmoteRange> Emotes { get; set; } = Array.Empty<TwitchEmoteRange>();
+    public bool IsSystemEvent { get; set; }
+    public string SystemText { get; set; } = string.Empty;
+    public Thickness RowMargin { get; set; }
+    public double RowOpacity { get; set; } = 1;
     public string FullTimestampText { get; set; } = string.Empty;
     public string TimestampText
     {
@@ -423,149 +549,197 @@ public sealed class ChatRowView : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NameBrush)));
         }
     }
-    public Visibility BadgeVisibility { get; set; } = Visibility.Visible;
-    public Visibility SubscriberBadgeVisibility { get; set; } = Visibility.Visible;
-
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public void SetTransparentAppearance(bool enabled)
     {
         TimestampText = enabled ? string.Empty : FullTimestampText;
-        NameBrush = enabled ? TransparentNameBrush : DefaultNameBrush;
+        NameBrush = DefaultNameBrush;
     }
 }
 
 public partial class MainWindow : Window
 {
     private const int WmHotkey = 0x0312;
+    private static readonly HttpClient TwitchBadgeImageHttpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(10)
+    };
     private readonly TwitchChatClient _chatClient = new();
+    private readonly TwitchBadgeClient _twitchBadgeClient = new();
+    private readonly TwitchChannelClient _twitchChannelClient = new();
     private readonly TwitchOAuthClient _twitchOAuthClient = new();
-    private readonly YouTubeOAuthClient _youTubeOAuthClient = new();
-    private readonly YouTubeChatClient _youTubeChatClient = new();
     private readonly AppSettings _settings;
     private readonly CancellationTokenSource _lifetimeCts = new();
+    private readonly List<ChatMessage> _chatHistory = new();
+    private readonly Dictionary<string, ImageSource> _twitchEmoteImageCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Task<ImageSource>> _twitchBadgeImageCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Task<ImageSource>> _twitchChannelImageCache = new(StringComparer.Ordinal);
     private TwitchCredentials? _twitchCredentials;
-    private YouTubeCredentials? _youTubeCredentials;
     private CancellationTokenSource? _authorizationCts;
     private Uri? _twitchVerificationUri;
     private int _connectInProgress;
     private int _hotKeyId = 9000;
     private bool _isConnected;
     private bool _twitchConnectionActive;
-    private int _youTubeConnectInProgress;
-    private CancellationTokenSource? _youTubeConnectCts;
-    private bool _youTubePublicChatActive;
     private bool _sharedChatFilterWarningShown;
     private int _reconnectScheduled;
     private bool _windowPositionReady;
     private bool _cursorOverResizeEdge;
     private readonly DispatcherTimer _windowPositionSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    private readonly DispatcherTimer _settingsSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private readonly DispatcherTimer _chatOnlyHitTestTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private readonly DispatcherTimer _chatOnlyGearHoldTimer = new() { Interval = TimeSpan.FromMilliseconds(5) };
     private readonly DispatcherTimer _suppressGearClickTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
     private bool _cursorOverChatOnlyGear;
     private bool _chatOnlyGearDragActive;
     private bool _suppressNextGearClick;
+    private TextBox? _activeColorInput;
+    private bool _settingsPopupDragging;
+    private Point _settingsPopupDragStart;
+    private Point _settingsPopupDragOrigin;
     private bool _chatOnlyGearPopupOffsetNudge;
     private NativeMethods.Point _chatOnlyGearDragStart;
     private double _chatOnlyGearWindowStartLeft;
     private double _chatOnlyGearWindowStartTop;
     private bool _popoutScriptRegistered;
-    private bool _youTubePopoutScriptRegistered;
     private bool _popoutNavigationHandlerRegistered;
-    private bool _youTubePopoutNavigationHandlerRegistered;
     private bool _twitchCaptureScriptRegistered;
-    private bool _youTubeCaptureScriptRegistered;
     private bool _twitchPublicChatActive;
     private int _connectionModeChangeVersion;
     private const string TwitchCaptureScript = """
         (() => {
             if (window.__transparentChatFilterTwitchCapture) return;
-            window.__transparentChatFilterTwitchCapture = true;
-            const seen = new WeakSet();
-            const send = () => {
-                document.querySelectorAll(
-                    '[data-a-target="chat-line-message"], [data-test-selector="chat-line-message"]'
-                ).forEach(line => {
-                    if (seen.has(line)) return;
-                    const user = line.querySelector(
-                        '[data-a-target="chat-message-username"], [data-test-selector="message-username"]'
-                    );
-                    const body = line.querySelector(
-                        '[data-a-target="chat-line-message-body"], [data-test-selector="message-body"]'
-                    );
-                    if (!user || !body) return;
-                    const displayName = (user.textContent || '').trim();
-                    const message = (body.innerText || body.textContent || '').trim();
-                    if (!displayName || !message) return;
-                    seen.add(line);
-                    const labels = (line.innerText || '').toLowerCase();
-                    window.chrome.webview.postMessage({
-                        platform:'Twitch', displayName, message,
-                        channel:location.pathname.split('/').filter(Boolean)[1] || '',
-                        isModerator:labels.includes('moderator'),
-                        isVip:labels.includes('vip'), isSubscriber:labels.includes('subscriber')
+            const capturedLines = new WeakMap();
+            const messageSelector = [
+                '[data-a-target="chat-line-message"]',
+                '[data-test-selector="chat-line-message"]',
+                '.chat-line__message'
+            ].join(',');
+            const start = () => {
+                if (!document.documentElement) return false;
+                const send = () => {
+                    document.querySelectorAll(messageSelector).forEach(line => {
+                        const user = line.querySelector([
+                            '[data-a-target="chat-message-username"]',
+                            '[data-test-selector="message-username"]',
+                            '.chat-author__display-name'
+                        ].join(','));
+                        const body = line.querySelector([
+                            '[data-a-target="chat-line-message-body"]',
+                            '[data-test-selector="message-body"]',
+                            '.text-fragment'
+                        ].join(','));
+                        if (!user || !body) return;
+                        const displayName = (user.textContent || '').trim();
+                        const message = (body.textContent || '').trim();
+                        if (!displayName || !message) return;
+                        const precedingImages = Array.from(line.querySelectorAll('img'))
+                            .filter(image =>
+                                (user.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_PRECEDING) !== 0);
+                        const sharedChatImage = line.querySelector([
+                            '[data-a-target*="shared-chat"] img',
+                            '[data-test-selector*="shared-chat"] img',
+                            '[class*="shared-chat"] img',
+                            '[data-a-target*="sharedChat"] img',
+                            '[data-test-selector*="sharedChat"] img',
+                            '[data-a-target*="channel-badge"] img',
+                            '[data-test-selector*="channel-badge"] img',
+                            'img[data-a-target*="shared-chat"]',
+                            'img[data-test-selector*="shared-chat"]',
+                            'img[data-a-target*="sharedChat"]',
+                            'img[data-test-selector*="sharedChat"]'
+                        ].join(','));
+                        const getImageUrl = image =>
+                            image.currentSrc || image.src || image.getAttribute('data-src') ||
+                            image.getAttribute('src') || '';
+                        const isChannelProfileImage = image => {
+                            const imageUrl = getImageUrl(image);
+                            const imagePath = imageUrl.split(/[?#]/, 1)[0];
+                            const accessibleName = [
+                                image.alt,
+                                image.getAttribute('aria-label'),
+                                image.title,
+                                image.parentElement?.getAttribute('aria-label'),
+                                image.parentElement?.title
+                            ].filter(Boolean).join(' ').toLowerCase();
+                            return /\/(?:jtv_user_pictures|user-pictures|channel_images|profiles)\//i.test(imagePath) ||
+                                /shared chat|channel (?:profile|picture|avatar)|channel icon/i.test(accessibleName);
+                        };
+                        const channelImage = sharedChatImage || precedingImages.find(isChannelProfileImage);
+                        const channelImageUrl = channelImage
+                            ? getImageUrl(channelImage)
+                            : '';
+                        const signature = `${displayName}\n${message}\n${channelImageUrl}`;
+                        if (capturedLines.get(line) === signature) return;
+                        const badges = precedingImages
+                            .map(image => {
+                                const imageUrl = getImageUrl(image);
+                                if (!/^https:\/\/(?:[^/]+\.)?(?:jtvnw\.net|twitch\.tv)\//i.test(imageUrl)) return null;
+                                const title = (image.alt || image.getAttribute('aria-label') ||
+                                    image.title || image.parentElement?.getAttribute('aria-label') ||
+                                    image.parentElement?.title || 'Twitch badge').trim();
+                                const label = title.toLowerCase();
+                                const setId = label.includes('moderator') ? 'moderator' :
+                                    label.includes('vip') ? 'vip' :
+                                    label.includes('subscriber') ? 'subscriber' : label;
+                                return { setId, title, imageUrl };
+                            })
+                            .filter(badge => badge && badge.imageUrl && badge.imageUrl !== channelImageUrl);
+                        const pathSegments = location.pathname.split('/').filter(Boolean);
+                        const channel = pathSegments[0] === 'popout' ? pathSegments[1] || '' : pathSegments[0] || '';
+                        window.chrome.webview.postMessage({
+                            kind:'message',
+                            displayName, message, channel, channelImageUrl,
+                            isModerator:badges.some(badge => badge.setId === 'moderator'),
+                            isVip:badges.some(badge => badge.setId === 'vip'),
+                            isSubscriber:badges.some(badge => badge.setId === 'subscriber'),
+                            badges
+                        });
+                        capturedLines.set(line, signature);
                     });
+                };
+                new MutationObserver(send).observe(document.documentElement, {
+                    childList:true, subtree:true, characterData:true
                 });
+                window.__transparentChatFilterTwitchCapture = true;
+                window.chrome.webview.postMessage({ kind:'capture-ready' });
+                setInterval(send, 1000);
+                send();
+                return true;
             };
-            new MutationObserver(send).observe(document.documentElement, {
-                childList:true, subtree:true, characterData:true
-            });
-            setInterval(send, 1000);
-            send();
-        })();
-        """;
-    private const string YouTubeCaptureScript = """
-        (() => {
-            if (window.__transparentChatFilterYouTubeCapture) return;
-            window.__transparentChatFilterYouTubeCapture = true;
-            const seen = new WeakSet();
-            const send = () => {
-                document.querySelectorAll(
-                    'yt-live-chat-text-message-renderer, yt-live-chat-paid-message-renderer, ' +
-                    'yt-live-chat-membership-item-renderer, yt-live-chat-paid-sticker-renderer'
-                ).forEach(line => {
-                    if (seen.has(line)) return;
-                    const author = line.querySelector('#author-name');
-                    const body = line.querySelector('#message');
-                    const displayName = (author?.textContent || '').trim();
-                    const message = (body?.innerText || body?.textContent || line.querySelector('#purchase-amount')?.textContent || '').trim();
-                    if (!displayName || !message) return;
-                    seen.add(line);
-                    window.chrome.webview.postMessage({
-                        platform:'YouTube', displayName, message,
-                        channel:new URL(location.href).searchParams.get('v') || ''
-                    });
-                });
-            };
-            new MutationObserver(send).observe(document.documentElement, {
-                childList:true, subtree:true, characterData:true
-            });
-            setInterval(send, 1000);
-            send();
+            if (!start()) {
+                document.addEventListener('DOMContentLoaded', start, { once:true });
+            }
         })();
         """;
     private const string TwitchMessagesOnlyScript = """
         (() => {
+            const existingApply = window.__transparentChatFilterTwitchScrollFix;
+            if (typeof existingApply === 'function') {
+                existingApply();
+                return;
+            }
             const styleId = 'transparent-chat-filter-messages-only';
+            const messageSelector = [
+                '[data-test-selector="chat-scrollable-area__message-container"]',
+                '[data-a-target="chat-scrollable-area__message-container"]',
+                '[role="log"].chat-scrollable-area__message-container'
+            ].join(',');
             const css = `
                 html, body { width:100%!important; height:100%!important; margin:0!important; overflow:hidden!important; background:transparent!important; }
+                *, *::before, *::after { scrollbar-width:none!important; -ms-overflow-style:none!important; }
+                *::-webkit-scrollbar { display:none!important; width:0!important; height:0!important; }
                 body * { visibility:hidden!important; }
-                [data-test-selector="chat-scrollable-area__message-container"],
-                [role="log"].chat-scrollable-area__message-container {
+                ${messageSelector} {
                     position:fixed!important; inset:0!important; z-index:2147483647!important;
                     display:block!important; width:100vw!important; height:100vh!important;
                     max-height:100vh!important; overflow-x:hidden!important; overflow-y:auto!important;
+                    scrollbar-width:none!important; -ms-overflow-style:none!important;
                     margin:0!important; padding:0!important; background:transparent!important;
-                    visibility:visible!important;
+                    visibility:hidden!important;
                 }
-                [data-test-selector="chat-scrollable-area__message-container"] *,
-                [role="log"].chat-scrollable-area__message-container * {
-                    visibility:visible!important;
-                    -webkit-text-stroke:0!important;
-                }
-                [data-test-selector="chat-scrollable-area__message-container"] [data-a-target="chat-line-message"],
-                [role="log"].chat-scrollable-area__message-container [data-a-target="chat-line-message"] {
+                ${messageSelector} [data-a-target="chat-line-message"] {
                     display:block!important;
                     width:max-content!important;
                     max-width:100%!important;
@@ -575,92 +749,46 @@ public partial class MainWindow : Window
                     border-radius:4px!important;
                     background:rgba(0,0,0,0.72)!important;
                 }
-                [data-test-selector="chat-scrollable-area__message-container"] [data-a-target="chat-line-message"] *,
-                [role="log"].chat-scrollable-area__message-container [data-a-target="chat-line-message"] * {
+                ${messageSelector} [data-a-target="chat-line-message"] * {
                     background-color:transparent!important;
                     -webkit-text-stroke:0!important;
                     text-shadow:0 1px 1px rgba(0,0,0,0.95), 0 0 3px rgba(0,0,0,0.8)!important;
+                    visibility:hidden!important;
                 }
             `;
-            const apply = () => {
-                const messages = document.querySelector(
-                    '[data-test-selector="chat-scrollable-area__message-container"], [role="log"].chat-scrollable-area__message-container'
-                );
-                if (!messages) return false;
-                const root = document.head || document.documentElement;
-                if (!root) return false;
-                let style = document.getElementById(styleId);
-                if (!style) {
-                    style = document.createElement('style');
-                    style.id = styleId;
-                    root.appendChild(style);
-                }
-                style.textContent = css;
-                return true;
+            const observedContainers = new WeakSet();
+            const scrollToLatest = container => {
+                const scroll = () => { container.scrollTop = container.scrollHeight; };
+                requestAnimationFrame(scroll);
+                setTimeout(scroll, 80);
             };
-            if (apply()) return;
-            const observer = new MutationObserver(() => {
-                if (apply()) observer.disconnect();
-            });
-            observer.observe(document.documentElement, { childList:true, subtree:true });
-        })();
-        """;
-    private const string YouTubeMessagesOnlyScript = """
-        (() => {
-            const styleId = 'transparent-chat-filter-youtube-messages-only';
-            const css = `
-                html, body, yt-live-chat-app, yt-live-chat-renderer {
-                    width:100%!important; height:100%!important; min-height:100%!important;
-                    margin:0!important; overflow:hidden!important; background:transparent!important;
-                }
-                yt-live-chat-header-renderer, yt-live-chat-ticker-renderer,
-                yt-live-chat-message-input-renderer, yt-live-chat-viewer-engagement-message-renderer,
-                yt-live-chat-banner-manager, #ticker, #input-panel, #separator, #panel-pages {
-                    display:none!important;
-                }
-                yt-live-chat-renderer, #contents, yt-live-chat-item-list-renderer,
-                yt-live-chat-item-list-renderer #item-scroller {
-                    height:100vh!important; max-height:100vh!important; min-height:0!important;
-                    background:transparent!important;
-                }
-                yt-live-chat-item-list-renderer #item-scroller {
-                    overflow-y:auto!important; overflow-x:hidden!important;
-                }
-                yt-live-chat-item-list-renderer #items {
-                    padding:4px!important; background:transparent!important;
-                }
-                yt-live-chat-text-message-renderer, yt-live-chat-paid-message-renderer,
-                yt-live-chat-membership-item-renderer, yt-live-chat-paid-sticker-renderer {
-                    width:max-content!important; max-width:100%!important; box-sizing:border-box!important;
-                    margin:2px 0!important; padding:3px 7px!important; border-radius:4px!important;
-                    background:rgba(0,0,0,0.72)!important;
-                }
-                yt-live-chat-text-message-renderer *,
-                yt-live-chat-paid-message-renderer *,
-                yt-live-chat-membership-item-renderer *,
-                yt-live-chat-paid-sticker-renderer * {
-                    background-color:transparent!important;
-                    text-shadow:0 1px 1px rgba(0,0,0,0.95), 0 0 3px rgba(0,0,0,0.8)!important;
-                }
-            `;
             const apply = () => {
-                if (!document.querySelector('yt-live-chat-renderer')) return false;
+                const messages = document.querySelector(messageSelector);
                 const root = document.head || document.documentElement;
-                if (!root) return false;
-                let style = document.getElementById(styleId);
-                if (!style) {
-                    style = document.createElement('style');
-                    style.id = styleId;
-                    root.appendChild(style);
+                if (root) {
+                    let style = document.getElementById(styleId);
+                    if (!style) {
+                        style = document.createElement('style');
+                        style.id = styleId;
+                        root.appendChild(style);
+                    }
+                    if (style.textContent !== css) {
+                        style.textContent = css;
+                    }
                 }
-                style.textContent = css;
-                return true;
+                if (!messages) return;
+                if (!observedContainers.has(messages)) {
+                    observedContainers.add(messages);
+                    new MutationObserver(() => scrollToLatest(messages)).observe(messages, {
+                        childList:true, subtree:true, characterData:true
+                    });
+                }
+                scrollToLatest(messages);
             };
-            if (apply()) return;
-            const observer = new MutationObserver(() => {
-                if (apply()) observer.disconnect();
-            });
-            observer.observe(document.documentElement, { childList:true, subtree:true });
+            const observer = new MutationObserver(apply);
+            observer.observe(document, { childList:true, subtree:true });
+            window.__transparentChatFilterTwitchScrollFix = apply;
+            apply();
         })();
         """;
 
@@ -670,21 +798,15 @@ public partial class MainWindow : Window
         _settings.IsTransparent = false;
         DataContext = new OverlayViewModel(_settings);
         InitializeComponent();
+        UpdateColorPreview(AccentColorInput.Text, AccentColorPreviewDot, AccentColorPreviewText);
+        UpdateColorPreview(MessageBackgroundColorInput.Text, MessageBackgroundColorPreviewDot, MessageBackgroundColorPreviewText);
         RestoreWindowPosition();
         _windowPositionSaveTimer.Tick += WindowPositionSaveTimer_Tick;
-        if (_settings.YouTubeOAuthClientIdMigrated)
+        _settingsSaveTimer.Tick += (_, _) =>
         {
-            try
-            {
-                YouTubeCredentialStore.DeleteRefreshToken();
-                _settings.Save();
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                ViewModel.UpdateDiagnostic($"Não foi possível atualizar a autorização Google para o novo Client ID: {ex.Message}");
-            }
-        }
-
+            _settingsSaveTimer.Stop();
+            ViewModel.SaveSettings();
+        };
         ChatOnlyGearPopup.CustomPopupPlacementCallback = ChatOnlyGearPopup_Placement;
         LocationChanged += MainWindow_LocationChanged;
         _chatOnlyHitTestTimer.Tick += ChatOnlyHitTestTimer_Tick;
@@ -697,7 +819,6 @@ public partial class MainWindow : Window
         FilterModeComboBox.SelectedIndex = (int)_settings.FilterMode;
         ConnectionModeComboBox.SelectedIndex = (int)_settings.ConnectionMode;
         UpdateConnectionModeUi();
-        UpdateYouTubePublicChatButtonVisibility();
         try
         {
             _twitchCredentials = TwitchCredentialStore.LoadCredentials(_settings.TwitchUsername);
@@ -719,7 +840,6 @@ public partial class MainWindow : Window
         }
 
         UpdateConnectionModeUi();
-        UpdateYouTubePublicChatButtonVisibility();
         this.Closed += MainWindow_Closed;
         this.Loaded += MainWindow_Loaded;
         this.StateChanged += MainWindow_StateChanged;
@@ -746,69 +866,38 @@ public partial class MainWindow : Window
 
         _chatClient.MessageReceived += (_, message) =>
         {
-            DispatchToUi(() =>
+            if (_settings.FilterMode == ChatFilterMode.JoinedChats)
             {
-                var viewModel = ViewModel;
-                if (!ShouldDisplayMessage(message, viewModel.Settings))
-                {
-                    WarnWhenJoinedMessageIsFiltered(message, viewModel.Settings);
-                    return;
-                }
-
-                var row = CreateChatRow(message, viewModel.Settings);
-                if (viewModel.Messages.Count >= viewModel.Settings.MaxVisibleMessages)
-                {
-                    viewModel.Messages.RemoveAt(0);
-                }
-
-                viewModel.Messages.Add(row);
-                ChatMessagesScrollViewer.ScrollToEnd();
-            });
+                _ = ResolveJoinedChatMessageAndAppendAsync(message);
+            }
+            else if (message.BadgeReferences.Count == 0)
+            {
+                DispatchToUi(() => AppendMessageToFeed(message));
+            }
+            else
+            {
+                _ = ResolveBadgesAndAppendAsync(message);
+            }
         };
-
-        _youTubeChatClient.MessageReceived += (_, message) =>
+        _chatClient.MessageDeleted += (_, messageId) => DispatchToUi(() =>
         {
-            DispatchToUi(() =>
+            _chatHistory.RemoveAll(message => string.Equals(message.MessageId, messageId, StringComparison.Ordinal));
+            var deletedRow = ViewModel.Messages.FirstOrDefault(row => row.SourceMessage.MessageId == messageId);
+            if (deletedRow is not null)
             {
-                var viewModel = ViewModel;
-                if (!ShouldDisplayMessage(message, viewModel.Settings))
-                {
-                    return;
-                }
-
-                if (viewModel.Messages.Count >= viewModel.Settings.MaxVisibleMessages)
-                {
-                    viewModel.Messages.RemoveAt(0);
-                }
-
-                viewModel.Messages.Add(CreateChatRow(message, viewModel.Settings));
-                ChatMessagesScrollViewer.ScrollToEnd();
-            });
-        };
-
-        _youTubeChatClient.StatusChanged += (_, status) =>
+                ViewModel.Messages.Remove(deletedRow);
+                ScrollChatToLatestMessage();
+            }
+        });
+        _chatClient.UserMessagesCleared += (_, clear) => DispatchToUi(() =>
         {
-            DispatchToUi(() =>
-            {
-                YouTubeConnectionStatus.Text = status;
-                UpdateOverallConnectionState();
-                RefreshChatPanels();
-                if (!_twitchConnectionActive)
-                {
-                    ViewModel.ConnectionStatus = status;
-                }
-            });
-        };
+            _chatHistory.RemoveAll(message =>
+                string.Equals(message.Channel, clear.Channel, StringComparison.OrdinalIgnoreCase) &&
+                (clear.Username is null ||
+                 string.Equals(message.LoginName, clear.Username, StringComparison.OrdinalIgnoreCase)));
 
-        _youTubeChatClient.ErrorReported += (_, error) =>
-        {
-            DispatchToUi(() =>
-            {
-                YouTubeConnectionStatus.Text = "Não foi possível manter a conexão.";
-                ViewModel.UpdateDiagnostic(error);
-                MessageBox.Show(this, error, "Chat do YouTube", MessageBoxButton.OK, MessageBoxImage.Warning);
-            });
-        };
+            RefreshMessageFeed();
+        });
 
         _chatClient.ErrorReported += (_, error) =>
         {
@@ -877,10 +966,11 @@ public partial class MainWindow : Window
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
         _windowPositionSaveTimer.Stop();
+        _settingsSaveTimer.Stop();
+        ViewModel.SaveSettings();
         SaveWindowPosition();
         _lifetimeCts.Cancel();
         _authorizationCts?.Cancel();
-        _ = _youTubeChatClient.DisconnectAsync();
         _chatOnlyHitTestTimer.Stop();
         _chatOnlyGearHoldTimer.Stop();
         _suppressGearClickTimer.Stop();
@@ -1036,209 +1126,51 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ChatPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(ChatPreferencesPage, ChatPreferencesButton);
-
-    private void YouTubePreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(YouTubePreferencesPage, YouTubePreferencesButton);
-
-    private void YouTubeConnectionsPreferencesButton_Click(object sender, RoutedEventArgs e) =>
-        ShowPreferencesPage(YouTubeConnectionsPreferencesPage, YouTubeConnectionsPreferencesButton);
-
-    private async void OpenYouTubePublicChatButton_Click(object sender, RoutedEventArgs e)
+    private void SettingsPopupDrag_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        try
-        {
-            var videoId = NormalizeYouTubeVideoId(ViewModel.YouTubeVideoId);
-            if (string.IsNullOrWhiteSpace(videoId))
-            {
-                throw new InvalidOperationException("Cole o link da transmissão ao vivo do YouTube.");
-            }
-
-            await _youTubeChatClient.DisconnectAsync();
-            _youTubePublicChatActive = true;
-            await ShowYouTubePublicChatAsync(videoId);
-            YouTubePublicChatView.Visibility = Visibility.Visible;
-            RefreshChatPanels();
-            UpdateChatOnlyControlsVisibility();
-            UpdateOverallConnectionState();
-            if (!_twitchConnectionActive)
-            {
-                ViewModel.ConnectionStatus = "Chat público do YouTube";
-            }
-
-            YouTubeConnectionStatus.Text = "Chat público aberto · sem login";
-            YouTubePublicChatStatus.Text = "Chat público aberto. Esta opção não autoriza a conta Google nem inicia a conexão autenticada do YouTube.";
-        }
-        catch (Exception ex)
-        {
-            if (_youTubePublicChatActive)
-            {
-                _youTubePublicChatActive = false;
-                YouTubePublicChatView.Visibility = Visibility.Collapsed;
-                UpdateChatOnlyControlsVisibility();
-                RefreshChatPanels();
-                UpdateOverallConnectionState();
-            }
-
-            YouTubeConnectionStatus.Text = "Não foi possível abrir o chat público.";
-            YouTubePublicChatStatus.Text = "Não foi possível abrir o chat público.";
-            ViewModel.UpdateDiagnostic($"YouTube: {ex.Message}");
-            MessageBox.Show(this, ex.Message, "Chat público do YouTube", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-    }
-
-    private async void ConnectYouTubeButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (Interlocked.Exchange(ref _youTubeConnectInProgress, 1) != 0)
+        if (sender is not FrameworkElement dragSurface || e.ChangedButton != MouseButton.Left)
         {
             return;
         }
 
-        var connectionCts = CancellationTokenSource.CreateLinkedTokenSource(_lifetimeCts.Token);
-        _youTubeConnectCts = connectionCts;
-        try
-        {
-            CancelYouTubeConnectionButton.Visibility = Visibility.Visible;
-            var videoId = NormalizeYouTubeVideoId(ViewModel.YouTubeVideoId);
-            if (string.IsNullOrWhiteSpace(videoId))
-            {
-                throw new InvalidOperationException("Informe o ID ou o link do vídeo ao vivo do YouTube.");
-            }
-
-            _youTubePublicChatActive = false;
-            YouTubePublicChatView.CoreWebView2?.Stop();
-            YouTubePublicChatView.Visibility = Visibility.Collapsed;
-            RefreshChatPanels();
-            UpdateChatOnlyControlsVisibility();
-            YouTubeConnectionStatus.Text = "Preparando a autorização do Google...";
-            var refreshToken = YouTubeCredentialStore.LoadRefreshToken();
-            if (string.IsNullOrWhiteSpace(refreshToken))
-            {
-                YouTubeConnectionStatus.Text = "Aguardando autorização no navegador...";
-                _youTubeCredentials = await _youTubeOAuthClient.AuthorizeAsync(connectionCts.Token);
-                YouTubeCredentialStore.SaveRefreshToken(_youTubeCredentials.RefreshToken);
-            }
-            else
-            {
-                _youTubeCredentials = new YouTubeCredentials(string.Empty, refreshToken, DateTimeOffset.MinValue);
-                await GetYouTubeAccessTokenAsync(connectionCts.Token);
-            }
-
-            await _youTubeChatClient.ConnectAsync(
-                videoId,
-                GetYouTubeAccessTokenAsync,
-                connectionCts.Token);
-        }
-        catch (OperationCanceledException) when (connectionCts.IsCancellationRequested)
-        {
-            YouTubeConnectionStatus.Text = "Conexão cancelada.";
-        }
-        catch (Exception ex)
-        {
-            YouTubeConnectionStatus.Text = "Não foi possível conectar.";
-            ViewModel.UpdateDiagnostic($"YouTube: {ex.Message}");
-            MessageBox.Show(
-                this,
-                ex.Message.Contains("redirect_uri_mismatch", StringComparison.OrdinalIgnoreCase)
-                    ? "O Google rejeitou o endereço de retorno local.\n\nEm Conexões, informe o Client ID de um cliente OAuth do tipo Aplicativo para computador. Um Client ID do tipo Aplicativo da Web não aceita a porta local dinâmica usada pelo app."
-                    : ex.Message,
-                "Não foi possível conectar ao YouTube",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-        }
-        finally
-        {
-            if (ReferenceEquals(_youTubeConnectCts, connectionCts))
-            {
-                _youTubeConnectCts = null;
-            }
-
-            connectionCts.Dispose();
-            CancelYouTubeConnectionButton.Visibility = Visibility.Collapsed;
-            Interlocked.Exchange(ref _youTubeConnectInProgress, 0);
-        }
+        _settingsPopupDragStart = dragSurface.PointToScreen(e.GetPosition(dragSurface));
+        _settingsPopupDragOrigin = new Point(SettingsPopup.HorizontalOffset, SettingsPopup.VerticalOffset);
+        _settingsPopupDragging = dragSurface.CaptureMouse();
+        e.Handled = true;
     }
 
-    private void CancelYouTubeConnectionButton_Click(object sender, RoutedEventArgs e)
+    private void SettingsPopupDrag_MouseMove(object sender, MouseEventArgs e)
     {
-        _youTubeConnectCts?.Cancel();
+        if (!_settingsPopupDragging || sender is not FrameworkElement dragSurface)
+        {
+            return;
+        }
+
+        var currentPosition = dragSurface.PointToScreen(e.GetPosition(dragSurface));
+        var delta = currentPosition - _settingsPopupDragStart;
+        if (PresentationSource.FromVisual(dragSurface)?.CompositionTarget is { } target)
+        {
+            delta = target.TransformFromDevice.Transform(delta);
+        }
+
+        SettingsPopup.HorizontalOffset = _settingsPopupDragOrigin.X + delta.X;
+        SettingsPopup.VerticalOffset = _settingsPopupDragOrigin.Y + delta.Y;
+        e.Handled = true;
     }
 
-    private async void DisconnectYouTubeButton_Click(object sender, RoutedEventArgs e)
+    private void SettingsPopupDrag_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        _youTubeConnectCts?.Cancel();
-        await _youTubeChatClient.DisconnectAsync();
-        if (_youTubePublicChatActive)
+        if (!_settingsPopupDragging || sender is not FrameworkElement dragSurface)
         {
-            _youTubePublicChatActive = false;
-            YouTubePublicChatView.CoreWebView2?.Stop();
-            YouTubePublicChatView.Visibility = Visibility.Collapsed;
-            RefreshChatPanels();
-            UpdateChatOnlyControlsVisibility();
+            return;
         }
 
-        UpdateOverallConnectionState();
-        RefreshChatPanels();
-        YouTubePublicChatStatus.Text = "Chat público desconectado";
-        YouTubeConnectionStatus.Text = "YouTube desconectado";
-        if (!_twitchConnectionActive)
-        {
-            ViewModel.ConnectionStatus = "Desconectado";
-        }
+        _settingsPopupDragging = false;
+        dragSurface.ReleaseMouseCapture();
+        e.Handled = true;
     }
 
-    private async Task<string> GetYouTubeAccessTokenAsync(CancellationToken cancellationToken)
-    {
-        if (_youTubeCredentials is null || _youTubeCredentials.ExpiresAtUtc <= DateTimeOffset.UtcNow.AddMinutes(1))
-        {
-            var refreshToken = _youTubeCredentials?.RefreshToken ?? YouTubeCredentialStore.LoadRefreshToken();
-            if (string.IsNullOrWhiteSpace(refreshToken))
-            {
-                throw new InvalidOperationException("Autorize sua conta Google para conectar ao chat do YouTube.");
-            }
-
-            var refreshed = await _youTubeOAuthClient.RefreshAsync(
-                new YouTubeCredentials(string.Empty, refreshToken, DateTimeOffset.MinValue),
-                cancellationToken);
-            _youTubeCredentials = refreshed;
-        }
-
-        return _youTubeCredentials.AccessToken;
-    }
-
-    private static string NormalizeYouTubeVideoId(string input)
-    {
-        var value = input.Trim();
-        if (Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
-            (uri.Host.Equals("youtube.com", StringComparison.OrdinalIgnoreCase) ||
-             uri.Host.EndsWith(".youtube.com", StringComparison.OrdinalIgnoreCase) ||
-             uri.Host.Equals("youtu.be", StringComparison.OrdinalIgnoreCase)))
-        {
-            if (uri.Host.Equals("youtu.be", StringComparison.OrdinalIgnoreCase))
-            {
-                return uri.AbsolutePath.Trim('/');
-            }
-
-            var videoId = uri.Query.TrimStart('?')
-                .Split('&', StringSplitOptions.RemoveEmptyEntries)
-                .Select(pair => pair.Split('=', 2))
-                .Where(pair => pair.Length == 2 && pair[0] == "v")
-                .Select(pair => Uri.UnescapeDataString(pair[1]))
-                .FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(videoId))
-            {
-                return videoId;
-            }
-
-            var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            var liveIndex = Array.FindIndex(segments, segment => segment.Equals("live", StringComparison.OrdinalIgnoreCase));
-            if (liveIndex >= 0 && liveIndex + 1 < segments.Length)
-            {
-                return segments[liveIndex + 1];
-            }
-        }
-
-        return value;
-    }
+    private void ChatPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(ChatPreferencesPage, ChatPreferencesButton);
 
     private void ConnectionsPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(ConnectionsPreferencesPage, ConnectionsPreferencesButton);
 
@@ -1249,8 +1181,6 @@ public partial class MainWindow : Window
     private void ShowPreferencesPage(FrameworkElement page, Button activeButton)
     {
         ChatPreferencesPage.Visibility = Visibility.Collapsed;
-        YouTubePreferencesPage.Visibility = Visibility.Collapsed;
-        YouTubeConnectionsPreferencesPage.Visibility = Visibility.Collapsed;
         ConnectionsPreferencesPage.Visibility = Visibility.Collapsed;
         WidgetsPreferencesPage.Visibility = Visibility.Collapsed;
         AboutPreferencesPage.Visibility = Visibility.Collapsed;
@@ -1259,8 +1189,6 @@ public partial class MainWindow : Window
         foreach (var button in new[]
                  {
                      ChatPreferencesButton,
-                     YouTubePreferencesButton,
-                     YouTubeConnectionsPreferencesButton,
                      ConnectionsPreferencesButton,
                      WidgetsPreferencesButton,
                      AboutPreferencesButton
@@ -1274,18 +1202,19 @@ public partial class MainWindow : Window
         activeButton.Background = new SolidColorBrush(Color.FromRgb(48, 37, 68));
         activeButton.BorderBrush = new SolidColorBrush(Color.FromRgb(128, 84, 197));
         activeButton.Foreground = new SolidColorBrush(Color.FromRgb(241, 232, 255));
+        page.UpdateLayout();
+        if (page is ScrollViewer scrollViewer)
+        {
+            scrollViewer.ScrollToTop();
+        }
     }
 
-    private async void DisconnectButton_Click(object sender, RoutedEventArgs e)
+    private void DisconnectButton_Click(object sender, RoutedEventArgs e)
     {
-        _youTubePublicChatActive = false;
         _twitchPublicChatActive = false;
         _chatClient.Disconnect();
-        await _youTubeChatClient.DisconnectAsync();
         TwitchPopoutView.CoreWebView2?.Stop();
         TwitchPopoutView.Visibility = Visibility.Collapsed;
-        YouTubePublicChatView.CoreWebView2?.Stop();
-        YouTubePublicChatView.Visibility = Visibility.Collapsed;
         RefreshChatPanels();
         UpdateChatOnlyControlsVisibility();
         SetConnected(false);
@@ -1295,7 +1224,13 @@ public partial class MainWindow : Window
 
     private void SavePreferences_Changed(object sender, RoutedEventArgs e)
     {
+        if (!IsInitialized)
+        {
+            return;
+        }
+
         ApplyAppearance();
+        RefreshMessageFeed();
         ViewModel.SaveSettings();
     }
 
@@ -1303,7 +1238,11 @@ public partial class MainWindow : Window
     {
         if (IsInitialized)
         {
-            Dispatcher.BeginInvoke(new Action(ViewModel.SaveSettings), DispatcherPriority.DataBind);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                RefreshMessageFeed();
+                ViewModel.SaveSettings();
+            }), DispatcherPriority.DataBind);
         }
     }
 
@@ -1311,8 +1250,144 @@ public partial class MainWindow : Window
     {
         if (IsInitialized)
         {
-            ViewModel.SaveSettings();
+            RefreshMessageFeed();
+            QueueSettingsSave();
         }
+    }
+
+    private void QueueSettingsSave()
+    {
+        _settingsSaveTimer.Stop();
+        _settingsSaveTimer.Start();
+    }
+
+    private void AppearanceSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsInitialized)
+        {
+            return;
+        }
+
+        RefreshMessageFeed();
+        ViewModel.SaveSettings();
+    }
+
+    private void AccentColor_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!IsInitialized)
+        {
+            return;
+        }
+
+        var isValid = AccentColorInput.Text.Trim() is { Length: 7 } colorText &&
+                      colorText.StartsWith('#') &&
+                      ParseHexColor(colorText) is not null;
+        AccentColorStatus.Text = isValid ? string.Empty : "Use uma cor hexadecimal como #5EA2FF.";
+        AccentColorStatus.Visibility = isValid ? Visibility.Collapsed : Visibility.Visible;
+        if (isValid)
+        {
+            var selectedColor = AccentColorInput.Text.Trim();
+            ViewModel.AccentColor = selectedColor;
+            UpdateColorPreview(selectedColor, AccentColorPreviewDot, AccentColorPreviewText);
+            RefreshMessageFeed();
+            QueueSettingsSave();
+        }
+    }
+
+    private void MessageBackgroundColor_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!IsInitialized)
+        {
+            return;
+        }
+
+        var colorText = MessageBackgroundColorInput.Text.Trim();
+        var isValid = colorText.Length == 7 &&
+                      colorText.StartsWith('#') &&
+                      ParseHexColor(colorText) is not null;
+        MessageBackgroundColorStatus.Text = isValid ? string.Empty : "Use uma cor hexadecimal como #161D2C.";
+        MessageBackgroundColorStatus.Visibility = isValid ? Visibility.Collapsed : Visibility.Visible;
+        if (isValid)
+        {
+            ViewModel.MessageBackgroundColor = colorText;
+            UpdateColorPreview(colorText, MessageBackgroundColorPreviewDot, MessageBackgroundColorPreviewText);
+            RefreshMessageFeed();
+            QueueSettingsSave();
+        }
+    }
+
+    private static void UpdateColorPreview(string colorText, Border swatch, TextBlock description)
+    {
+        if (ParseHexColor(colorText) is not { } color)
+        {
+            return;
+        }
+
+        var normalizedHex = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+        swatch.Background = new SolidColorBrush(color);
+        description.Text = $"{GetColorName(color)} {normalizedHex}";
+        description.ToolTip = $"Cor selecionada: {GetColorName(color)} {normalizedHex}";
+    }
+
+    private static string GetColorName(Color color)
+    {
+        (string Name, Color Color)[] namedColors =
+        [
+            ("Preto", Colors.Black),
+            ("Branco", Colors.White),
+            ("Cinza", Colors.Gray),
+            ("Cinza claro", Colors.Silver),
+            ("Vinho", Color.FromRgb(127, 0, 0)),
+            ("Vermelho", Colors.Red),
+            ("Laranja", Color.FromRgb(255, 127, 0)),
+            ("Amarelo", Colors.Yellow),
+            ("Oliva", Color.FromRgb(127, 127, 0)),
+            ("Verde", Colors.Lime),
+            ("Verde escuro", Color.FromRgb(0, 127, 0)),
+            ("Ciano", Colors.Cyan),
+            ("Azul claro", Color.FromRgb(0, 127, 255)),
+            ("Azul", Color.FromRgb(94, 162, 255)),
+            ("Azul escuro", Color.FromRgb(0, 0, 127)),
+            ("Violeta", Color.FromRgb(127, 0, 255)),
+            ("Magenta", Colors.Magenta),
+            ("Rosa", Color.FromRgb(255, 0, 127)),
+            ("Violeta Twitch", Color.FromRgb(169, 112, 255))
+        ];
+
+        var nearest = namedColors
+            .MinBy(candidate =>
+                Math.Pow(color.R - candidate.Color.R, 2) +
+                Math.Pow(color.G - candidate.Color.G, 2) +
+                Math.Pow(color.B - candidate.Color.B, 2));
+        return nearest.Name;
+    }
+
+    private void ChooseAccentColorButton_Click(object sender, RoutedEventArgs e)
+    {
+        OpenColorPalette(AccentColorInput, (UIElement)sender);
+    }
+
+    private void ChooseMessageBackgroundColorButton_Click(object sender, RoutedEventArgs e)
+    {
+        OpenColorPalette(MessageBackgroundColorInput, (UIElement)sender);
+    }
+
+    private void OpenColorPalette(TextBox colorInput, UIElement placementTarget)
+    {
+        _activeColorInput = colorInput;
+        ColorPalettePopup.PlacementTarget = placementTarget;
+        ColorPalettePopup.IsOpen = true;
+    }
+
+    private void PaletteColorButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || _activeColorInput is null || button.Tag is not string color)
+        {
+            return;
+        }
+
+        _activeColorInput.Text = color;
+        ColorPalettePopup.IsOpen = false;
     }
 
     private void ShowDiagnosticButton_Click(object sender, RoutedEventArgs e)
@@ -1333,6 +1408,7 @@ public partial class MainWindow : Window
         }
 
         ApplyAppearance();
+        RefreshMessageFeed();
         ViewModel.SaveSettings();
     }
 
@@ -1368,13 +1444,14 @@ public partial class MainWindow : Window
         });
     }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void Toolbar_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ChangedButton != MouseButton.Left)
+        if (e.ChangedButton != MouseButton.Left || IsWindowControl(e.OriginalSource as DependencyObject))
         {
             return;
         }
 
+        e.Handled = true;
         if (e.ClickCount == 2)
         {
             ToggleMaximizeRestore();
@@ -1382,6 +1459,23 @@ public partial class MainWindow : Window
         }
 
         DragMove();
+    }
+
+    private bool IsWindowControl(DependencyObject? source)
+    {
+        while (source is not null && source != Toolbar)
+        {
+            if (source is ButtonBase)
+            {
+                return true;
+            }
+
+            source = source is Visual
+                ? VisualTreeHelper.GetParent(source)
+                : LogicalTreeHelper.GetParent(source);
+        }
+
+        return false;
     }
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
@@ -1437,6 +1531,7 @@ public partial class MainWindow : Window
         }
 
         ApplyAppearance();
+        RefreshMessageFeed();
         _settings.Save();
     }
 
@@ -1444,26 +1539,13 @@ public partial class MainWindow : Window
     {
         _twitchConnectionActive = connected;
         ViewModel.IsTwitchConnected = connected;
-        UpdateYouTubePublicChatButtonVisibility();
         UpdateOverallConnectionState();
-    }
-
-    private void UpdateYouTubePublicChatButtonVisibility()
-    {
-        if (!IsInitialized)
-        {
-            return;
-        }
-
-        YouTubePublicChatButton.Visibility =
-            _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc && _chatClient.IsConnected
-                ? Visibility.Collapsed
-                : Visibility.Visible;
+        UpdateConnectionModeUi();
     }
 
     private void UpdateOverallConnectionState()
     {
-        _isConnected = _twitchConnectionActive || _youTubeChatClient.IsConnected || _youTubePublicChatActive;
+        _isConnected = _twitchConnectionActive;
         ViewModel.IsConnected = _isConnected;
     }
 
@@ -1480,10 +1562,7 @@ public partial class MainWindow : Window
         SetConnected(false);
         RefreshChatPanels();
         UpdateChatOnlyControlsVisibility();
-        ViewModel.ConnectionStatus = _youTubeChatClient.IsConnected
-            ? "YouTube conectado"
-            : _youTubePublicChatActive ? "Chat público do YouTube"
-            : _twitchPublicChatActive ? "Chat público da Twitch" : "Desconectado";
+        ViewModel.ConnectionStatus = _twitchPublicChatActive ? "Chat público da Twitch" : "Desconectado";
     }
 
     private void ExitChatOnlyButton_Click(object sender, RoutedEventArgs e)
@@ -1708,7 +1787,7 @@ public partial class MainWindow : Window
 
         ViewModel.FilterMode = (ChatFilterMode)comboBox.SelectedIndex;
         _sharedChatFilterWarningShown = false;
-        ViewModel.Messages.Clear();
+        RefreshMessageFeed();
         ViewModel.SaveSettings();
 
         if (_twitchConnectionActive && _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc)
@@ -1721,7 +1800,6 @@ public partial class MainWindow : Window
     private void WarnWhenJoinedMessageIsFiltered(ChatMessage message, AppSettings settings)
     {
         if (_sharedChatFilterWarningShown ||
-            message.Platform != ChatPlatform.Twitch ||
             settings.FilterMode != ChatFilterMode.OnlyMyChannel ||
             string.IsNullOrWhiteSpace(message.SourceRoomId) ||
             string.IsNullOrWhiteSpace(message.RoomId) ||
@@ -1763,6 +1841,8 @@ public partial class MainWindow : Window
         ViewModel.ConnectionMode = selectedMode;
         _authorizationCts?.Cancel();
         UpdateConnectionModeUi();
+        ApplyAppearance();
+        RefreshMessageFeed();
         _chatClient.Disconnect();
         SetConnected(false);
         TwitchPopoutView.CoreWebView2?.Stop();
@@ -1804,6 +1884,9 @@ public partial class MainWindow : Window
     {
         var ircMode = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc;
         var filtersAvailable = ircMode && _twitchCredentials is not null;
+        DimOtherChannelsCheckBox.Visibility = ircMode && _twitchConnectionActive
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         ConnectionModeDescription.Text = ircMode
             ? "Usa conexão IRC autenticada para obter mensagens estruturadas e aplicar os filtros de canal, usuário e comandos."
             : "Mostra as mensagens do chat público da Twitch no feed, sem autorização. Os filtros Meu Chat e Chat Unido também se aplicam.";
@@ -1824,8 +1907,7 @@ public partial class MainWindow : Window
     private void UpdateChatOnlyControlsVisibility()
     {
         var chatOnly = _settings.IsTransparent;
-        var publicChatVisible = TwitchPopoutView.Visibility == Visibility.Visible ||
-                                YouTubePublicChatView.Visibility == Visibility.Visible;
+        var publicChatVisible = TwitchPopoutView.Visibility == Visibility.Visible;
         ExitChatOnlyButton.Visibility = chatOnly && !publicChatVisible
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -1838,9 +1920,6 @@ public partial class MainWindow : Window
         TwitchPopoutView.Visibility = _twitchPublicChatActive
             ? Visibility.Visible
             : Visibility.Collapsed;
-        YouTubePublicChatView.Visibility = _youTubePublicChatActive
-            ? Visibility.Visible
-            : Visibility.Collapsed;
     }
 
     private void PublicChat_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -1849,13 +1928,17 @@ public partial class MainWindow : Window
         {
             using var document = JsonDocument.Parse(e.WebMessageAsJson);
             var root = document.RootElement;
-            var platform = root.TryGetProperty("platform", out var platformValue) &&
-                           string.Equals(platformValue.GetString(), "YouTube", StringComparison.Ordinal)
-                ? ChatPlatform.YouTube
-                : ChatPlatform.Twitch;
-            if ((platform == ChatPlatform.Twitch && !_twitchPublicChatActive) ||
-                (platform == ChatPlatform.YouTube && !_youTubePublicChatActive))
+            if (!_twitchPublicChatActive)
             {
+                return;
+            }
+
+            var kind = root.TryGetProperty("kind", out var kindValue)
+                ? kindValue.GetString()
+                : null;
+            if (string.Equals(kind, "capture-ready", StringComparison.Ordinal))
+            {
+                ViewModel.UpdateDiagnostic("Chat público conectado; captura de mensagens ativa.");
                 return;
             }
 
@@ -1873,14 +1956,58 @@ public partial class MainWindow : Window
             var channel = root.TryGetProperty("channel", out var channelValue)
                 ? channelValue.GetString()?.Trim() ?? string.Empty
                 : string.Empty;
+            var channelImageUrl = root.TryGetProperty("channelImageUrl", out var channelImageValue)
+                ? channelImageValue.GetString()?.Trim() ?? string.Empty
+                : string.Empty;
+            if (!string.IsNullOrWhiteSpace(channelImageUrl) &&
+                (!Uri.TryCreate(channelImageUrl, UriKind.Absolute, out var channelImageUri) ||
+                 channelImageUri.Scheme != Uri.UriSchemeHttps ||
+                 !(channelImageUri.Host.EndsWith(".jtvnw.net", StringComparison.OrdinalIgnoreCase) ||
+                   channelImageUri.Host.EndsWith(".twitch.tv", StringComparison.OrdinalIgnoreCase))))
+            {
+                channelImageUrl = string.Empty;
+            }
+
+            var badges = new List<TwitchChatBadge>();
+            if (root.TryGetProperty("badges", out var badgesValue) && badgesValue.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var badgeValue in badgesValue.EnumerateArray())
+                {
+                    var setId = badgeValue.TryGetProperty("setId", out var setIdValue)
+                        ? setIdValue.GetString()?.Trim() ?? string.Empty
+                        : string.Empty;
+                    var title = badgeValue.TryGetProperty("title", out var titleValue)
+                        ? titleValue.GetString()?.Trim() ?? string.Empty
+                        : string.Empty;
+                    var imageUrl = badgeValue.TryGetProperty("imageUrl", out var imageValue)
+                        ? imageValue.GetString()?.Trim() ?? string.Empty
+                        : string.Empty;
+                    if (string.IsNullOrWhiteSpace(title) ||
+                        !Uri.TryCreate(imageUrl, UriKind.Absolute, out var badgeUri) ||
+                        badgeUri.Scheme != Uri.UriSchemeHttps ||
+                        !(badgeUri.Host.EndsWith(".jtvnw.net", StringComparison.OrdinalIgnoreCase) ||
+                          badgeUri.Host.EndsWith(".twitch.tv", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        continue;
+                    }
+
+                    badges.Add(new TwitchChatBadge(
+                        string.IsNullOrWhiteSpace(setId) ? title.ToLowerInvariant() : setId,
+                        string.Empty,
+                        title,
+                        badgeUri.AbsoluteUri));
+                }
+            }
+
             var message = new ChatMessage
             {
-                Platform = platform,
                 DisplayName = displayName,
                 LoginName = displayName,
                 Message = text,
                 Channel = channel,
                 OriginChannel = channel,
+                ChannelImageUrl = channelImageUrl,
+                Badges = badges,
                 IsModerator = root.TryGetProperty("isModerator", out var moderatorValue) && moderatorValue.GetBoolean(),
                 IsVip = root.TryGetProperty("isVip", out var vipValue) && vipValue.GetBoolean(),
                 IsSubscriber = root.TryGetProperty("isSubscriber", out var subscriberValue) && subscriberValue.GetBoolean(),
@@ -1895,22 +2022,141 @@ public partial class MainWindow : Window
         }
     }
 
+    private async Task ResolveBadgesAndAppendAsync(ChatMessage message)
+    {
+        await ResolveBadgesAsync(message);
+        DispatchToUi(() => AppendMessageToFeed(message));
+    }
+
+    private async Task ResolveBadgesAsync(ChatMessage message)
+    {
+        try
+        {
+            message.Badges = (await _twitchBadgeClient.ResolveBadgesAsync(
+                [message.SourceRoomId, message.RoomId],
+                message.BadgeReferences,
+                _twitchCredentials?.AccessToken ?? string.Empty,
+                error => DispatchToUi(() => ViewModel.UpdateDiagnostic(error)),
+                _lifetimeCts.Token)).ToList();
+        }
+        catch (Exception ex) when (
+            ex is HttpRequestException or JsonException or OperationCanceledException)
+        {
+            if (_lifetimeCts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            message.Badges = message.BadgeReferences
+                .Select(reference => new TwitchChatBadge(
+                    reference.SetId,
+                    reference.Version,
+                    reference.SetId,
+                    string.Empty))
+                .ToList();
+            DispatchToUi(() => ViewModel.UpdateDiagnostic($"Não foi possível carregar os badges da Twitch: {ex.Message}"));
+        }
+    }
+
+    private async Task ResolveJoinedChatMessageAndAppendAsync(ChatMessage message)
+    {
+        var channelId = string.IsNullOrWhiteSpace(message.SourceRoomId)
+            ? message.RoomId
+            : message.SourceRoomId;
+        var tasks = new List<Task>();
+        if (message.BadgeReferences.Count > 0)
+        {
+            tasks.Add(ResolveBadgesAsync(message));
+        }
+
+        if (!string.IsNullOrWhiteSpace(channelId))
+        {
+            tasks.Add(ResolveChannelImageAsync(message, channelId));
+        }
+
+        await Task.WhenAll(tasks);
+        DispatchToUi(() => AppendMessageToFeed(message));
+    }
+
+    private async Task ResolveChannelImageAsync(ChatMessage message, string channelId)
+    {
+        try
+        {
+            message.ChannelImageUrl = await _twitchChannelClient.GetProfileImageUrlAsync(
+                channelId,
+                _twitchCredentials?.AccessToken ?? string.Empty,
+                _lifetimeCts.Token) ?? string.Empty;
+        }
+        catch (Exception ex) when (
+            ex is HttpRequestException or JsonException or OperationCanceledException)
+        {
+            if (_lifetimeCts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            DispatchToUi(() => ViewModel.UpdateDiagnostic($"Não foi possível carregar a foto do canal Twitch: {ex.Message}"));
+        }
+    }
+
     private void AppendMessageToFeed(ChatMessage message)
     {
-        var viewModel = ViewModel;
-        if (!ShouldDisplayMessage(message, viewModel.Settings))
+        _chatHistory.Add(message);
+        while (_chatHistory.Count > ViewModel.Settings.MaxVisibleMessages)
         {
-            WarnWhenJoinedMessageIsFiltered(message, viewModel.Settings);
+            _chatHistory.RemoveAt(0);
+        }
+
+        if (!ShouldDisplayMessage(message, ViewModel.Settings))
+        {
+            WarnWhenJoinedMessageIsFiltered(message, ViewModel.Settings);
             return;
         }
 
-        if (viewModel.Messages.Count >= viewModel.Settings.MaxVisibleMessages)
+        if (ViewModel.Messages.Count >= ViewModel.Settings.MaxVisibleMessages)
         {
-            viewModel.Messages.RemoveAt(0);
+            ViewModel.Messages.RemoveAt(0);
         }
 
-        viewModel.Messages.Add(CreateChatRow(message, viewModel.Settings));
-        ChatMessagesScrollViewer.ScrollToEnd();
+        ViewModel.Messages.Add(CreateChatRow(message, ViewModel.Settings));
+        if (ViewModel.Settings.EnableSound && ContainsAnyTerm(message.Message, ViewModel.Settings.HighlightTerms))
+        {
+            System.Media.SystemSounds.Asterisk.Play();
+        }
+
+        ScrollChatToLatestMessage();
+    }
+
+    private void RefreshMessageFeed()
+    {
+        if (!IsInitialized)
+        {
+            return;
+        }
+
+        var visibleMessages = _chatHistory
+            .Where(message => ShouldDisplayMessage(message, ViewModel.Settings))
+            .TakeLast(ViewModel.Settings.MaxVisibleMessages)
+            .Select(message => CreateChatRow(message, ViewModel.Settings))
+            .ToArray();
+        ViewModel.Messages.Clear();
+        foreach (var row in visibleMessages)
+        {
+            ViewModel.Messages.Add(row);
+        }
+
+        ScrollChatToLatestMessage();
+    }
+
+    private void ScrollChatToLatestMessage()
+    {
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.ContextIdle,
+            new Action(() =>
+            {
+                ChatMessagesScrollViewer.UpdateLayout();
+                ChatMessagesScrollViewer.ScrollToEnd();
+            }));
     }
 
     private async Task ShowTwitchPopoutAsync(string channel)
@@ -1950,42 +2196,6 @@ public partial class MainWindow : Window
         core.Navigate($"https://www.twitch.tv/popout/{Uri.EscapeDataString(channel)}/chat?popout=");
     }
 
-    private async Task ShowYouTubePublicChatAsync(string videoId)
-    {
-        try
-        {
-            await YouTubePublicChatView.EnsureCoreWebView2Async();
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
-        {
-            throw new InvalidOperationException(
-                "Não foi possível iniciar o navegador interno WebView2. Instale ou atualize o Microsoft Edge WebView2 Runtime e tente novamente.",
-                ex);
-        }
-
-        var core = YouTubePublicChatView.CoreWebView2
-            ?? throw new InvalidOperationException("O navegador interno não foi inicializado.");
-        core.Settings.AreDefaultContextMenusEnabled = false;
-        core.Settings.IsStatusBarEnabled = false;
-        core.Settings.IsZoomControlEnabled = false;
-        core.Settings.IsBuiltInErrorPageEnabled = false;
-        if (!_youTubePopoutScriptRegistered)
-        {
-            await core.AddScriptToExecuteOnDocumentCreatedAsync(YouTubeMessagesOnlyScript);
-            _youTubePopoutScriptRegistered = true;
-        }
-        if (!_youTubeCaptureScriptRegistered)
-        {
-            await core.AddScriptToExecuteOnDocumentCreatedAsync(YouTubeCaptureScript);
-            core.WebMessageReceived += PublicChat_WebMessageReceived;
-            _youTubeCaptureScriptRegistered = true;
-        }
-
-        RegisterYouTubePopoutNavigationHandler();
-        YouTubePublicChatView.Visibility = Visibility.Visible;
-        core.Navigate($"https://www.youtube.com/live_chat?v={Uri.EscapeDataString(videoId)}&is_popout=1");
-    }
-
     private void RegisterPopoutNavigationHandler()
     {
         if (_popoutNavigationHandlerRegistered)
@@ -1995,17 +2205,6 @@ public partial class MainWindow : Window
 
         TwitchPopoutView.NavigationCompleted += TwitchPopoutView_NavigationCompleted;
         _popoutNavigationHandlerRegistered = true;
-    }
-
-    private void RegisterYouTubePopoutNavigationHandler()
-    {
-        if (_youTubePopoutNavigationHandlerRegistered)
-        {
-            return;
-        }
-
-        YouTubePublicChatView.NavigationCompleted += YouTubePublicChatView_NavigationCompleted;
-        _youTubePopoutNavigationHandlerRegistered = true;
     }
 
     private void TwitchPopoutView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
@@ -2019,7 +2218,7 @@ public partial class MainWindow : Window
         {
             if (_settings.ConnectionMode == ChatConnectionMode.PublicPopout)
             {
-                _ = ApplyTwitchMessagesOnlyAsync();
+                _ = ApplyTwitchPublicChatScriptsAsync();
             }
 
             return;
@@ -2038,31 +2237,7 @@ public partial class MainWindow : Window
         ViewModel.UpdateDiagnostic(reason);
     }
 
-    private void YouTubePublicChatView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
-    {
-        if (!_youTubePublicChatActive ||
-            YouTubePublicChatView.Visibility != Visibility.Visible)
-        {
-            return;
-        }
-
-        if (e.IsSuccess)
-        {
-            _ = ApplyYouTubeMessagesOnlyAsync();
-            return;
-        }
-
-        _youTubePublicChatActive = false;
-        YouTubePublicChatView.Visibility = Visibility.Collapsed;
-        RefreshChatPanels();
-        UpdateChatOnlyControlsVisibility();
-        UpdateOverallConnectionState();
-        YouTubeConnectionStatus.Text = "Não foi possível abrir o chat público.";
-        ViewModel.ConnectionStatus = "Falha ao carregar chat público do YouTube";
-        ViewModel.UpdateDiagnostic($"O chat público do YouTube não carregou ({e.WebErrorStatus}).");
-    }
-
-    private async Task ApplyTwitchMessagesOnlyAsync()
+    private async Task ApplyTwitchPublicChatScriptsAsync()
     {
         var core = TwitchPopoutView.CoreWebView2;
         if (core is null)
@@ -2073,28 +2248,11 @@ public partial class MainWindow : Window
         try
         {
             await core.ExecuteScriptAsync(TwitchMessagesOnlyScript);
+            await core.ExecuteScriptAsync(TwitchCaptureScript);
         }
         catch (System.Runtime.InteropServices.COMException ex)
         {
-            ViewModel.UpdateDiagnostic($"Não foi possível ocultar o layout do chat da Twitch: {ex.Message}");
-        }
-    }
-
-    private async Task ApplyYouTubeMessagesOnlyAsync()
-    {
-        var core = YouTubePublicChatView.CoreWebView2;
-        if (core is null)
-        {
-            return;
-        }
-
-        try
-        {
-            await core.ExecuteScriptAsync(YouTubeMessagesOnlyScript);
-        }
-        catch (System.Runtime.InteropServices.COMException ex)
-        {
-            ViewModel.UpdateDiagnostic($"Não foi possível ajustar a exibição do chat público do YouTube: {ex.Message}");
+            ViewModel.UpdateDiagnostic($"Não foi possível iniciar a captura do chat da Twitch: {ex.Message}");
         }
     }
 
@@ -2142,10 +2300,7 @@ public partial class MainWindow : Window
 
                 await ShowTwitchPopoutAsync(channel);
                 TwitchPopoutView.Visibility = Visibility.Visible;
-                if (!_youTubeChatClient.IsConnected && !_youTubePublicChatActive)
-                {
-                    viewModel.Messages.Clear();
-                }
+                viewModel.Messages.Clear();
 
                 RefreshChatPanels();
                 UpdateChatOnlyControlsVisibility();
@@ -2343,9 +2498,7 @@ public partial class MainWindow : Window
 
         UpdateChatOnlyControlsVisibility();
         var alpha = (byte)Math.Round(255 * Math.Clamp(_settings.BackgroundOpacity, 0.15, 1.0));
-        RootBorder.Background = chatOnly
-            ? Brushes.Transparent
-            : new SolidColorBrush(Color.FromArgb(alpha, 10, 18, 28));
+        RootBorder.Background = Brushes.Transparent;
         RootBorder.BorderBrush = chatOnly
             ? Brushes.Transparent
             : new SolidColorBrush(Color.FromArgb(120, 120, 150, 180));
@@ -2361,13 +2514,19 @@ public partial class MainWindow : Window
         MainLayoutGrid.Margin = chatOnly ? new Thickness(0) : new Thickness(8);
         Toolbar.Visibility = chatOnly ? Visibility.Collapsed : Visibility.Visible;
         SettingsPanel.Visibility = ViewModel.SettingsVisibility;
-        ChatContainer.Background = chatOnly ? Brushes.Transparent : new SolidColorBrush(Color.FromRgb(13, 20, 32));
-        ChatContainer.BorderBrush = chatOnly ? Brushes.Transparent : new SolidColorBrush(Color.FromRgb(45, 55, 71));
+        var chatBackground = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc
+            ? Color.FromRgb(24, 24, 27)
+            : Color.FromRgb(13, 20, 32);
+        ChatContainer.Background = chatOnly
+            ? Brushes.Transparent
+            : new SolidColorBrush(Color.FromArgb(alpha, chatBackground.R, chatBackground.G, chatBackground.B));
+        ChatContainer.BorderBrush = chatOnly
+            ? Brushes.Transparent
+            : new SolidColorBrush(Color.FromRgb(45, 55, 71));
         ChatContainer.BorderThickness = chatOnly ? new Thickness(0) : new Thickness(1);
         ChatContainer.CornerRadius = chatOnly ? new CornerRadius(0) : new CornerRadius(12);
         ChatMessagesScrollViewer.Padding = chatOnly ? new Thickness(0, 38, 0, 0) : new Thickness(0);
         TwitchPopoutView.Margin = chatOnly ? new Thickness(0, 38, 0, 0) : new Thickness(0);
-        YouTubePublicChatView.Margin = chatOnly ? new Thickness(0, 38, 0, 0) : new Thickness(0);
         Toolbar.Opacity = 0.82;
         UpdateClickThroughStyle();
     }
@@ -2414,9 +2573,9 @@ public partial class MainWindow : Window
             return false;
         }
 
-        if (message.Platform == ChatPlatform.YouTube)
+        if (ContainsAnyTerm($"{message.SystemText} {message.Message}", settings.BlockedTerms))
         {
-            return true;
+            return false;
         }
 
         if (string.IsNullOrWhiteSpace(origin))
@@ -2445,6 +2604,21 @@ public partial class MainWindow : Window
         };
     }
 
+    private static bool ContainsAnyTerm(string text, string? configuredTerms)
+    {
+        return ParseTerms(configuredTerms)
+            .Any(term => text.Contains(term, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string[] ParseTerms(string? configuredTerms)
+    {
+        return (configuredTerms ?? string.Empty)
+            .Split([',', ';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(term => !string.IsNullOrWhiteSpace(term))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
     private static string NormalizeChannel(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -2461,41 +2635,70 @@ public partial class MainWindow : Window
         return trimmed.Trim().ToLowerInvariant();
     }
 
+    private static SolidColorBrush CreateMessageBackgroundBrush(AppSettings settings)
+    {
+        var color = ParseHexColor(settings.MessageBackgroundColor) ?? Color.FromRgb(22, 29, 44);
+        var opacity = settings.IsTransparent ? 184 : 255;
+        return new SolidColorBrush(Color.FromArgb((byte)opacity, color.R, color.G, color.B));
+    }
+
+    private static bool IsOtherChannelMessage(ChatMessage message, AppSettings settings)
+    {
+        if (!string.IsNullOrWhiteSpace(message.SourceRoomId) &&
+            !string.IsNullOrWhiteSpace(message.RoomId))
+        {
+            return !string.Equals(message.SourceRoomId, message.RoomId, StringComparison.Ordinal);
+        }
+
+        var origin = NormalizeChannel(message.EffectiveOrigin);
+        var main = NormalizeChannel(settings.MainChannel);
+        return !string.IsNullOrWhiteSpace(origin) &&
+               !string.IsNullOrWhiteSpace(main) &&
+               !string.Equals(origin, main, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static ChatRowView CreateChatRow(ChatMessage message, AppSettings settings)
     {
-        var color = string.IsNullOrWhiteSpace(message.RawMetadata) ? Colors.White : TryParseColor(message.RawMetadata);
-        var (platformImage, platformName) = message.Platform switch
-        {
-            ChatPlatform.YouTube => (ChatRowView.YouTubeImage, "YouTube"),
-            _ => (ChatRowView.TwitchImage, "Twitch")
-        };
-        var (badgeImage, badgeName) = !settings.ShowBadges
-            ? (null, string.Empty)
-            : message.IsModerator && settings.ShowModerators
-                ? (ChatRowView.ModeratorImage, "Moderador")
-                : message.IsVip && settings.ShowVips
-                    ? (ChatRowView.VipImage, "VIP")
-                : message.IsSubscriber
-                    ? (ChatRowView.SubscriberImage, "Inscrito")
-                    : (null, string.Empty);
-        var showSubscriberBadge = settings.ShowBadges &&
-                                  message.IsSubscriber &&
-                                  badgeImage != ChatRowView.SubscriberImage;
+        var color = settings.UseTwitchNameColors
+            ? TryParseColor(message.RawMetadata) ??
+              (settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc
+                  ? GetTwitchUsernameColor(message.LoginName, message.DisplayName)
+                  : Colors.White)
+            : Colors.White;
+        var badges = settings.ShowBadges
+            ? message.Badges
+                .Where(badge =>
+                    (settings.ShowModerators || !string.Equals(badge.SetId, "moderator", StringComparison.OrdinalIgnoreCase)) &&
+                    (settings.ShowVips || !string.Equals(badge.SetId, "vip", StringComparison.OrdinalIgnoreCase)))
+                .ToArray()
+            : Array.Empty<TwitchChatBadge>();
 
         var row = new ChatRowView
         {
-            PlatformImage = platformImage,
-            PlatformName = platformName,
-            BadgeImage = badgeImage,
-            BadgeName = badgeName,
-            SubscriberBadgeImage = showSubscriberBadge ? ChatRowView.SubscriberImage : null,
-            SubscriberBadgeName = showSubscriberBadge ? "Inscrito" : string.Empty,
-            FullTimestampText = settings.ShowTimestamps ? $"{DateTime.Now:HH:mm} " : string.Empty,
-            DisplayName = settings.ShowUserNames ? message.DisplayName : string.Empty,
+            SourceMessage = message,
+            Emotes = message.Emotes,
+            IsSystemEvent = message.Kind != ChatMessageKind.Chat,
+            SystemText = message.Kind == ChatMessageKind.Chat ? string.Empty : message.SystemText,
+            RowMargin = new Thickness(0, 0, 0, settings.IsTransparent ? 2 : settings.MessageSpacing),
+            PlatformImage = ChatRowView.TwitchImage,
+            ChannelImageUrl = settings.ConnectionMode == ChatConnectionMode.PublicPopout ||
+                              settings.FilterMode == ChatFilterMode.JoinedChats
+                ? message.ChannelImageUrl
+                : string.Empty,
+            MessageBackgroundBrush = CreateMessageBackgroundBrush(settings),
+            RowOpacity = settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc &&
+                         settings.DimOtherChannelMessages &&
+                         IsOtherChannelMessage(message, settings)
+                ? 0.5
+                : 1,
+            PlatformName = "Twitch",
+            Badges = badges,
+            FullTimestampText = settings.ShowTimestamps
+                ? $"{message.TimestampUtc.ToLocalTime():HH:mm} "
+                : string.Empty,
+            DisplayName = settings.ShowUserNames && message.Kind == ChatMessageKind.Chat ? message.DisplayName : string.Empty,
             BadgeText = string.Empty,
-            NameSeparator = settings.ShowUserNames ? ": " : string.Empty,
-            BadgeVisibility = badgeImage is null ? Visibility.Collapsed : Visibility.Visible,
-            SubscriberBadgeVisibility = showSubscriberBadge ? Visibility.Visible : Visibility.Collapsed,
+            NameSeparator = settings.ShowUserNames && message.Kind == ChatMessageKind.Chat ? ": " : string.Empty,
             DefaultNameBrush = new SolidColorBrush(color),
             Text = message.Message
         };
@@ -2503,7 +2706,414 @@ public partial class MainWindow : Window
         return row;
     }
 
-    private static Color TryParseColor(string rawMetadata)
+    private void ChatMessageTextBlock_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            RenderChatMessageTextBlock(sender);
+        }
+        catch (Exception ex) when (
+            ex is InvalidOperationException or ArgumentException or FormatException or NotSupportedException)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível renderizar uma mensagem do chat: {ex.Message}");
+        }
+    }
+
+    private void RenderChatMessageTextBlock(object sender)
+    {
+        if (sender is not TextBlock textBlock || textBlock.DataContext is not ChatRowView row)
+        {
+            return;
+        }
+
+        textBlock.Inlines.Clear();
+        if (row.IsSystemEvent)
+        {
+            var systemRun = new Run(row.SystemText)
+            {
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(ParseHexColor(_settings.AccentColor) ?? Color.FromRgb(169, 112, 255))
+            };
+            textBlock.Inlines.Add(systemRun);
+            if (!string.IsNullOrWhiteSpace(row.SourceMessage.Message))
+            {
+                textBlock.Inlines.Add(new Run(" "));
+                AddMessageBodyInlines(textBlock, row);
+            }
+
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(row.TimestampText))
+        {
+            textBlock.Inlines.Add(new Run(row.TimestampText)
+            {
+                Foreground = new SolidColorBrush(Color.FromRgb(155, 176, 200)),
+                FontSize = 10
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(row.ChannelImageUrl))
+        {
+            textBlock.Inlines.Add(CreateTwitchChannelImageInline(row));
+        }
+
+        foreach (var badge in row.Badges)
+        {
+            textBlock.Inlines.Add(CreateTwitchBadgeInline(badge));
+        }
+
+        if (!string.IsNullOrEmpty(row.DisplayName))
+        {
+            textBlock.Inlines.Add(new Run(row.DisplayName)
+            {
+                FontWeight = FontWeights.Bold,
+                Foreground = row.NameBrush
+            });
+            textBlock.Inlines.Add(new Run(row.NameSeparator)
+            {
+                Foreground = new SolidColorBrush(GetChatTextColor())
+            });
+        }
+
+        AddMessageBodyInlines(textBlock, row);
+    }
+
+    private InlineUIContainer CreateInlineImage(ImageSource source, string toolTip, double size)
+    {
+        var image = new Image
+        {
+            Source = source,
+            Width = size,
+            Height = size,
+            Stretch = Stretch.Uniform,
+            ToolTip = toolTip,
+            Margin = new Thickness(0, 0, 3, 0)
+        };
+        return new InlineUIContainer(image) { BaselineAlignment = BaselineAlignment.Center };
+    }
+
+    private InlineUIContainer CreateTwitchBadgeInline(TwitchChatBadge badge)
+    {
+        if (string.IsNullOrWhiteSpace(badge.ImageUrl))
+        {
+            return CreateBadgeTextFallback(badge);
+        }
+
+        var image = new Image
+        {
+            Width = 16,
+            Height = 16,
+            Stretch = Stretch.Uniform,
+            ToolTip = badge.Title,
+            Margin = new Thickness(0, 0, 3, 0)
+        };
+        var inline = new InlineUIContainer(CreateBadgeTextFallbackText(badge))
+        {
+            BaselineAlignment = BaselineAlignment.Center
+        };
+        _ = LoadTwitchBadgeImageAsync(inline, image, badge);
+        return inline;
+    }
+
+    private static InlineUIContainer CreateBadgeTextFallback(TwitchChatBadge badge)
+    {
+        return new InlineUIContainer(CreateBadgeTextFallbackText(badge))
+        {
+            BaselineAlignment = BaselineAlignment.Center
+        };
+    }
+
+    private static TextBlock CreateBadgeTextFallbackText(TwitchChatBadge badge)
+    {
+        var label = badge.SetId.ToLowerInvariant() switch
+        {
+            "moderator" => "MOD",
+            "vip" => "VIP",
+            "subscriber" => "SUB",
+            "broadcaster" => "LIVE",
+            _ => badge.SetId.Length > 5 ? badge.SetId[..5].ToUpperInvariant() : badge.SetId.ToUpperInvariant()
+        };
+        var text = new TextBlock
+        {
+            Text = label,
+            FontSize = 8,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brushes.White,
+            Background = new SolidColorBrush(Color.FromRgb(74, 55, 98)),
+            Padding = new Thickness(2, 1, 2, 1),
+            ToolTip = badge.Title,
+            Margin = new Thickness(0, 0, 3, 0)
+        };
+        return text;
+    }
+
+    private void AddMessageBodyInlines(TextBlock textBlock, ChatRowView row)
+    {
+        var text = row.SourceMessage.Message;
+        var position = 0;
+        var terms = ParseTerms(_settings.HighlightTerms);
+        foreach (var emote in row.Emotes)
+        {
+            if (emote.Start < position || emote.End >= text.Length)
+            {
+                continue;
+            }
+
+            AddHighlightedText(textBlock, text[position..emote.Start], terms);
+            var fallbackText = text[emote.Start..(emote.End + 1)];
+            var image = new Image
+            {
+                Source = GetTwitchEmoteImage(emote.Id),
+                Width = Math.Max(18, ViewModel.FontSize * 1.6),
+                Height = Math.Max(18, ViewModel.FontSize * 1.6),
+                Stretch = Stretch.Uniform,
+                ToolTip = fallbackText,
+                Margin = new Thickness(1, 0, 1, 0)
+            };
+            image.ImageFailed += (_, _) =>
+            {
+                if (image.Parent is InlineUIContainer inline)
+                {
+                    inline.Child = new TextBlock
+                    {
+                        Text = fallbackText,
+                        FontSize = ViewModel.FontSize,
+                        Foreground = new SolidColorBrush(GetChatTextColor())
+                    };
+                }
+
+                ViewModel.UpdateDiagnostic($"Não foi possível carregar o emote da Twitch: {fallbackText}.");
+            };
+            textBlock.Inlines.Add(new InlineUIContainer(image) { BaselineAlignment = BaselineAlignment.Center });
+            position = emote.End + 1;
+        }
+
+        AddHighlightedText(textBlock, text[position..], terms);
+    }
+
+    private ImageSource GetTwitchEmoteImage(string emoteId)
+    {
+        var imageKey = emoteId;
+        if (_twitchEmoteImageCache.TryGetValue(imageKey, out var cachedImage))
+        {
+            return cachedImage;
+        }
+
+        var uri = new Uri($"https://static-cdn.jtvnw.net/emoticons/v2/{Uri.EscapeDataString(emoteId)}/default/dark/2.0");
+        var image = new BitmapImage();
+        image.BeginInit();
+        image.UriSource = uri;
+        image.CacheOption = BitmapCacheOption.OnDemand;
+        image.EndInit();
+        _twitchEmoteImageCache[imageKey] = image;
+        return image;
+    }
+
+    private async Task LoadTwitchBadgeImageAsync(
+        InlineUIContainer inline,
+        Image image,
+        TwitchChatBadge badge)
+    {
+        try
+        {
+            if (!_twitchBadgeImageCache.TryGetValue(badge.ImageUrl, out var imageTask))
+            {
+                imageTask = DownloadTwitchBadgeImageAsync(badge.ImageUrl);
+                _twitchBadgeImageCache[badge.ImageUrl] = imageTask;
+            }
+
+            image.Source = await imageTask;
+            inline.Child = image;
+        }
+        catch (Exception ex) when (
+            ex is HttpRequestException or IOException or InvalidDataException or NotSupportedException or
+                TaskCanceledException or FormatException or ArgumentException or InvalidOperationException)
+        {
+            _twitchBadgeImageCache.Remove(badge.ImageUrl);
+            ViewModel.UpdateDiagnostic($"Não foi possível carregar a imagem do badge Twitch “{badge.Title}”: {ex.Message}");
+        }
+    }
+
+    private static async Task<ImageSource> DownloadTwitchBadgeImageAsync(string imageUrl)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, imageUrl);
+                request.Headers.UserAgent.ParseAdd("TransparentChatFilter/1.0");
+                using var response = await TwitchBadgeImageHttpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                using var stream = new MemoryStream(imageBytes);
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.StreamSource = stream;
+                image.EndInit();
+                image.Freeze();
+                return image;
+            }
+            catch (Exception ex) when (
+                attempt == 0 &&
+                (ex is HttpRequestException or IOException or InvalidDataException or TaskCanceledException))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(350));
+            }
+        }
+    }
+
+    private InlineUIContainer CreateTwitchChannelImageInline(ChatRowView row)
+    {
+        var image = new Image
+        {
+            Width = 16,
+            Height = 16,
+            Stretch = Stretch.Uniform,
+            ToolTip = "Canal em que a mensagem foi enviada",
+            Margin = new Thickness(0, 0, 3, 0)
+        };
+        var inline = new InlineUIContainer(image) { BaselineAlignment = BaselineAlignment.Center };
+        _ = LoadTwitchChannelImageAsync(inline, image, row.ChannelImageUrl);
+
+        return inline;
+    }
+
+    private async Task LoadTwitchChannelImageAsync(InlineUIContainer inline, Image image, string imageUrl)
+    {
+        try
+        {
+            if (!_twitchChannelImageCache.TryGetValue(imageUrl, out var imageTask))
+            {
+                imageTask = DownloadTwitchBadgeImageAsync(imageUrl);
+                _twitchChannelImageCache[imageUrl] = imageTask;
+            }
+
+            image.Source = await imageTask;
+        }
+        catch (Exception ex) when (
+            ex is HttpRequestException or IOException or InvalidDataException or NotSupportedException or
+                TaskCanceledException or FormatException or ArgumentException or InvalidOperationException)
+        {
+            _twitchChannelImageCache.Remove(imageUrl);
+            inline.Child = null;
+            ViewModel.UpdateDiagnostic($"Não foi possível carregar a foto do canal Twitch: {ex.Message}");
+        }
+    }
+
+    private void AddHighlightedText(TextBlock textBlock, string text, IReadOnlyList<string> terms)
+    {
+        if (text.Length == 0)
+        {
+            return;
+        }
+
+        var accent = ParseHexColor(_settings.AccentColor) ?? Color.FromRgb(94, 162, 255);
+        var matchRanges = terms
+            .SelectMany(term => FindTermMatches(text, term))
+            .OrderBy(range => range.Start)
+            .ThenByDescending(range => range.Length)
+            .ToArray();
+        var cursor = 0;
+        foreach (var match in matchRanges)
+        {
+            if (match.Start < cursor)
+            {
+                continue;
+            }
+
+            if (match.Start > cursor)
+            {
+                textBlock.Inlines.Add(new Run(text[cursor..match.Start])
+                {
+                    Foreground = new SolidColorBrush(GetChatTextColor())
+                });
+            }
+
+            textBlock.Inlines.Add(CreateHighlightedTermInline(
+                text.Substring(match.Start, match.Length),
+                accent,
+                textBlock.FontSize));
+            cursor = match.Start + match.Length;
+        }
+
+        if (cursor < text.Length)
+        {
+            textBlock.Inlines.Add(new Run(text[cursor..])
+            {
+                Foreground = new SolidColorBrush(GetChatTextColor())
+            });
+        }
+    }
+
+    private static InlineUIContainer CreateHighlightedTermInline(string text, Color accent, double fontSize)
+    {
+        var label = new TextBlock
+        {
+            Text = text,
+            FontSize = fontSize,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(GetContrastingTextColor(accent)),
+            TextWrapping = TextWrapping.NoWrap
+        };
+        var highlight = new Border
+        {
+            Background = new SolidColorBrush(accent),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(220, accent.R, accent.G, accent.B)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(3, 0, 3, 0),
+            Margin = new Thickness(1, 0, 1, 0),
+            Child = label
+        };
+        return new InlineUIContainer(highlight) { BaselineAlignment = BaselineAlignment.Center };
+    }
+
+    private static Color GetContrastingTextColor(Color background)
+    {
+        static double Linearize(byte component)
+        {
+            var value = component / 255.0;
+            return value <= 0.04045 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
+        }
+
+        var luminance = 0.2126 * Linearize(background.R) +
+                        0.7152 * Linearize(background.G) +
+                        0.0722 * Linearize(background.B);
+        var whiteContrast = 1.05 / (luminance + 0.05);
+        var blackContrast = (luminance + 0.05) / 0.05;
+        return whiteContrast >= blackContrast ? Colors.White : Colors.Black;
+    }
+
+    private static IEnumerable<(int Start, int Length)> FindTermMatches(string text, string term)
+    {
+        var start = 0;
+        while ((start = text.IndexOf(term, start, StringComparison.OrdinalIgnoreCase)) >= 0)
+        {
+            yield return (start, term.Length);
+            start += term.Length;
+        }
+    }
+
+    private Color GetChatTextColor()
+    {
+        return Color.FromRgb(239, 239, 241);
+    }
+
+    private static Color? ParseHexColor(string rawColor)
+    {
+        try
+        {
+            return ColorConverter.ConvertFromString(rawColor) is Color color ? color : null;
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
+    }
+
+    private static Color? TryParseColor(string rawMetadata)
     {
         var key = "color=";
         var index = rawMetadata.IndexOf(key, StringComparison.OrdinalIgnoreCase);
@@ -2521,7 +3131,35 @@ public partial class MainWindow : Window
             }
         }
 
-        return Colors.White;
+        return null;
+    }
+
+    private static Color GetTwitchUsernameColor(string loginName, string displayName)
+    {
+        Color[] palette =
+        [
+            Color.FromRgb(255, 107, 107),
+            Color.FromRgb(105, 168, 255),
+            Color.FromRgb(105, 203, 119),
+            Color.FromRgb(255, 140, 102),
+            Color.FromRgb(181, 155, 255),
+            Color.FromRgb(255, 200, 87),
+            Color.FromRgb(77, 208, 225),
+            Color.FromRgb(255, 111, 177),
+            Color.FromRgb(190, 220, 85),
+            Color.FromRgb(255, 125, 190),
+            Color.FromRgb(94, 218, 170),
+            Color.FromRgb(255, 178, 92)
+        ];
+
+        var name = string.IsNullOrWhiteSpace(loginName) ? displayName : loginName;
+        uint hash = 2166136261;
+        foreach (var character in name)
+        {
+            hash = (hash ^ char.ToLowerInvariant(character)) * 16777619;
+        }
+
+        return palette[(int)(hash % (uint)palette.Length)];
     }
 
 }

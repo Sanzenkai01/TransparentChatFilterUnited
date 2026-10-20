@@ -10,4 +10,3 @@ namespace TransparentChatFilter;
 public partial class App : Application
 {
 }
-

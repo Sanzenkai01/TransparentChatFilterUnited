@@ -10,24 +10,15 @@ public enum ChatFilterMode
     JoinedChats
 }
 
-public enum OverlayTheme
-{
-    Dark,
-    Light
-}
-
 public enum ChatConnectionMode
 {
     PublicPopout,
     AuthenticatedIrc
 }
 
-public enum ChatPlatform { Twitch, YouTube }
-
 public sealed class AppSettings
 {
     public string MainChannel { get; set; } = string.Empty;
-    public string YouTubeVideoId { get; set; } = string.Empty;
     public string TwitchUsername { get; set; } = string.Empty;
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
@@ -38,12 +29,16 @@ public sealed class AppSettings
     public List<string> SelectedChannels { get; set; } = new();
     public List<string> BlockedChannels { get; set; } = new();
     public List<string> BlockedUsers { get; set; } = new();
+    public string BlockedTerms { get; set; } = string.Empty;
+    public string HighlightTerms { get; set; } = string.Empty;
     public bool HideCommands { get; set; }
     public bool ShowTimestamps { get; set; } = true;
     public bool ShowBadges { get; set; } = true;
     public bool ShowUserNames { get; set; } = true;
+    public bool UseTwitchNameColors { get; set; } = true;
     public bool ShowModerators { get; set; } = true;
     public bool ShowVips { get; set; } = true;
+    public bool DimOtherChannelMessages { get; set; }
     public bool EnableSound { get; set; } = false;
     public bool AutoReconnect { get; set; } = true;
     public bool StartMinimized { get; set; } = false;
@@ -52,17 +47,14 @@ public sealed class AppSettings
     public bool ClickThroughEnabled { get; set; } = false;
     public bool IsTransparent { get; set; } = false;
     public bool ShowSettingsPanel { get; set; } = true;
-    public OverlayTheme Theme { get; set; } = OverlayTheme.Dark;
     public double BackgroundOpacity { get; set; } = 0.86;
     public double TextOpacity { get; set; } = 1.0;
     public int FontSize { get; set; } = 14;
     public int MessageSpacing { get; set; } = 6;
     public int MaxVisibleMessages { get; set; } = 80;
     public string AccentColor { get; set; } = "#5ea2ff";
+    public string MessageBackgroundColor { get; set; } = "#161D2C";
     public string[] RecentChannels { get; set; } = Array.Empty<string>();
-
-    [JsonIgnore]
-    public bool YouTubeOAuthClientIdMigrated { get; private set; }
 
     [JsonIgnore]
     public string SettingsPath { get; set; } = Path.Combine(
@@ -86,22 +78,6 @@ public sealed class AppSettings
         {
             var json = File.ReadAllText(targetPath);
             var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
-            using (var document = JsonDocument.Parse(json))
-            {
-                if (document.RootElement.TryGetProperty("YouTubeOAuthClientId", out var clientId) &&
-                    clientId.ValueKind == JsonValueKind.String &&
-                    !string.Equals(clientId.GetString(), YouTubeOAuthClient.ClientId, StringComparison.Ordinal))
-                {
-                    settings.YouTubeOAuthClientIdMigrated = true;
-                }
-
-                if (string.IsNullOrWhiteSpace(settings.YouTubeVideoId) &&
-                    document.RootElement.TryGetProperty("YouTubeLiveChatId", out var previousVideoId) &&
-                    previousVideoId.ValueKind == JsonValueKind.String)
-                {
-                    settings.YouTubeVideoId = previousVideoId.GetString() ?? string.Empty;
-                }
-            }
 
             settings.SettingsPath = targetPath;
             if (!Enum.IsDefined(settings.FilterMode))
@@ -113,6 +89,11 @@ public sealed class AppSettings
             {
                 settings.ConnectionMode = ChatConnectionMode.PublicPopout;
             }
+
+            settings.TextOpacity = Math.Clamp(settings.TextOpacity, 0.2, 1.0);
+            settings.MessageSpacing = Math.Clamp(settings.MessageSpacing, 0, 20);
+            settings.BlockedTerms ??= string.Empty;
+            settings.HighlightTerms ??= string.Empty;
 
             if (Math.Abs(settings.BackgroundOpacity - 0.55) < 0.001)
             {
