@@ -16,8 +16,17 @@ public enum ChatConnectionMode
     AuthenticatedIrc
 }
 
+public enum MessageNotificationSound
+{
+    Neutral,
+    Soft,
+    Bell
+}
+
 public sealed class AppSettings
 {
+    private const int CurrentSettingsVersion = 1;
+
     public string MainChannel { get; set; } = string.Empty;
     public string TwitchUsername { get; set; } = string.Empty;
     public double? WindowLeft { get; set; }
@@ -40,6 +49,10 @@ public sealed class AppSettings
     public bool ShowVips { get; set; } = true;
     public bool DimOtherChannelMessages { get; set; }
     public bool EnableSound { get; set; } = false;
+    public bool NotifyNewMessages { get; set; } = true;
+    public int SettingsVersion { get; set; }
+    public MessageNotificationSound NotificationSound { get; set; } = MessageNotificationSound.Neutral;
+    public int NotificationVolumePercent { get; set; } = 50;
     public bool AutoReconnect { get; set; } = true;
     public bool StartMinimized { get; set; } = false;
     public bool StartWithWindows { get; set; } = false;
@@ -71,7 +84,11 @@ public sealed class AppSettings
 
         if (!File.Exists(targetPath))
         {
-            return new AppSettings { SettingsPath = targetPath };
+            return new AppSettings
+            {
+                SettingsPath = targetPath,
+                SettingsVersion = CurrentSettingsVersion
+            };
         }
 
         try
@@ -80,6 +97,12 @@ public sealed class AppSettings
             var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
 
             settings.SettingsPath = targetPath;
+            if (settings.SettingsVersion < CurrentSettingsVersion)
+            {
+                settings.NotifyNewMessages = true;
+                settings.SettingsVersion = CurrentSettingsVersion;
+            }
+
             if (!Enum.IsDefined(settings.FilterMode))
             {
                 settings.FilterMode = ChatFilterMode.JoinedChats;
@@ -90,6 +113,12 @@ public sealed class AppSettings
                 settings.ConnectionMode = ChatConnectionMode.PublicPopout;
             }
 
+            if (!Enum.IsDefined(settings.NotificationSound))
+            {
+                settings.NotificationSound = MessageNotificationSound.Neutral;
+            }
+
+            settings.NotificationVolumePercent = Math.Clamp(settings.NotificationVolumePercent, 0, 100);
             settings.TextOpacity = Math.Clamp(settings.TextOpacity, 0.2, 1.0);
             settings.MessageSpacing = Math.Clamp(settings.MessageSpacing, 0, 20);
             settings.BlockedTerms ??= string.Empty;
@@ -104,12 +133,17 @@ public sealed class AppSettings
         }
         catch
         {
-            return new AppSettings { SettingsPath = targetPath };
+            return new AppSettings
+            {
+                SettingsPath = targetPath,
+                SettingsVersion = CurrentSettingsVersion
+            };
         }
     }
 
     public void Save()
     {
+        SettingsVersion = CurrentSettingsVersion;
         var directory = Path.GetDirectoryName(SettingsPath);
         if (!string.IsNullOrWhiteSpace(directory))
         {

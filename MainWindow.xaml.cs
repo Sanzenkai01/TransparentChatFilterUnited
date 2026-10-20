@@ -168,6 +168,37 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool NotifyNewMessages
+    {
+        get => _settings.NotifyNewMessages;
+        set
+        {
+            if (_settings.NotifyNewMessages == value)
+            {
+                return;
+            }
+
+            _settings.NotifyNewMessages = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int NotificationVolumePercent
+    {
+        get => Math.Clamp(_settings.NotificationVolumePercent, 0, 100);
+        set
+        {
+            var volume = Math.Clamp(value, 0, 100);
+            if (_settings.NotificationVolumePercent == volume)
+            {
+                return;
+            }
+
+            _settings.NotificationVolumePercent = volume;
+            OnPropertyChanged();
+        }
+    }
+
     public bool DimOtherChannelMessages
     {
         get => _settings.DimOtherChannelMessages;
@@ -561,6 +592,7 @@ public sealed class ChatRowView : INotifyPropertyChanged
 public partial class MainWindow : Window
 {
     private const int WmHotkey = 0x0312;
+    private const long MessageNotificationSoundCooldownMilliseconds = 500;
     private static readonly HttpClient TwitchBadgeImageHttpClient = new()
     {
         Timeout = TimeSpan.FromSeconds(10)
@@ -607,6 +639,7 @@ public partial class MainWindow : Window
     private bool _twitchCaptureScriptRegistered;
     private bool _twitchPublicChatActive;
     private int _connectionModeChangeVersion;
+    private long _lastMessageNotificationSoundTimestamp;
     private const string TwitchCaptureScript = """
         (() => {
             if (window.__transparentChatFilterTwitchCapture) return;
@@ -818,6 +851,7 @@ public partial class MainWindow : Window
         };
         FilterModeComboBox.SelectedIndex = (int)_settings.FilterMode;
         ConnectionModeComboBox.SelectedIndex = (int)_settings.ConnectionMode;
+        NotificationSoundComboBox.SelectedIndex = (int)_settings.NotificationSound;
         UpdateConnectionModeUi();
         try
         {
@@ -1229,9 +1263,53 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (sender is CheckBox checkBox)
+        {
+            checkBox.GetBindingExpression(ToggleButton.IsCheckedProperty)?.UpdateSource();
+        }
+
         ApplyAppearance();
         RefreshMessageFeed();
         ViewModel.SaveSettings();
+    }
+
+    private void NotificationSoundComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsInitialized ||
+            NotificationSoundComboBox.SelectedIndex < 0 ||
+            !Enum.IsDefined((MessageNotificationSound)NotificationSoundComboBox.SelectedIndex))
+        {
+            return;
+        }
+
+        var selectedSound = (MessageNotificationSound)NotificationSoundComboBox.SelectedIndex;
+        if (_settings.NotificationSound == selectedSound)
+        {
+            return;
+        }
+
+        _settings.NotificationSound = selectedSound;
+        ViewModel.SaveSettings();
+        _ = PlayNotificationSoundAsync(selectedSound, _settings.NotificationVolumePercent);
+    }
+
+    private void NotificationSoundPreviewButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (NotificationSoundComboBox.SelectedIndex >= 0 &&
+            Enum.IsDefined((MessageNotificationSound)NotificationSoundComboBox.SelectedIndex))
+        {
+            _ = PlayNotificationSoundAsync(
+                (MessageNotificationSound)NotificationSoundComboBox.SelectedIndex,
+                _settings.NotificationVolumePercent);
+        }
+    }
+
+    private void NotificationVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (IsInitialized)
+        {
+            ViewModel.SaveSettings();
+        }
     }
 
     private void FontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -2119,12 +2197,118 @@ public partial class MainWindow : Window
         }
 
         ViewModel.Messages.Add(CreateChatRow(message, ViewModel.Settings));
-        if (ViewModel.Settings.EnableSound && ContainsAnyTerm(message.Message, ViewModel.Settings.HighlightTerms))
+        if (ViewModel.Settings.NotifyNewMessages)
+        {
+            PlayNewMessageNotificationSound();
+        }
+        else if (ViewModel.Settings.EnableSound &&
+                 ContainsAnyTerm(message.Message, ViewModel.Settings.HighlightTerms) &&
+                 TryAcquireMessageNotificationSoundCooldown())
         {
             System.Media.SystemSounds.Asterisk.Play();
         }
 
         ScrollChatToLatestMessage();
+    }
+
+    private void PlayNewMessageNotificationSound()
+    {
+        if (!ViewModel.Settings.NotifyNewMessages)
+        {
+            return;
+        }
+
+        if (!TryAcquireMessageNotificationSoundCooldown())
+        {
+            return;
+        }
+
+        _ = PlayNotificationSoundAsync(
+            ViewModel.Settings.NotificationSound,
+            ViewModel.Settings.NotificationVolumePercent);
+    }
+
+    private bool TryAcquireMessageNotificationSoundCooldown()
+    {
+        var now = Stopwatch.GetTimestamp();
+        var previous = Volatile.Read(ref _lastMessageNotificationSoundTimestamp);
+        if (previous != 0 &&
+            Stopwatch.GetElapsedTime(previous, now) <
+            TimeSpan.FromMilliseconds(MessageNotificationSoundCooldownMilliseconds))
+        {
+            return false;
+        }
+
+        Interlocked.Exchange(ref _lastMessageNotificationSoundTimestamp, now);
+        return true;
+    }
+
+    private async Task PlayNotificationSoundAsync(MessageNotificationSound sound, int volumePercent)
+    {
+        try
+        {
+            var waveData = CreateNotificationWave(sound, volumePercent);
+            await Task.Run(() =>
+            {
+                using var stream = new MemoryStream(waveData);
+                using var player = new System.Media.SoundPlayer(stream);
+                player.PlaySync();
+            });
+        }
+        catch (Exception ex) when (
+            ex is IOException or InvalidOperationException or System.ComponentModel.Win32Exception or ExternalException)
+        {
+            DispatchToUi(() => ViewModel.UpdateDiagnostic($"Não foi possível reproduzir o som de notificação: {ex.Message}"));
+        }
+    }
+
+    private static byte[] CreateNotificationWave(MessageNotificationSound sound, int volumePercent)
+    {
+        const int sampleRate = 44100;
+        const short bitsPerSample = 16;
+        const short channels = 1;
+        var durationSeconds = sound switch
+        {
+            MessageNotificationSound.Soft => 0.14,
+            MessageNotificationSound.Bell => 0.22,
+            _ => 0.10
+        };
+        var sampleCount = (int)(sampleRate * durationSeconds);
+        var dataLength = sampleCount * sizeof(short);
+        var volume = Math.Clamp(volumePercent, 0, 100) / 100.0;
+        using var stream = new MemoryStream(44 + dataLength);
+        using var writer = new BinaryWriter(stream);
+        writer.Write("RIFF"u8);
+        writer.Write(36 + dataLength);
+        writer.Write("WAVEfmt "u8);
+        writer.Write(16);
+        writer.Write((short)1);
+        writer.Write(channels);
+        writer.Write(sampleRate);
+        writer.Write(sampleRate * channels * bitsPerSample / 8);
+        writer.Write((short)(channels * bitsPerSample / 8));
+        writer.Write(bitsPerSample);
+        writer.Write("data"u8);
+        writer.Write(dataLength);
+
+        for (var index = 0; index < sampleCount; index++)
+        {
+            var progress = (double)index / sampleCount;
+            var envelope = sound == MessageNotificationSound.Bell
+                ? Math.Exp(-4.5 * progress)
+                : Math.Min(1, Math.Min(progress / 0.08, (1 - progress) / 0.08));
+            var sample = sound switch
+            {
+                MessageNotificationSound.Soft => Math.Sin(2 * Math.PI * 660 * index / sampleRate),
+                MessageNotificationSound.Bell =>
+                    (Math.Sin(2 * Math.PI * 880 * index / sampleRate) +
+                     Math.Sin(2 * Math.PI * 1320 * index / sampleRate)) / 2,
+                _ => Math.Sin(2 * Math.PI * 880 * index / sampleRate)
+            };
+            writer.Write((short)(sample * envelope * volume * short.MaxValue * 0.22));
+        }
+
+        return stream.ToArray();
     }
 
     private void RefreshMessageFeed()
