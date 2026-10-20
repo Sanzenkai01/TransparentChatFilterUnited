@@ -1,4 +1,4 @@
-# Transparent Chat Filter
+# TransparentChatFilterUnited
 
 Este programa foi feito para quem quer acompanhar o chat da Twitch sem atrapalhar a tela principal.
 
@@ -8,13 +8,13 @@ Ele abre como uma janela flutuante, transparente e fácil de ler, ideal para ass
 
 A forma mais simples de usar é baixar o arquivo já compilado:
 
-- [Baixar para Windows](https://github.com/Sanzenkai01/TransparentChatFilterUnited/releases/download/v1.0.1/TransparentChatFilter-win-x64.zip)
+- [Baixar para Windows](https://github.com/Sanzenkai01/TransparentChatFilterUnited/releases/download/v1.0.2/TransparentChatFilterUnited-win-x64.zip)
 
 Como usar:
 
 1. baixe o arquivo ZIP
-2. extraia o arquivo `TransparentChatFilter.exe` para uma pasta no computador
-3. abra o `TransparentChatFilter.exe`
+2. extraia o arquivo `TransparentChatFilterUnited.exe` para uma pasta no computador
+3. abra o `TransparentChatFilterUnited.exe`
 4. pronto: o programa já pode ser usado
 
 ## O que ele faz
@@ -43,7 +43,7 @@ dotnet build "TransparentChatFilter.csproj" -c Release
 O executável será gerado em:
 
 ```powershell
-bin\Release\net8.0-windows\TransparentChatFilter.exe
+bin\Release\net8.0-windows\TransparentChatFilterUnited.exe
 ```
 
 ## Observações

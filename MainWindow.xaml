@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:TransparentChatFilter"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
-        Title="Transparent Chat Filter"
+        Title="TransparentChatFilterUnited"
         Icon="icon.ico"
         Width="460"
         Height="620"
@@ -763,7 +763,7 @@
                         <ScrollViewer x:Name="AboutPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <TextBlock Text="SOBRE" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                                <TextBlock Text="Transparent Chat Filter" FontSize="15" FontWeight="SemiBold" Foreground="#E6D5FF" Margin="0,18,0,7"/>
+                                <TextBlock Text="TransparentChatFilterUnited" FontSize="15" FontWeight="SemiBold" Foreground="#E6D5FF" Margin="0,18,0,7"/>
                                 <TextBlock Text="Overlay leve para acompanhar o chat da Twitch enquanto joga. Configure um canal, escolha um modo de filtragem e ajuste o visual do widget." TextWrapping="Wrap" Foreground="#BCC8D9" Margin="0,0,0,14"/>
                                 <TextBlock Text="Mostrar/ocultar: Ctrl + Alt + T · Alternar chat-only: Ctrl + Alt + Shift + T" TextWrapping="Wrap" Foreground="#D7E5FF"/>
                                 <TextBlock Text="As preferências ficam salvas localmente neste computador." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
