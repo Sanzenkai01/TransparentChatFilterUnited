@@ -1,5 +1,6 @@
 bin/
 obj/
+publish/
 .vs/
 *.user
 *.suo
@@ -9,3 +10,4 @@ obj/
 *.log
 *.tmp
 *.cache
+*.zip
