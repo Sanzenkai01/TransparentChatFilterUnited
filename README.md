@@ -1,62 +1,53 @@
 # Transparent Chat Filter
 
-Aplicativo desktop em Windows para exibir um overlay de chat do Twitch com filtro e organização de mensagens em tempo real.
+Este programa foi feito para quem quer acompanhar o chat da Twitch sem atrapalhar a tela principal.
+
+Ele abre como uma janela flutuante, transparente e fácil de ler, ideal para assistir lives, jogar ou acompanhar conversas ao mesmo tempo.
+
+## Download da versão pronta
+
+A forma mais simples de usar é baixar o arquivo já compilado:
+
+- [Baixar para Windows](https://github.com/Sanzenkai01/TransparentChatFilterUnited/releases/download/v1.0.0/TransparentChatFilter-win-x64.zip)
+
+Como usar:
+
+1. baixe o arquivo ZIP
+2. extraia a pasta no computador
+3. clique em `TransparentChatFilter.exe`
+4. pronto: o programa já pode ser usado
 
 ## O que ele faz
 
-- Mostra mensagens de canais do Twitch em um painel transparente
-- Permite filtrar por canal, usuário e termos bloqueados
-- Suporta exibição de badges, horários, nomes e destaque de mensagens
-- Permite ocultar comandos, reduzir ruído e manter o chat em segundo plano
-- Funciona como uma janela flutuante "on-top" para acompanhar transmissões sem interferir muito na área de visualização
+- mostra o chat em uma janela sobreposta
+- deixa a tela mais limpa e discreta
+- esconde mensagens que você não quer ver
+- permite bloquear usuários, canais e termos
+- ajuda a destacar mensagens importantes
+- funciona bem enquanto você assiste ou joga
 
 ## Requisitos
 
 - Windows 10 ou 11
-- .NET 8 SDK
-- Visual Studio 2022 ou qualquer ambiente com suporte a WPF e .NET
+- nenhum conhecimento de programação é necessário para usar a versão pronta
 
-## Dependências do projeto
+## Se quiser compilar no computador
 
-- WPF (.NET 8)
-- Microsoft.Web.WebView2
-- NuGet será responsável por restaurar as dependências automaticamente ao compilar
-
-## Compilar
-
-No terminal, dentro da pasta do projeto:
+Se você abrir o projeto e quiser gerar a versão manualmente, use:
 
 ```powershell
 dotnet restore
 dotnet build "TransparentChatFilter.csproj" -c Release
 ```
 
-Se preferir compilar sem restore explícito:
-
-```powershell
-dotnet build "TransparentChatFilter.csproj" -c Release
-```
-
-## Executar
-
-Após a compilação, você pode abrir o executável gerado em:
+O executável será gerado em:
 
 ```powershell
 bin\Release\net8.0-windows\TransparentChatFilter.exe
 ```
 
-Ou executar diretamente via dotnet:
-
-```powershell
-dotnet run --project "TransparentChatFilter.csproj"
-```
-
 ## Observações
 
-- O projeto usa WPF e, por isso, só pode ser executado em Windows.
-- O diretório `bin/` e `obj/` são artefatos de compilação e devem ser ignorados pelo Git conforme configurado em `.gitignore`.
-- Caso queira gerar uma versão publicada, você pode usar:
-
-```powershell
-dotnet publish "TransparentChatFilter.csproj" -c Release -r win-x64 --self-contained false
-```
+- a versão pronta não exige navegador, site ou instalação extra
+- o programa foi pensado para Windows
+- para usuários leigos, o melhor caminho é usar o arquivo ZIP da release
