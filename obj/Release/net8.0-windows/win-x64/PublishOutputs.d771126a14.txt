@@ -1,4 +1,0 @@
-C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\SingleFile\publish\Microsoft.Web.WebView2.Core.xml
-C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\SingleFile\publish\Microsoft.Web.WebView2.WinForms.xml
-C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\SingleFile\publish\Microsoft.Web.WebView2.Wpf.xml
-C:\Users\Liniker12\OneDrive\Documentos\GitHub\TransparentChatFilterUnited\bin\Release\SingleFile\publish\TransparentChatFilter.exe
