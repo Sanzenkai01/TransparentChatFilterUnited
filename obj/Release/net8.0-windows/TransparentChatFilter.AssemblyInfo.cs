@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TransparentChatFilter")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ccbeefe37ad83de8316da79b37364561ee18f685")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+35c86628e3783a40e0414aa59853f76fddc2c246")]
 [assembly: System.Reflection.AssemblyProductAttribute("TransparentChatFilter")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TransparentChatFilter")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
