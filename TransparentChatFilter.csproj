@@ -10,7 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="icon-cfuc.png" />
     <Resource Include="twitch.png" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
   </ItemGroup>

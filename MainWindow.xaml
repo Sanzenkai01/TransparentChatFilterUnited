@@ -7,7 +7,7 @@
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
         Title="Transparent Chat Filter"
-        Icon="icon-cfuc.png"
+        Icon="icon.ico"
         Width="460"
         Height="620"
         MinWidth="340"

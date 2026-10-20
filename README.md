@@ -8,13 +8,13 @@ Ele abre como uma janela flutuante, transparente e fácil de ler, ideal para ass
 
 A forma mais simples de usar é baixar o arquivo já compilado:
 
-- [Baixar para Windows](https://github.com/Sanzenkai01/TransparentChatFilterUnited/releases/download/v1.0.0/TransparentChatFilter-win-x64.zip)
+- [Baixar para Windows](https://github.com/Sanzenkai01/TransparentChatFilterUnited/releases/download/v1.0.1/TransparentChatFilter-win-x64.zip)
 
 Como usar:
 
 1. baixe o arquivo ZIP
-2. extraia a pasta no computador
-3. clique em `TransparentChatFilter.exe`
+2. extraia o arquivo `TransparentChatFilter.exe` para uma pasta no computador
+3. abra o `TransparentChatFilter.exe`
 4. pronto: o programa já pode ser usado
 
 ## O que ele faz
@@ -48,6 +48,7 @@ bin\Release\net8.0-windows\TransparentChatFilter.exe
 
 ## Observações
 
-- a versão pronta não exige navegador, site ou instalação extra
+- o ZIP contém somente o executável; os componentes necessários foram incluídos nele
+- ao iniciar, o Windows e o WebView2 podem criar dados temporários e configurações locais para o funcionamento normal do programa
 - o programa foi pensado para Windows
 - para usuários leigos, o melhor caminho é usar o arquivo ZIP da release
