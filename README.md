@@ -8,7 +8,7 @@ Ele abre como uma janela flutuante, transparente e fácil de ler, ideal para ass
 
 A forma mais simples de usar é baixar o arquivo já compilado:
 
-- [Baixar para Windows](https://github.com/Sanzenkai01/TransparentChatFilterUnited/releases/download/v1.0.2/TransparentChatFilterUnited-win-x64.zip)
+- [Baixar para Windows](https://github.com/Sanzenkai01/TransparentChatFilterUnited/releases/latest/download/TransparentChatFilterUnited-win-x64.zip)
 
 Como usar:
 
@@ -16,6 +16,19 @@ Como usar:
 2. extraia o arquivo `TransparentChatFilterUnited.exe` para uma pasta no computador
 3. abra o `TransparentChatFilterUnited.exe`
 4. pronto: o programa já pode ser usado
+
+## Atualizações
+
+O programa verifica as atualizações ao iniciar. Quando uma nova versão estiver disponível, ele pedirá confirmação, baixará o pacote da release oficial no GitHub e reiniciará já atualizado.
+
+Para publicar uma versão, atualize a versão em `TransparentChatFilter.csproj`, crie e envie uma tag correspondente (por exemplo, `v1.0.4`). O GitHub Actions compilará o executável e publicará o ZIP usado pelo atualizador:
+
+```powershell
+git tag v1.0.4
+git push origin v1.0.4
+```
+
+Quem já usa uma versão anterior a `1.0.3` precisa baixar esta versão manualmente uma vez; as versões antigas não incluem o atualizador.
 
 ## O que ele faz
 
