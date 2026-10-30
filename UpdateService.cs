@@ -20,7 +20,9 @@ internal static class UpdateService
     private const string UpdateScript = """
         param([int]$ParentProcessId, [string]$ArchivePath, [string]$ExecutablePath)
         $ErrorActionPreference = 'Stop'
-        $stagedPath = "$ExecutablePath.$([Guid]::NewGuid().ToString('N')).tmp"
+        $updateId = [Guid]::NewGuid().ToString('N')
+        $stagedPath = "$ExecutablePath.$updateId.tmp"
+        $backupPath = "$ExecutablePath.$updateId.bak"
         try {
             Wait-Process -Id $ParentProcessId -Timeout 120 -ErrorAction SilentlyContinue
             Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -37,12 +39,26 @@ internal static class UpdateService
             }
 
             if ([IO.File]::Exists($ExecutablePath)) {
-                [IO.File]::Replace($stagedPath, $ExecutablePath, $null)
+                [IO.File]::Replace($stagedPath, $ExecutablePath, $backupPath)
             }
             else {
                 [IO.File]::Move($stagedPath, $ExecutablePath)
             }
-            Start-Process -FilePath $ExecutablePath
+            try {
+                Start-Process -FilePath $ExecutablePath
+                if ([IO.File]::Exists($backupPath)) {
+                    [IO.File]::Delete($backupPath)
+                }
+            }
+            catch {
+                if ([IO.File]::Exists($backupPath)) {
+                    if ([IO.File]::Exists($ExecutablePath)) {
+                        [IO.File]::Delete($ExecutablePath)
+                    }
+                    [IO.File]::Move($backupPath, $ExecutablePath)
+                }
+                throw
+            }
         }
         catch {
             try {
