@@ -1166,6 +1166,20 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SettingsResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+    {
+        var maximumWidth = Math.Max(SettingsPanel.MinWidth, SystemParameters.WorkArea.Width - 32);
+        var maximumHeight = Math.Max(SettingsPanel.MinHeight, SystemParameters.WorkArea.Height - 32);
+        SettingsPanel.Width = Math.Clamp(
+            SettingsPanel.Width + e.HorizontalChange,
+            SettingsPanel.MinWidth,
+            maximumWidth);
+        SettingsPanel.Height = Math.Clamp(
+            SettingsPanel.Height + e.VerticalChange,
+            SettingsPanel.MinHeight,
+            maximumHeight);
+    }
+
     private void SettingsPopupDrag_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement dragSurface

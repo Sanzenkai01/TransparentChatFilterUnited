@@ -228,6 +228,54 @@
             <Setter Property="Foreground" Value="#D4DFEF"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="0,0,14,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <Grid MinHeight="22">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="CheckBoxChrome"
+                                    Width="16"
+                                    Height="16"
+                                    VerticalAlignment="Center"
+                                    Background="#0E1724"
+                                    BorderBrush="#53647D"
+                                    BorderThickness="1"
+                                    CornerRadius="4">
+                                <Path x:Name="CheckMark"
+                                      Data="M 2,7 L 6,11 L 13,3"
+                                      Stroke="#FFFFFF"
+                                      StrokeThickness="2"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter Grid.Column="1"
+                                              Margin="8,0,0,0"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckBoxChrome" Property="Background" Value="#8B5BD6"/>
+                                <Setter TargetName="CheckBoxChrome" Property="BorderBrush" Value="#B88BFF"/>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CheckBoxChrome" Property="BorderBrush" Value="#C39AFF"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="CheckBoxChrome" Property="BorderBrush" Value="#D6BCFF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="{x:Type ScrollBar}">
@@ -567,7 +615,7 @@
                    PopupAnimation="Fade"
                    DataContext="{Binding DataContext, ElementName=RootWindow}"
                    Closed="SettingsPopup_Closed">
-                <Border x:Name="SettingsPanel" Width="520" MinHeight="380" MaxHeight="{Binding ActualHeight, ElementName=RootWindow}" CornerRadius="12" Background="#121B29" BorderBrush="#47566C" BorderThickness="1" Padding="14" PreviewMouseDown="SettingsPopup_PreviewMouseDown">
+                <Border x:Name="SettingsPanel" Width="560" Height="500" MinWidth="420" MinHeight="340" CornerRadius="12" Background="#121B29" BorderBrush="#47566C" BorderThickness="1" Padding="14" PreviewMouseDown="SettingsPopup_PreviewMouseDown">
                     <Border.Effect>
                         <DropShadowEffect Color="#000000" BlurRadius="22" ShadowDepth="4" Opacity="0.55"/>
                     </Border.Effect>
@@ -580,6 +628,32 @@
                         <RowDefinition Height="32"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
+
+                    <Thumb Grid.RowSpan="2"
+                           Grid.ColumnSpan="2"
+                           Panel.ZIndex="5"
+                           Width="18"
+                           Height="18"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Bottom"
+                           Cursor="SizeNWSE"
+                           DragDelta="SettingsResizeThumb_DragDelta"
+                           ToolTip="Arraste para redimensionar">
+                        <Thumb.Template>
+                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                <Grid Background="Transparent">
+                                    <Path Data="M 4,16 L 16,4 M 10,16 L 16,10"
+                                          Stroke="#71819A"
+                                          StrokeThickness="1.5"
+                                          StrokeStartLineCap="Round"
+                                          StrokeEndLineCap="Round"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Bottom"
+                                          Margin="0,0,2,2"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </Thumb.Template>
+                    </Thumb>
 
                     <Border Grid.Row="0" Grid.ColumnSpan="2"
                             Background="Transparent"
