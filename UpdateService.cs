@@ -39,25 +39,39 @@ internal static class UpdateService
             }
 
             if ([IO.File]::Exists($ExecutablePath)) {
-                [IO.File]::Replace($stagedPath, $ExecutablePath, $backupPath)
+                [IO.File]::Move($ExecutablePath, $backupPath)
             }
-            else {
-                [IO.File]::Move($stagedPath, $ExecutablePath)
-            }
+
             try {
-                Start-Process -FilePath $ExecutablePath
-                if ([IO.File]::Exists($backupPath)) {
-                    [IO.File]::Delete($backupPath)
-                }
+                [IO.File]::Move($stagedPath, $ExecutablePath)
             }
             catch {
                 if ([IO.File]::Exists($backupPath)) {
-                    if ([IO.File]::Exists($ExecutablePath)) {
-                        [IO.File]::Delete($ExecutablePath)
-                    }
                     [IO.File]::Move($backupPath, $ExecutablePath)
                 }
                 throw
+            }
+
+            try {
+                Start-Process -FilePath $ExecutablePath
+            }
+            catch {
+                if ([IO.File]::Exists($ExecutablePath)) {
+                    [IO.File]::Delete($ExecutablePath)
+                }
+                if ([IO.File]::Exists($backupPath)) {
+                    [IO.File]::Move($backupPath, $ExecutablePath)
+                }
+                throw
+            }
+
+            if ([IO.File]::Exists($backupPath)) {
+                try {
+                    [IO.File]::Delete($backupPath)
+                }
+                catch {
+                    Write-Warning "Nao foi possivel remover o backup: $backupPath"
+                }
             }
         }
         catch {
