@@ -453,22 +453,62 @@
                     </StackPanel>
                     <Border Grid.Column="1" Background="Transparent">
                         <Grid VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <ContentControl Grid.Column="0" ContentTemplate="{StaticResource DragGripTemplate}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                            <TextBlock Text="{Binding ConnectionStatus}"
-                                       Grid.Column="1"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Stretch"
-                                       Foreground="#E5F0FF"
-                                       FontSize="11"
-                                       TextTrimming="CharacterEllipsis"
-                                       ToolTip="{Binding ConnectionStatus}"/>
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center">
+                                <ContentControl ContentTemplate="{StaticResource DragGripTemplate}"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,7,0"/>
+                                <TextBlock Text="Chat"
+                                           VerticalAlignment="Center"
+                                           Foreground="#E5F0FF"
+                                           FontWeight="SemiBold"/>
+                            </StackPanel>
                         </Grid>
                     </Border>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding ConnectionStatus}"
+                                   VerticalAlignment="Center"
+                                   Foreground="#E5F0FF"
+                                   FontSize="11"
+                                   Margin="0,0,6,0"
+                                   MaxWidth="112"
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTipService.InitialShowDelay="0"
+                                   ToolTipService.BetweenShowDelay="0">
+                            <TextBlock.ToolTip>
+                                <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="0"
+                                         HasDropShadow="True"
+                                         ToolTipService.InitialShowDelay="0"
+                                         ToolTipService.ShowDuration="60000">
+                                    <Border Background="#121B29"
+                                            BorderBrush="#53647D"
+                                            BorderThickness="1"
+                                            CornerRadius="9"
+                                            Padding="12">
+                                        <StackPanel MinWidth="190">
+                                            <TextBlock Text="ESTADO DA CONEXÃO"
+                                                       Foreground="#9EADC2"
+                                                       FontSize="9"
+                                                       FontWeight="Bold"
+                                                       Margin="0,0,0,6"/>
+                                            <TextBlock Text="{Binding ConnectionStatus}"
+                                                       Foreground="#F1F5FF"
+                                                       FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding MainChannel, StringFormat=Canal: #{0}}"
+                                                       Foreground="#C2CEE0"
+                                                       FontSize="11"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </ToolTip>
+                            </TextBlock.ToolTip>
+                        </TextBlock>
                         <Button Style="{StaticResource WindowControlButton}" Content="−" Width="22" Height="28" ToolTip="Minimizar" Click="MinimizeButton_Click"/>
                         <Button Style="{StaticResource WindowControlButton}" x:Name="MaximizeButton" Content="□" Width="22" Height="28" ToolTip="Maximizar" Click="MaximizeRestoreButton_Click"/>
                         <Button Style="{StaticResource WindowControlButton}" Content="×" Width="22" Height="28" ToolTip="Fechar" Click="CloseButton_Click"/>
