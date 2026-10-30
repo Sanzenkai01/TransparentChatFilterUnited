@@ -26,6 +26,25 @@
         <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#26374D"/>
         <SolidColorBrush x:Key="AccentBrush" Color="#A970FF"/>
         <SolidColorBrush x:Key="MutedTextBrush" Color="#9EADC2"/>
+        <DataTemplate x:Key="DragGripTemplate">
+            <Grid Width="10" Height="8" IsHitTestVisible="False">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="0" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+        </DataTemplate>
         <DropShadowEffect x:Key="ChatTextOutline" Color="#000000" BlurRadius="3" ShadowDepth="1" Direction="315" Opacity="0.95"/>
         <Style TargetType="{x:Type Button}">
             <Setter Property="Foreground" Value="#EAF2FF"/>
@@ -309,7 +328,10 @@
                         </ToggleButton>
                     </StackPanel>
                     <Border Grid.Column="1" Background="Transparent">
-                        <TextBlock Text="Chat" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#E5F0FF" FontWeight="SemiBold" Margin="12,0"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <ContentControl ContentTemplate="{StaticResource DragGripTemplate}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="Chat" VerticalAlignment="Center" Foreground="#E5F0FF" FontWeight="SemiBold"/>
+                        </StackPanel>
                     </Border>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                         <TextBlock Text="{Binding ConnectionStatus}" VerticalAlignment="Center" Foreground="#E5F0FF" FontSize="11" Margin="0,0,5,0" MaxWidth="78" TextTrimming="CharacterEllipsis" ToolTipService.InitialShowDelay="0" ToolTipService.BetweenShowDelay="0">
@@ -470,16 +492,23 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
                     Margin="4"
-                    Width="34"
-                    Height="30"
-                    Padding="4,2"
-                    Content="⚙"
-                    ToolTip="Segure para arrastar · clique para sair do modo somente chat"
+                    Width="48"
+                    Height="34"
+                    Padding="5,2"
                     Opacity="0.75"
                     Visibility="Collapsed"
                     PreviewMouseLeftButtonDown="ExitChatOnlyButton_PreviewMouseLeftButtonDown"
                     PreviewMouseLeftButtonUp="ExitChatOnlyButton_PreviewMouseLeftButtonUp"
                     Click="ExitChatOnlyButton_Click">
+                <Button.Content>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="⚙" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ContentControl ContentTemplate="{StaticResource DragGripTemplate}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button.Content>
+                <Button.ToolTip>
+                    <ToolTip Content="Segure para arrastar · clique para sair do modo somente chat"/>
+                </Button.ToolTip>
                 <Button.Style>
                     <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
                         <Setter Property="Background" Value="#182333"/>
@@ -503,15 +532,18 @@
                    StaysOpen="True"
                    IsOpen="False">
                 <Button x:Name="ChatOnlyGearPopupButton"
-                        Width="34"
-                        Height="30"
-                        Padding="4,2"
-                        Content="⚙"
+                        Width="48"
+                        Height="34"
+                        Padding="5,2"
                         ToolTip="Segure para arrastar · clique para sair do modo somente chat"
-                        Opacity="0.75"
                         PreviewMouseLeftButtonDown="ExitChatOnlyButton_PreviewMouseLeftButtonDown"
                         PreviewMouseLeftButtonUp="ExitChatOnlyButton_PreviewMouseLeftButtonUp"
-                        Click="ExitChatOnlyButton_Click">
+                        Click="ExitChatOnlyButton_Click"
+                        Opacity="0.75">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="⚙" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ContentControl ContentTemplate="{StaticResource DragGripTemplate}" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <Button.Style>
                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
                             <Setter Property="Background" Value="#182333"/>
@@ -535,17 +567,17 @@
                    PopupAnimation="Fade"
                    DataContext="{Binding DataContext, ElementName=RootWindow}"
                    Closed="SettingsPopup_Closed">
-                <Border x:Name="SettingsPanel" Width="420" MinHeight="320" MaxHeight="{Binding ActualHeight, ElementName=RootWindow}" CornerRadius="12" Background="#121B29" BorderBrush="#47566C" BorderThickness="1" Padding="12" PreviewMouseDown="SettingsPopup_PreviewMouseDown">
+                <Border x:Name="SettingsPanel" Width="520" MinHeight="380" MaxHeight="{Binding ActualHeight, ElementName=RootWindow}" CornerRadius="12" Background="#121B29" BorderBrush="#47566C" BorderThickness="1" Padding="14" PreviewMouseDown="SettingsPopup_PreviewMouseDown">
                     <Border.Effect>
                         <DropShadowEffect Color="#000000" BlurRadius="22" ShadowDepth="4" Opacity="0.55"/>
                     </Border.Effect>
                     <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="94"/>
+                        <ColumnDefinition Width="112"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="26"/>
+                        <RowDefinition Height="32"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -556,15 +588,44 @@
                             MouseLeftButtonDown="SettingsPopupDrag_MouseLeftButtonDown"
                             MouseMove="SettingsPopupDrag_MouseMove"
                             MouseLeftButtonUp="SettingsPopupDrag_MouseLeftButtonUp">
-                        <TextBlock Text="CONFIGURAÇÕES  ·  arraste para mover"
-                                   VerticalAlignment="Center"
-                                   Foreground="{StaticResource MutedTextBrush}"
-                                   FontSize="10"
-                                   FontWeight="SemiBold"
-                                   IsHitTestVisible="False"/>
+                        <Grid>
+                            <ContentControl ContentTemplate="{StaticResource DragGripTemplate}"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Margin="2,0,0,0"/>
+                            <TextBlock Text="CONFIGURAÇÕES  ·  arraste para mover"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       IsHitTestVisible="False"/>
+                            <Button Content="×"
+                                    Width="24"
+                                    Height="24"
+                                    Padding="0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Cursor="Hand"
+                                    ToolTip="Fechar configurações"
+                                    Click="CloseSettingsButton_Click">
+                                <Button.Style>
+                                    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource WindowControlButton}">
+                                        <Setter Property="Foreground" Value="#9EADC2"/>
+                                        <Setter Property="FontSize" Value="18"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                <Setter Property="Background" Value="#A33B4B"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </Grid>
                     </Border>
 
-                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,7,0">
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Text="TWITCH" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="4,4,0,6"/>
                         <Button x:Name="ChatPreferencesButton" Content="Chat e filtros" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Background="#302544" BorderBrush="#8054C5" Foreground="#F1E8FF" Margin="0,0,0,4" Click="ChatPreferencesButton_Click"/>
                         <Button x:Name="ConnectionsPreferencesButton" Content="Conexões" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,10" Click="ConnectionsPreferencesButton_Click"/>
@@ -763,7 +824,8 @@
                         <ScrollViewer x:Name="AboutPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <TextBlock Text="SOBRE" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                                <TextBlock Text="TransparentChatFilterUnited" FontSize="15" FontWeight="SemiBold" Foreground="#E6D5FF" Margin="0,18,0,7"/>
+                                <TextBlock Text="TransparentChatFilterUnited" FontSize="15" FontWeight="SemiBold" Foreground="#E6D5FF" Margin="0,18,0,4"/>
+                                <TextBlock x:Name="AppVersionText" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,9"/>
                                 <TextBlock Text="Overlay leve para acompanhar o chat da Twitch enquanto joga. Configure um canal, escolha um modo de filtragem e ajuste o visual do widget." TextWrapping="Wrap" Foreground="#BCC8D9" Margin="0,0,0,14"/>
                                 <TextBlock Text="Mostrar/ocultar: Ctrl + Alt + T · Alternar chat-only: Ctrl + Alt + Shift + T" TextWrapping="Wrap" Foreground="#D7E5FF"/>
                                 <TextBlock Text="As preferências ficam salvas localmente neste computador." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>

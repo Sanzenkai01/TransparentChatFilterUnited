@@ -1,0 +1,51 @@
+<Window x:Class="TransparentChatFilter.UpdateCheckWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Procurando atualizações"
+        Width="360"
+        Height="150"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Topmost="True"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Foreground="#EAF2FF"
+        WindowStyle="None">
+    <Border CornerRadius="14"
+            BorderThickness="1"
+            BorderBrush="#5A6474"
+            Background="#121B29"
+            Padding="22">
+        <Border.Effect>
+            <DropShadowEffect Color="#8D5BDA" BlurRadius="24" ShadowDepth="0" Opacity="0.28"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="12"/>
+                <RowDefinition Height="8"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="ATUALIZAÇÕES"
+                       Grid.Row="0"
+                       Foreground="#C39AFF"
+                       FontSize="10"
+                       FontWeight="Bold"
+                       Margin="0,0,0,8"/>
+            <TextBlock x:Name="StatusText"
+                       Grid.Row="1"
+                       FontSize="15"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center"/>
+            <ProgressBar Grid.Row="3"
+                         IsIndeterminate="True"
+                         Minimum="0"
+                         Maximum="100"
+                         Height="8"
+                         Foreground="#A970FF"
+                         Background="#26374D"
+                         BorderThickness="0"/>
+        </Grid>
+    </Border>
+</Window>

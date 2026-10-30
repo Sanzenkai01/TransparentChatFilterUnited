@@ -16,9 +16,22 @@ public partial class App : Application
 
     private static async Task CheckForUpdatesAsync()
     {
+        UpdateCheckWindow? progressWindow = null;
+
         try
         {
-            var update = await UpdateService.CheckForUpdateAsync();
+            progressWindow = new UpdateCheckWindow("Checando atualizações...")
+            {
+                Owner = Current.MainWindow
+            };
+            progressWindow.Show();
+
+            var updateTask = UpdateService.CheckForUpdateAsync();
+            await Task.WhenAll(updateTask, Task.Delay(TimeSpan.FromMilliseconds(1500)));
+            var update = await updateTask;
+            progressWindow.Close();
+            progressWindow = null;
+
             if (update is null)
             {
                 return;
@@ -35,17 +48,29 @@ public partial class App : Application
                 return;
             }
 
+            progressWindow = new UpdateCheckWindow("Baixando atualização...")
+            {
+                Owner = Current.MainWindow
+            };
+            progressWindow.Show();
+
             var archivePath = await UpdateService.DownloadUpdateAsync(update);
             UpdateService.StartUpdate(archivePath);
             Current.Shutdown();
         }
         catch (Exception exception)
         {
+            progressWindow?.Close();
+            progressWindow = null;
             MessageBox.Show(
                 $"Não foi possível verificar ou baixar atualizações: {exception.Message}",
                 "Atualização",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+        }
+        finally
+        {
+            progressWindow?.Close();
         }
     }
 }

@@ -831,6 +831,7 @@ public partial class MainWindow : Window
         _settings.IsTransparent = false;
         DataContext = new OverlayViewModel(_settings);
         InitializeComponent();
+        AppVersionText.Text = $"Versão {GetType().Assembly.GetName().Version?.ToString(3) ?? "desconhecida"}";
         UpdateColorPreview(AccentColorInput.Text, AccentColorPreviewDot, AccentColorPreviewText);
         UpdateColorPreview(MessageBackgroundColorInput.Text, MessageBackgroundColorPreviewDot, MessageBackgroundColorPreviewText);
         RestoreWindowPosition();
@@ -1131,6 +1132,11 @@ public partial class MainWindow : Window
         ToggleSettingsPopup(!SettingsPopup.IsOpen);
     }
 
+    private void CloseSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        ToggleSettingsPopup(false);
+    }
+
     private void ToggleSettingsPopup(bool isOpen)
     {
         ViewModel.SetSettingsVisible(isOpen);
@@ -1162,7 +1168,9 @@ public partial class MainWindow : Window
 
     private void SettingsPopupDrag_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not FrameworkElement dragSurface || e.ChangedButton != MouseButton.Left)
+        if (sender is not FrameworkElement dragSurface
+            || e.ChangedButton != MouseButton.Left
+            || IsWindowControl(e.OriginalSource as DependencyObject))
         {
             return;
         }
