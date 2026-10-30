@@ -27,12 +27,36 @@
                 <RowDefinition Height="12"/>
                 <RowDefinition Height="8"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="ATUALIZAÇÕES"
-                       Grid.Row="0"
-                       Foreground="#C39AFF"
-                       FontSize="10"
-                       FontWeight="Bold"
-                       Margin="0,0,0,8"/>
+            <Border Grid.Row="0"
+                    Background="Transparent"
+                    Cursor="SizeAll"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                    ToolTip="Arraste para mover esta janela"
+                    Margin="0,0,0,8">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Grid Width="10" Height="8" Margin="0,0,8,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0"/>
+                        <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0"/>
+                        <Ellipse Grid.Row="0" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0"/>
+                        <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0"/>
+                        <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0"/>
+                        <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0"/>
+                    </Grid>
+                    <TextBlock Text="ATUALIZAÇÕES"
+                               Foreground="#C39AFF"
+                               FontSize="10"
+                               FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
             <TextBlock x:Name="StatusText"
                        Grid.Row="1"
                        FontSize="15"

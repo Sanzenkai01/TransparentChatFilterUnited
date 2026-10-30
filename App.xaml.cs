@@ -37,13 +37,11 @@ public partial class App : Application
                 return;
             }
 
-            var answer = MessageBox.Show(
-                $"A versão {update.Version} está disponível. Deseja baixar e instalar agora? O programa será fechado durante a atualização.",
-                "Atualização disponível",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Information);
-
-            if (answer != MessageBoxResult.Yes)
+            var updatePrompt = new UpdateAvailableWindow(update.Version)
+            {
+                Owner = Current.MainWindow
+            };
+            if (updatePrompt.ShowDialog() != true)
             {
                 return;
             }

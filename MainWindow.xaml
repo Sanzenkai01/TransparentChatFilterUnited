@@ -124,6 +124,82 @@
             </Setter>
         </Style>
 
+        <Style TargetType="{x:Type Slider}">
+            <Setter Property="Foreground" Value="#A970FF"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Slider}">
+                        <Grid x:Name="SliderRoot" Height="24">
+                            <Track x:Name="PART_Track"
+                                   Minimum="{TemplateBinding Minimum}"
+                                   Maximum="{TemplateBinding Maximum}"
+                                   Value="{TemplateBinding Value}"
+                                   Orientation="{TemplateBinding Orientation}"
+                                   IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge"
+                                                  IsTabStop="False"
+                                                  Height="4"
+                                                  VerticalAlignment="Center"
+                                                  Background="#A970FF"
+                                                  BorderThickness="0">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                <Border Height="4"
+                                                        CornerRadius="2"
+                                                        Background="{TemplateBinding Background}"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Width="14" Height="14" Focusable="False">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                                <Border x:Name="ThumbChrome"
+                                                        Width="14"
+                                                        Height="14"
+                                                        CornerRadius="7"
+                                                        Background="#EAF2FF"
+                                                        BorderBrush="#A970FF"
+                                                        BorderThickness="2"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="#C39AFF"/>
+                                                        <Setter TargetName="ThumbChrome" Property="BorderBrush" Value="#E6D5FF"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="#A970FF"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge"
+                                                  IsTabStop="False"
+                                                  Height="4"
+                                                  VerticalAlignment="Center"
+                                                  Background="#34445B"
+                                                  BorderThickness="0">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                <Border Height="4"
+                                                        CornerRadius="2"
+                                                        Background="{TemplateBinding Background}"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="Foreground" Value="#EFF5FF"/>
             <Setter Property="Background" Value="#0E1724"/>
@@ -376,46 +452,23 @@
                         </ToggleButton>
                     </StackPanel>
                     <Border Grid.Column="1" Background="Transparent">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <ContentControl ContentTemplate="{StaticResource DragGripTemplate}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="Chat" VerticalAlignment="Center" Foreground="#E5F0FF" FontWeight="SemiBold"/>
-                        </StackPanel>
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentControl Grid.Column="0" ContentTemplate="{StaticResource DragGripTemplate}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                            <TextBlock Text="{Binding ConnectionStatus}"
+                                       Grid.Column="1"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Stretch"
+                                       Foreground="#E5F0FF"
+                                       FontSize="11"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding ConnectionStatus}"/>
+                        </Grid>
                     </Border>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                        <TextBlock Text="{Binding ConnectionStatus}" VerticalAlignment="Center" Foreground="#E5F0FF" FontSize="11" Margin="0,0,5,0" MaxWidth="78" TextTrimming="CharacterEllipsis" ToolTipService.InitialShowDelay="0" ToolTipService.BetweenShowDelay="0">
-                            <TextBlock.ToolTip>
-                                <ToolTip DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         Padding="0"
-                                         HasDropShadow="True"
-                                         ToolTipService.InitialShowDelay="0"
-                                         ToolTipService.ShowDuration="60000">
-                                    <Border Background="#121B29"
-                                            BorderBrush="#53647D"
-                                            BorderThickness="1"
-                                            CornerRadius="9"
-                                            Padding="12">
-                                        <StackPanel MinWidth="190">
-                                            <TextBlock Text="ESTADO DA CONEXÃO"
-                                                       Foreground="#9EADC2"
-                                                       FontSize="9"
-                                                       FontWeight="Bold"
-                                                       Margin="0,0,0,6"/>
-                                            <TextBlock Text="{Binding ConnectionStatus}"
-                                                       Foreground="#F1F5FF"
-                                                       FontSize="12"
-                                                       FontWeight="SemiBold"
-                                                       TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding MainChannel, StringFormat=Canal: #{0}}"
-                                                       Foreground="#C2CEE0"
-                                                       FontSize="11"
-                                                       Margin="0,5,0,0"/>
-                                        </StackPanel>
-                                    </Border>
-                                </ToolTip>
-                            </TextBlock.ToolTip>
-                        </TextBlock>
                         <Button Style="{StaticResource WindowControlButton}" Content="−" Width="22" Height="28" ToolTip="Minimizar" Click="MinimizeButton_Click"/>
                         <Button Style="{StaticResource WindowControlButton}" x:Name="MaximizeButton" Content="□" Width="22" Height="28" ToolTip="Maximizar" Click="MaximizeRestoreButton_Click"/>
                         <Button Style="{StaticResource WindowControlButton}" Content="×" Width="22" Height="28" ToolTip="Fechar" Click="CloseButton_Click"/>
