@@ -136,14 +136,19 @@
                 </DockPanel>
             </Border>
 
-            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="2,16,2,18">
-                <Border Width="38"
+            <Grid Grid.Row="1" VerticalAlignment="Center" Margin="2,16,2,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="38"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0"
+                        Width="38"
                         Height="38"
                         CornerRadius="19"
                         Background="#382954"
                         BorderBrush="#8054C5"
-                        BorderThickness="1"
-                        Margin="0,0,14,0">
+                        BorderThickness="1">
                     <TextBlock Text="↑"
                                Foreground="#E6D5FF"
                                FontSize="22"
@@ -151,7 +156,7 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                 </Border>
-                <StackPanel>
+                <StackPanel Grid.Column="2">
                     <TextBlock x:Name="VersionText"
                                Foreground="#F1F5FF"
                                FontSize="15"
@@ -163,7 +168,7 @@
                                TextWrapping="Wrap"
                                Margin="0,6,0,0"/>
                 </StackPanel>
-            </StackPanel>
+            </Grid>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Agora não"
