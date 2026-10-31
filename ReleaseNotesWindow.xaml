@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Novidades da versão"
         Width="500"
-        Height="470"
+        Height="510"
         MinWidth="460"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
@@ -147,6 +147,11 @@
                 <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,7,0,0">
                     <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
                         <Run Text="•  Títulos e descrições das páginas de configurações agora ficam centralizados."/>
+                    </TextBlock>
+                </Border>
+                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,7,0,0">
+                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
+                        <Run Text="•  As novidades de cada versão são exibidas automaticamente uma única vez após a atualização."/>
                     </TextBlock>
                 </Border>
             </StackPanel>

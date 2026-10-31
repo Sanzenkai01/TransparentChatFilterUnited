@@ -1,31 +1,43 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
 
 namespace TransparentChatFilter;
 
 public partial class App : Application
 {
-    private const string ReleaseNotesArgument = "--show-release-notes";
-
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
         var mainWindow = new MainWindow();
         MainWindow = mainWindow;
-        var showReleaseNotes = Array.Exists(
-            e.Args,
-            argument => string.Equals(argument, ReleaseNotesArgument, StringComparison.OrdinalIgnoreCase));
-        if (showReleaseNotes)
+        var currentVersion = typeof(App).Assembly.GetName().Version
+            ?? throw new InvalidOperationException("Não foi possível determinar a versão instalada.");
+        var lastSeenVersion = Version.TryParse(
+            mainWindow.ViewModel.Settings.LastSeenReleaseNotesVersion,
+            out var parsedVersion)
+                ? parsedVersion
+                : new Version(0, 0);
+        if (currentVersion > lastSeenVersion)
         {
             mainWindow.WindowState = WindowState.Normal;
             mainWindow.Loaded += (_, _) =>
             {
-                var version = typeof(App).Assembly.GetName().Version ?? new Version(1, 1, 7);
-                var releaseNotesWindow = new ReleaseNotesWindow(version)
+                var releaseNotesWindow = new ReleaseNotesWindow(currentVersion)
                 {
                     Owner = mainWindow
                 };
                 releaseNotesWindow.ShowDialog();
+                mainWindow.ViewModel.Settings.LastSeenReleaseNotesVersion = currentVersion.ToString(3);
+                try
+                {
+                    mainWindow.ViewModel.SaveSettings();
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                {
+                    mainWindow.ViewModel.UpdateDiagnostic(
+                        $"Não foi possível salvar a versão das novidades exibidas: {exception.Message}");
+                }
             };
         }
 
