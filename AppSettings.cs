@@ -25,7 +25,7 @@ public enum MessageNotificationSound
 
 public sealed class AppSettings
 {
-    private const int CurrentSettingsVersion = 1;
+    private const int CurrentSettingsVersion = 2;
 
     public string MainChannel { get; set; } = string.Empty;
     public string TwitchUsername { get; set; } = string.Empty;
@@ -62,7 +62,7 @@ public sealed class AppSettings
     public bool ShowSettingsPanel { get; set; } = true;
     public double BackgroundOpacity { get; set; } = 0.86;
     public double TextOpacity { get; set; } = 1.0;
-    public bool UseMessageBackgroundOpacity { get; set; }
+    public bool UseMessageBackgroundOpacity { get; set; } = true;
     public double MessageBackgroundOpacity { get; set; } = 0.75;
     public int FontSize { get; set; } = 14;
     public int MessageSpacing { get; set; } = 6;
@@ -102,6 +102,7 @@ public sealed class AppSettings
             if (settings.SettingsVersion < CurrentSettingsVersion)
             {
                 settings.NotifyNewMessages = true;
+                settings.UseMessageBackgroundOpacity = true;
                 settings.SettingsVersion = CurrentSettingsVersion;
             }
 

@@ -3023,7 +3023,7 @@ public partial class MainWindow : Window
         var baseAlpha = settings.IsTransparent ? 184 : 255;
         var opacity = settings.UseMessageBackgroundOpacity
             ? settings.MessageBackgroundOpacity
-            : 1.0;
+            : 0.0;
         var alpha = (byte)Math.Round(baseAlpha * opacity);
         return new SolidColorBrush(Color.FromArgb(alpha, color.R, color.G, color.B));
     }
