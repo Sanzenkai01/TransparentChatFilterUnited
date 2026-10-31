@@ -53,7 +53,7 @@ internal static class UpdateService
             }
 
             try {
-                Start-Process -FilePath $ExecutablePath
+                Start-Process -FilePath $ExecutablePath -ArgumentList '--show-release-notes'
             }
             catch {
                 if ([IO.File]::Exists($ExecutablePath)) {

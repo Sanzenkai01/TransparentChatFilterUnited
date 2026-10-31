@@ -4,12 +4,31 @@ namespace TransparentChatFilter;
 
 public partial class App : Application
 {
+    private const string ReleaseNotesArgument = "--show-release-notes";
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
         var mainWindow = new MainWindow();
         MainWindow = mainWindow;
+        var showReleaseNotes = Array.Exists(
+            e.Args,
+            argument => string.Equals(argument, ReleaseNotesArgument, StringComparison.OrdinalIgnoreCase));
+        if (showReleaseNotes)
+        {
+            mainWindow.WindowState = WindowState.Normal;
+            mainWindow.Loaded += (_, _) =>
+            {
+                var version = typeof(App).Assembly.GetName().Version ?? new Version(1, 1, 7);
+                var releaseNotesWindow = new ReleaseNotesWindow(version)
+                {
+                    Owner = mainWindow
+                };
+                releaseNotesWindow.ShowDialog();
+            };
+        }
+
         mainWindow.Show();
         _ = CheckForUpdatesAsync();
     }

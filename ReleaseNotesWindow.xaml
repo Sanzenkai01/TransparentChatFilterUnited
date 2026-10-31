@@ -1,0 +1,161 @@
+<Window x:Class="TransparentChatFilter.ReleaseNotesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Novidades da versão"
+        Width="500"
+        Height="470"
+        MinWidth="460"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Topmost="True"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStyle="None"
+        Loaded="Window_Loaded">
+    <Window.Resources>
+        <Style x:Key="CloseButton" TargetType="{x:Type Button}">
+            <Setter Property="Foreground" Value="#9EADC2"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                    <Setter Property="Background" Value="#A33B4B"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="AcknowledgeButton" TargetType="{x:Type Button}">
+            <Setter Property="Foreground" Value="#F1E8FF"/>
+            <Setter Property="Background" Value="#7040A5"/>
+            <Setter Property="BorderBrush" Value="#A970FF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="22,9"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="7">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#8050B8"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#C39AFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#54327D"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Border x:Name="DialogBorder"
+            CornerRadius="14"
+            BorderThickness="1"
+            BorderBrush="#5A6474"
+            Background="#121B29"
+            Padding="20"
+            Opacity="0"
+            RenderTransformOrigin="0.5,0.5">
+        <Border.RenderTransform>
+            <TranslateTransform Y="12"/>
+        </Border.RenderTransform>
+        <Border.Effect>
+            <DropShadowEffect Color="#8D5BDA" BlurRadius="26" ShadowDepth="0" Opacity="0.28"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <StackPanel>
+                    <TextBlock Text="NOVIDADES DA VERSÃO"
+                               Foreground="#C39AFF"
+                               FontSize="10"
+                               FontWeight="Bold"/>
+                    <TextBlock x:Name="VersionTitle"
+                               Text="Versão"
+                               Foreground="#F1F5FF"
+                               FontSize="22"
+                               FontWeight="Bold"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+                <Button Content="×"
+                        Width="28"
+                        Height="28"
+                        Padding="0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Style="{StaticResource CloseButton}"
+                        Click="CloseButton_Click"
+                        ToolTip="Fechar"/>
+            </Grid>
+            <StackPanel Grid.Row="1" Margin="0,18,0,16">
+                <TextBlock Text="Veja o que mudou nesta atualização:"
+                           Foreground="#BCC8D9"
+                           FontSize="11"
+                           Margin="0,0,0,10"/>
+                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
+                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
+                        <Run Text="•  Mais controle visual: ajustes para a cor e a opacidade do fundo das mensagens, com botões de paleta mais legíveis."/>
+                    </TextBlock>
+                </Border>
+                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
+                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
+                        <Run Text="•  As opções de canais agora acompanham o modo de filtro: Meu Chat mostra apenas o canal principal; Chat Unido permite configurar canais adicionais e ignorados."/>
+                    </TextBlock>
+                </Border>
+                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
+                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
+                        <Run Text="•  A conexão IRC é somente para leitura: o aplicativo não envia mensagens no chat."/>
+                    </TextBlock>
+                </Border>
+                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10">
+                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
+                        <Run Text="•  Indicador de conexão aprimorado e ícone de redimensionamento oculto no modo transparente."/>
+                    </TextBlock>
+                </Border>
+                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,7,0,0">
+                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
+                        <Run Text="•  Títulos e descrições das páginas de configurações agora ficam centralizados."/>
+                    </TextBlock>
+                </Border>
+            </StackPanel>
+            <Button Grid.Row="2"
+                    Content="Entendi"
+                    HorizontalAlignment="Right"
+                    MinWidth="100"
+                    Style="{StaticResource AcknowledgeButton}"
+                    Click="CloseButton_Click"/>
+        </Grid>
+    </Border>
+</Window>

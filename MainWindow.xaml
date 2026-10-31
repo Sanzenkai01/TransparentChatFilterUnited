@@ -776,7 +776,8 @@
                                       VerticalAlignment="Stretch"
                                       DefaultBackgroundColor="Transparent"/>
                     </Grid>
-                    <Path Data="M 2,12 L 12,2 M 7,12 L 12,7"
+                    <Path x:Name="ResizeGripIcon"
+                          Data="M 2,12 L 12,2 M 7,12 L 12,7"
                           Stroke="#8B9AB0"
                           StrokeThickness="1.5"
                           StrokeStartLineCap="Round"
@@ -1009,8 +1010,8 @@
                     <Grid Grid.Row="1" Grid.Column="1">
                         <ScrollViewer x:Name="ChatPreferencesPage" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                        <TextBlock Text="CHAT E FILTRO" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                        <TextBlock Text="Conecte canais, filtre mensagens e escolha o modo transparente." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,13"/>
+                        <TextBlock Text="CHAT E FILTRO" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3" TextAlignment="Center"/>
+                        <TextBlock Text="Conecte canais e filtre mensagens." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,13" TextAlignment="Center"/>
                         <TextBlock x:Name="ChatFilterModeInfo"
                                    Text="Os filtros locais só funcionam no modo IRC autenticado. O chat público exibe as mensagens direto da Twitch."
                                    TextWrapping="Wrap"
@@ -1057,56 +1058,48 @@
                                       Margin="0,0,8,0"
                                       SelectionChanged="RecentChannelsComboBox_SelectionChanged"/>
                             <Button Grid.Column="1"
-                                    Width="112"
+                                    Width="136"
                                     Padding="4,7"
                                     HorizontalContentAlignment="Center"
                                     Click="ConnectButton_Click">
-                                <Button.ContentTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Ellipse x:Name="ConnectSpinner"
-                                                     Width="13"
-                                                     Height="13"
-                                                     Margin="0,0,6,0"
-                                                     Stroke="#D7C2FF"
-                                                     StrokeThickness="2"
-                                                     StrokeDashArray="2,2"
-                                                     Visibility="Collapsed"
-                                                     RenderTransformOrigin="0.5,0.5">
-                                                <Ellipse.RenderTransform>
-                                                    <RotateTransform Angle="0"/>
-                                                </Ellipse.RenderTransform>
-                                            </Ellipse>
-                                            <TextBlock x:Name="ConnectButtonLabel"
-                                                       Text="{Binding ConnectButtonText}"
-                                                       VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                        <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding IsConnecting}" Value="True">
-                                                <Setter TargetName="ConnectSpinner" Property="Visibility" Value="Visible"/>
-                                                <Setter TargetName="ConnectButtonLabel" Property="Text" Value="Conectando..."/>
-                                                <DataTrigger.EnterActions>
-                                                    <BeginStoryboard x:Name="ConnectSpinnerStoryboard">
-                                                        <Storyboard>
-                                                            <DoubleAnimation Storyboard.TargetName="ConnectSpinner"
-                                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
-                                                                             From="0"
-                                                                             To="360"
-                                                                             Duration="0:0:0.8"
-                                                                             RepeatBehavior="Forever"/>
-                                                        </Storyboard>
-                                                    </BeginStoryboard>
-                                                </DataTrigger.EnterActions>
-                                                <DataTrigger.ExitActions>
-                                                    <RemoveStoryboard BeginStoryboardName="ConnectSpinnerStoryboard"/>
-                                                </DataTrigger.ExitActions>
-                                            </DataTrigger>
-                                        </DataTemplate.Triggers>
-                                    </DataTemplate>
-                                </Button.ContentTemplate>
-                                <Button.Content>
-                                    <Binding/>
-                                </Button.Content>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Ellipse Width="13"
+                                             Height="13"
+                                             Margin="0,0,6,0"
+                                             Stroke="#D7C2FF"
+                                             StrokeThickness="2"
+                                             StrokeDashArray="2,2"
+                                             RenderTransformOrigin="0.5,0.5">
+                                        <Ellipse.RenderTransform>
+                                            <RotateTransform Angle="0"/>
+                                        </Ellipse.RenderTransform>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <DataTrigger.EnterActions>
+                                                            <BeginStoryboard x:Name="ConnectSpinnerStoryboard">
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                                     From="0"
+                                                                                     To="360"
+                                                                                     Duration="0:0:0.8"
+                                                                                     RepeatBehavior="Forever"/>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.EnterActions>
+                                                        <DataTrigger.ExitActions>
+                                                            <RemoveStoryboard BeginStoryboardName="ConnectSpinnerStoryboard"/>
+                                                        </DataTrigger.ExitActions>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="{Binding ConnectButtonText}" VerticalAlignment="Center"/>
+                                </StackPanel>
                             </Button>
                         </Grid>
 
@@ -1121,19 +1114,25 @@
                                        FontSize="10"
                                        Foreground="{StaticResource MutedTextBrush}"
                                        Margin="0,0,0,10"/>
-                            <CheckBox x:Name="DimOtherChannelsCheckBox"
-                                      Content="Deixar mensagens de outros canais mais transparentes"
-                                      IsChecked="{Binding DimOtherChannelMessages}"
-                                      Checked="SavePreferences_Changed"
-                                      Unchecked="SavePreferences_Changed"
-                                      Margin="0,0,0,8"
-                                      ToolTip="Mantém as mensagens no chat com 50% de opacidade. Disponível enquanto conectado pelo IRC."/>
+                            <StackPanel x:Name="OtherChannelsFilterControls">
+                                <CheckBox x:Name="DimOtherChannelsCheckBox"
+                                          Content="Deixar mensagens de outros canais transparentes"
+                                          IsChecked="{Binding DimOtherChannelMessages}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,0,0,8"
+                                          ToolTip="Mantém as mensagens no chat com 50% de opacidade. Disponível enquanto conectado pelo IRC."/>
+                            </StackPanel>
 
-                            <TextBlock Text="Canais adicionais para unir · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                            <TextBox x:Name="SelectedChannelsTextBox" Text="{Binding SelectedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
+                            <StackPanel x:Name="AdditionalChannelsFilterControls">
+                                <TextBlock Text="Canais adicionais para unir · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
+                                <TextBox x:Name="SelectedChannelsTextBox" Text="{Binding SelectedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
+                            </StackPanel>
 
-                            <TextBlock Text="Ignorar mensagens destes canais · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                            <TextBox Text="{Binding BlockedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,10" TextChanged="SaveTextPreference_Changed"/>
+                            <StackPanel x:Name="BlockedChannelsFilterControls">
+                                <TextBlock Text="Ignorar mensagens destes canais · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
+                                <TextBox Text="{Binding BlockedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,10" TextChanged="SaveTextPreference_Changed"/>
+                            </StackPanel>
 
                             <TextBlock Text="Usuários ignorados · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
                             <TextBox Text="{Binding BlockedUsersText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
@@ -1144,14 +1143,27 @@
                         <TextBox Text="{Binding BlockedTermsText, UpdateSourceTrigger=PropertyChanged}" Height="48" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
                         <TextBlock Text="Destacar termos no chat · separados por vírgula ou linha" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,2,0,5"/>
                         <TextBox Text="{Binding HighlightTermsText, UpdateSourceTrigger=PropertyChanged}" Height="48" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,6" TextChanged="SaveTextPreference_Changed"/>
+                        <TextBlock Text="Cor dos termos destacados" Foreground="#D7E5FF" Margin="0,10,0,6"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="AccentColorInput" Text="{Binding AccentColor, UpdateSourceTrigger=PropertyChanged}" Height="30" TextChanged="AccentColor_TextChanged"/>
+                            <Button x:Name="AccentColorPaletteButton" Grid.Column="1" Content="Paleta de Cores" Width="110" Padding="6,0" Margin="6,0,0,0" Click="ChooseAccentColorButton_Click" ToolTip="Escolher a cor dos termos destacados"/>
+                        </Grid>
+                        <TextBlock x:Name="AccentColorStatus" Foreground="#F0A5A5" FontSize="10" Margin="0,3,0,0" Visibility="Collapsed"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,4,0,0">
+                            <Border x:Name="AccentColorPreviewDot" Width="12" Height="12" CornerRadius="6" BorderBrush="#9EADC2" BorderThickness="1" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="AccentColorPreviewText" Foreground="{StaticResource MutedTextBrush}" FontSize="10"/>
+                        </StackPanel>
                         <TextBlock Text="As regras valem para o feed integrado; mensagens bloqueadas somem e os termos destacados podem emitir alerta sonoro." TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,8"/>
                             </StackPanel>
                         </ScrollViewer>
 
                         <ScrollViewer x:Name="ConnectionsPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <TextBlock Text="CONEXÕES" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                                <TextBlock Text="Veja abaixo quais filtros estão disponíveis em cada método de conexão." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,10"/>
+                                <TextBlock Text="CONEXÕES" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3" TextAlignment="Center"/>
                                 <TextBlock Text="Método de conexão" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,0,0,5"/>
                                 <ComboBox x:Name="ConnectionModeComboBox" SelectionChanged="ConnectionModeComboBox_SelectionChanged" Margin="0,0,0,8">
                                     <ComboBoxItem Content="Chat público · sem autorização"/>
@@ -1181,14 +1193,18 @@
                                     </StackPanel>
                                 </Border>
                                 <Button Content="Diagnóstico" HorizontalAlignment="Left" Margin="0,0,8,8" Click="ShowDiagnosticButton_Click"/>
-                                <TextBlock x:Name="TwitchAuthorizationHelp" Text="O acesso é somente leitura (chat:read), usa conexão criptografada e fica protegido pela conta Windows. O app nunca envia mensagens no chat." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
+                                <TextBlock x:Name="TwitchAuthorizationHelp" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0">
+                                    <Run Text="A conexão IRC permite "/>
+                                    <Run Text="somente a leitura do chat" Foreground="#FFD166" FontWeight="Bold"/>
+                                    <Run Text=". O aplicativo não pode enviar mensagens. A conexão é criptografada e o acesso fica protegido pela conta Windows."/>
+                                </TextBlock>
                             </StackPanel>
                         </ScrollViewer>
 
                         <ScrollViewer x:Name="WidgetsPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <TextBlock Text="WIDGETS" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                                <TextBlock Text="Ajustes rápidos da sobreposição." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,16"/>
+                                <TextBlock Text="WIDGETS" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3" TextAlignment="Center"/>
+                                <TextBlock Text="Ajustes rápidos da sobreposição." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,16" TextAlignment="Center"/>
                                 <CheckBox Content="Permitir cliques atravessando o overlay" IsChecked="{Binding ClickThroughEnabled}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <CheckBox Content="Mostrar nomes de usuários" IsChecked="{Binding ShowUserNames}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <CheckBox Content="Usar cores individuais dos nomes" IsChecked="{Binding UseTwitchNameColors}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
@@ -1212,9 +1228,9 @@
                                         ValueChanged="NotificationVolumeSlider_ValueChanged"/>
                                 <TextBlock Text="{Binding FontSize, StringFormat=Fonte do chat: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
                                 <Slider Minimum="10" Maximum="32" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="FontSizeSlider_ValueChanged"/>
-                                <TextBlock Text="Opacidade do fundo" Foreground="#D7E5FF" Margin="0,10,0,6"/>
+                                <TextBlock Text="Opacidade do Fundo do Aplicativo" Foreground="#D7E5FF" Margin="0,10,0,6"/>
                                 <Slider Minimum="0.15" Maximum="1" Value="{Binding BackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="OpacitySlider_ValueChanged"/>
-                                <CheckBox Content="Aplicar opacidade ao fundo das mensagens"
+                                <CheckBox Content="Aplicar cor ao fundo das mensagens"
                                           IsChecked="{Binding UseMessageBackgroundOpacity, Mode=TwoWay}"
                                           Checked="SavePreferences_Changed"
                                           Unchecked="SavePreferences_Changed"
@@ -1227,24 +1243,6 @@
                                         IsEnabled="{Binding UseMessageBackgroundOpacity}"
                                         Value="{Binding MessageBackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         ValueChanged="AppearanceSlider_ValueChanged"/>
-                                <TextBlock Text="{Binding TextOpacity, StringFormat=Opacidade do texto: {0:P0}}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Slider Minimum="0.2" Maximum="1" Value="{Binding TextOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
-                                <TextBlock Text="{Binding MessageSpacing, StringFormat=Espaçamento entre mensagens: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Slider Minimum="0" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding MessageSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
-                                <TextBlock Text="Cor dos termos destacados" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="AccentColorInput" Text="{Binding AccentColor, UpdateSourceTrigger=PropertyChanged}" Height="30" TextChanged="AccentColor_TextChanged"/>
-                                    <Button x:Name="AccentColorPaletteButton" Grid.Column="1" Content="Paleta..." Margin="6,0,0,0" Click="ChooseAccentColorButton_Click" ToolTip="Escolher a cor dos termos destacados"/>
-                                </Grid>
-                                <TextBlock x:Name="AccentColorStatus" Foreground="#F0A5A5" FontSize="10" Margin="0,3,0,0" Visibility="Collapsed"/>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,4,0,0">
-                                    <Border x:Name="AccentColorPreviewDot" Width="12" Height="12" CornerRadius="6" BorderBrush="#9EADC2" BorderThickness="1" Margin="0,0,6,0"/>
-                                    <TextBlock x:Name="AccentColorPreviewText" Foreground="{StaticResource MutedTextBrush}" FontSize="10"/>
-                                </StackPanel>
                                 <TextBlock Text="Cor do fundo das mensagens" Foreground="#D7E5FF" Margin="0,10,0,6"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -1252,22 +1250,26 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="MessageBackgroundColorInput" Text="{Binding MessageBackgroundColor, UpdateSourceTrigger=PropertyChanged}" Height="30" TextChanged="MessageBackgroundColor_TextChanged"/>
-                                    <Button x:Name="MessageBackgroundColorPaletteButton" Grid.Column="1" Content="Paleta..." Margin="6,0,0,0" Click="ChooseMessageBackgroundColorButton_Click" ToolTip="Escolher o fundo das mensagens"/>
+                                    <Button x:Name="MessageBackgroundColorPaletteButton" Grid.Column="1" Content="Paleta de Cores" Width="110" Padding="6,0" Margin="6,0,0,0" Click="ChooseMessageBackgroundColorButton_Click" ToolTip="Escolher o fundo das mensagens"/>
                                 </Grid>
                                 <TextBlock x:Name="MessageBackgroundColorStatus" Foreground="#F0A5A5" FontSize="10" Margin="0,3,0,0" Visibility="Collapsed"/>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,4,0,0">
                                     <Border x:Name="MessageBackgroundColorPreviewDot" Width="12" Height="12" CornerRadius="6" BorderBrush="#9EADC2" BorderThickness="1" Margin="0,0,6,0"/>
                                     <TextBlock x:Name="MessageBackgroundColorPreviewText" Foreground="{StaticResource MutedTextBrush}" FontSize="10"/>
                                 </StackPanel>
+                                <TextBlock Text="{Binding TextOpacity, StringFormat=Opacidade do texto: {0:P0}}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
+                                <Slider Minimum="0.2" Maximum="1" Value="{Binding TextOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
+                                <TextBlock Text="{Binding MessageSpacing, StringFormat=Espaçamento entre mensagens: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
+                                <Slider Minimum="0" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding MessageSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
                             </StackPanel>
                         </ScrollViewer>
 
                         <ScrollViewer x:Name="AboutPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <TextBlock Text="SOBRE" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                                <TextBlock Text="TransparentChatFilterUnited" FontSize="15" FontWeight="SemiBold" Foreground="#E6D5FF" Margin="0,18,0,4"/>
-                                <TextBlock x:Name="AppVersionText" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,9"/>
-                                <TextBlock Text="Overlay leve para acompanhar o chat da Twitch enquanto joga. Configure um canal, escolha um modo de filtragem e ajuste o visual do widget." TextWrapping="Wrap" Foreground="#BCC8D9" Margin="0,0,0,14"/>
+                                <TextBlock Text="SOBRE" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3" TextAlignment="Center"/>
+                                <TextBlock Text="TransparentChatFilterUnited" FontSize="15" FontWeight="SemiBold" Foreground="#E6D5FF" Margin="0,18,0,4" TextAlignment="Center"/>
+                                <TextBlock x:Name="AppVersionText" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,9" TextAlignment="Center"/>
+                                <TextBlock Text="Overlay leve para acompanhar o chat da Twitch enquanto joga. Configure um canal, escolha um modo de filtragem e ajuste o visual do widget." TextWrapping="Wrap" Foreground="#BCC8D9" Margin="0,0,0,14" TextAlignment="Center"/>
                                 <TextBlock Text="Mostrar/ocultar: Ctrl + Alt + T · Alternar chat-only: Ctrl + Alt + Shift + T" TextWrapping="Wrap" Foreground="#D7E5FF"/>
                                 <TextBlock Text="As preferências ficam salvas localmente neste computador." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
                             </StackPanel>

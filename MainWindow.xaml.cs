@@ -363,10 +363,11 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 
             _isConnecting = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ConnectButtonText));
         }
     }
 
-    public string ConnectButtonText => IsTwitchConnected ? "Desconectar" : "Conectar";
+    public string ConnectButtonText => IsConnecting ? "Conectando..." : IsTwitchConnected ? "Desconectar" : "Conectar";
 
     public string ConnectionStatus
     {
@@ -2048,6 +2049,7 @@ public partial class MainWindow : Window
         }
 
         ViewModel.FilterMode = (ChatFilterMode)comboBox.SelectedIndex;
+        UpdateFilterModeUi();
         _sharedChatFilterWarningShown = false;
         RefreshMessageFeed();
         ViewModel.SaveSettings();
@@ -2145,9 +2147,6 @@ public partial class MainWindow : Window
     {
         var ircMode = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc;
         var hasTwitchAuthorization = ircMode && _twitchCredentials is not null;
-        DimOtherChannelsCheckBox.Visibility = hasTwitchAuthorization
-            ? Visibility.Visible
-            : Visibility.Collapsed;
         ConnectionModeDescription.Text = ircMode
             ? "IRC autenticado: requer autorização da Twitch. Só neste modo estão disponíveis Chat Unido e canais adicionais, ignorar mensagens por canal ou usuário, ocultar comandos e diminuir a opacidade de outros canais. Filtros de termos e personalização visual funcionam nos dois modos."
             : "Chat público: não requer autorização e mostra apenas o canal selecionado. Filtros de termos e personalização visual continuam disponíveis; Chat Unido, canais adicionais, ignorar mensagens por canal ou usuário, ocultar comandos e opacidade por canal são exclusivos do IRC.";
@@ -2160,6 +2159,24 @@ public partial class MainWindow : Window
             : Visibility.Collapsed;
         TwitchAuthorizationPanel.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;
         TwitchAuthorizationHelp.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;
+        UpdateFilterModeUi();
+    }
+
+    private void UpdateFilterModeUi()
+    {
+        var joinedChats = _settings.FilterMode == ChatFilterMode.JoinedChats;
+        var hasTwitchAuthorization = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc &&
+                                     _twitchCredentials is not null;
+
+        OtherChannelsFilterControls.Visibility = joinedChats && hasTwitchAuthorization
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        AdditionalChannelsFilterControls.Visibility = joinedChats
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        BlockedChannelsFilterControls.Visibility = joinedChats
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private void OpenFilterAuthentication_Click(object sender, RoutedEventArgs e)
@@ -2865,6 +2882,7 @@ public partial class MainWindow : Window
     {
         var chatOnly = _settings.IsTransparent;
         ResizeMode = ResizeMode.CanResize;
+        ResizeGripIcon.Visibility = chatOnly ? Visibility.Collapsed : Visibility.Visible;
         var trackChatOnlyGear = chatOnly && _settings.ClickThroughEnabled;
         if (trackChatOnlyGear)
         {
