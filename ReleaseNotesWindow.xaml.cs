@@ -11,6 +11,10 @@ public partial class ReleaseNotesWindow : Window
         InitializeComponent();
         Title = $"Novidades da versão {version.ToString(3)}";
         VersionTitle.Text = $"Versão {version.ToString(3)}";
+        if (version.Major == 1 && version.Minor == 1 && version.Build == 9)
+        {
+            ReleaseNotesIntro.Text = "Esta atualização também inclui as novidades da versão 1.1.7:";
+        }
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)

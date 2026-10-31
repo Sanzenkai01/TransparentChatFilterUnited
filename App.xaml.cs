@@ -9,6 +9,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        var settingsFileExisted = File.Exists(new AppSettings().SettingsPath);
         var mainWindow = new MainWindow();
         MainWindow = mainWindow;
         var currentVersion = typeof(App).Assembly.GetName().Version
@@ -26,7 +27,8 @@ public partial class App : Application
                             hasUnseenReleaseNotes;
         var updatedFromLegacyInstaller = lastSeenVersion is not null &&
                                          NormalizeReleaseVersion(lastSeenVersion) < releaseVersion;
-        if (pendingUpdate || updatedFromLegacyInstaller)
+        var upgradedFromUntrackedLegacyVersion = settingsFileExisted && lastSeenVersion is null;
+        if (pendingUpdate || updatedFromLegacyInstaller || upgradedFromUntrackedLegacyVersion)
         {
             mainWindow.WindowState = WindowState.Normal;
             mainWindow.Loaded += (_, _) =>

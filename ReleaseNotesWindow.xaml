@@ -120,7 +120,8 @@
                         ToolTip="Fechar"/>
             </Grid>
             <StackPanel Grid.Row="1" Margin="0,18,0,16">
-                <TextBlock Text="Veja o que mudou nesta atualização:"
+                <TextBlock x:Name="ReleaseNotesIntro"
+                           Text="Veja o que mudou nesta atualização:"
                            Foreground="#BCC8D9"
                            FontSize="11"
                            Margin="0,0,0,10"/>
