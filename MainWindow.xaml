@@ -1043,7 +1043,58 @@
                                       Height="30"
                                       Margin="0,0,8,0"
                                       SelectionChanged="RecentChannelsComboBox_SelectionChanged"/>
-                            <Button Grid.Column="1" Content="{Binding ConnectButtonText}" Width="112" Click="ConnectButton_Click"/>
+                            <Button Grid.Column="1"
+                                    Width="112"
+                                    Padding="4,7"
+                                    HorizontalContentAlignment="Center"
+                                    Click="ConnectButton_Click">
+                                <Button.ContentTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Ellipse x:Name="ConnectSpinner"
+                                                     Width="13"
+                                                     Height="13"
+                                                     Margin="0,0,6,0"
+                                                     Stroke="#D7C2FF"
+                                                     StrokeThickness="2"
+                                                     StrokeDashArray="2,2"
+                                                     Visibility="Collapsed"
+                                                     RenderTransformOrigin="0.5,0.5">
+                                                <Ellipse.RenderTransform>
+                                                    <RotateTransform Angle="0"/>
+                                                </Ellipse.RenderTransform>
+                                            </Ellipse>
+                                            <TextBlock x:Name="ConnectButtonLabel"
+                                                       Text="{Binding ConnectButtonText}"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                                                <Setter TargetName="ConnectSpinner" Property="Visibility" Value="Visible"/>
+                                                <Setter TargetName="ConnectButtonLabel" Property="Text" Value="Conectando..."/>
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard x:Name="ConnectSpinnerStoryboard">
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="ConnectSpinner"
+                                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                             From="0"
+                                                                             To="360"
+                                                                             Duration="0:0:0.8"
+                                                                             RepeatBehavior="Forever"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                                <DataTrigger.ExitActions>
+                                                    <RemoveStoryboard BeginStoryboardName="ConnectSpinnerStoryboard"/>
+                                                </DataTrigger.ExitActions>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </Button.ContentTemplate>
+                                <Button.Content>
+                                    <Binding/>
+                                </Button.Content>
+                            </Button>
                         </Grid>
 
                         <StackPanel x:Name="AuthenticatedFilterControls">

@@ -286,6 +286,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     private string _blockedUsersText = string.Empty;
     private bool _isConnected;
     private bool _isTwitchConnected;
+    private bool _isConnecting;
 
     public bool IsConnected
     {
@@ -316,6 +317,21 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             _isTwitchConnected = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(ConnectButtonText));
+        }
+    }
+
+    public bool IsConnecting
+    {
+        get => _isConnecting;
+        set
+        {
+            if (_isConnecting == value)
+            {
+                return;
+            }
+
+            _isConnecting = value;
+            OnPropertyChanged();
         }
     }
 
@@ -2602,6 +2618,7 @@ public partial class MainWindow : Window
             }
         }
 
+        ViewModel.IsConnecting = true;
         try
         {
             ViewModel.ConnectionStatus = "Conectando...";
@@ -2708,6 +2725,7 @@ public partial class MainWindow : Window
             _authorizationCts = null;
             TwitchCancelAuthorizationButton.Visibility = Visibility.Collapsed;
             Interlocked.Exchange(ref _connectInProgress, 0);
+            ViewModel.IsConnecting = false;
             if (_channelUpdatePending)
             {
                 _channelUpdatePending = false;
