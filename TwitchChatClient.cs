@@ -64,6 +64,7 @@ public sealed class TwitchChatClient : IDisposable
     private StreamWriter? _writer;
     private CancellationTokenSource? _connectionCts;
     private Task? _readLoopTask;
+    private HashSet<string> _joinedChannels = new(StringComparer.OrdinalIgnoreCase);
     private long _connectionGeneration;
     private volatile bool _isConnected;
     private volatile bool _disposed;
@@ -140,25 +141,93 @@ public sealed class TwitchChatClient : IDisposable
                     _writer = writer;
                 }
 
-                writer.WriteLine($"PASS oauth:{normalizedToken}");
-                writer.WriteLine($"NICK {normalizedUsername}");
-                writer.WriteLine("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership");
+                WriteLine(writer, $"PASS oauth:{normalizedToken}");
+                WriteLine(writer, $"NICK {normalizedUsername}");
+                WriteLine(writer, "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership");
                 var authentication = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 _readLoopTask = Task.Run(() => ReadLoopAsync(reader, writer, connectionCts, generation, authentication));
                 await authentication.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false);
 
                 foreach (var joinCommand in CreateJoinCommands(channels))
                 {
-                    writer.WriteLine(joinCommand);
+                    WriteLine(writer, joinCommand);
+                }
+
+                lock (_syncRoot)
+                {
+                    if (generation == _connectionGeneration && ReferenceEquals(_writer, writer))
+                    {
+                        _joinedChannels = channels.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    }
                 }
 
                 _isConnected = true;
-                StatusChanged?.Invoke(this, $"Conectado a {channels.Length} canal(is)");
+                StatusChanged?.Invoke(this, "Conectado");
             }
             catch
             {
                 CloseConnection(generation);
                 throw;
+            }
+        }
+        finally
+        {
+            _connectLock.Release();
+        }
+    }
+
+    public async Task UpdateChannelsAsync(IEnumerable<string> channelNames, CancellationToken cancellationToken)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(TwitchChatClient));
+        }
+
+        var desiredChannels = channelNames
+            .Select(NormalizeChannel)
+            .Where(channel => !string.IsNullOrWhiteSpace(channel))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        await _connectLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            StreamWriter? writer;
+            HashSet<string> currentChannels;
+            lock (_syncRoot)
+            {
+                if (!_isConnected || _writer is null)
+                {
+                    return;
+                }
+
+                writer = _writer;
+                currentChannels = new HashSet<string>(_joinedChannels, StringComparer.OrdinalIgnoreCase);
+            }
+
+            foreach (var channel in currentChannels.Except(desiredChannels, StringComparer.OrdinalIgnoreCase))
+            {
+                WriteLine(writer, $"PART #{channel}");
+            }
+
+            var channelsToJoin = desiredChannels.Except(currentChannels, StringComparer.OrdinalIgnoreCase).ToArray();
+            foreach (var joinCommand in CreateJoinCommands(channelsToJoin))
+            {
+                WriteLine(writer, joinCommand);
+            }
+
+            lock (_syncRoot)
+            {
+                if (_isConnected && ReferenceEquals(_writer, writer))
+                {
+                    _joinedChannels = desiredChannels;
+                }
+            }
+
+            if (channelsToJoin.Length > 0 ||
+                currentChannels.Except(desiredChannels, StringComparer.OrdinalIgnoreCase).Any())
+            {
+                StatusChanged?.Invoke(this, "Conectado");
             }
         }
         finally
@@ -225,6 +294,7 @@ public sealed class TwitchChatClient : IDisposable
             _tcpClient = null;
             _connectionCts = null;
             _isConnected = false;
+            _joinedChannels.Clear();
         }
 
         connectionCts?.Cancel();
@@ -263,7 +333,7 @@ public sealed class TwitchChatClient : IDisposable
 
                 if (line.StartsWith("PING ", StringComparison.OrdinalIgnoreCase))
                 {
-                    writer.WriteLine($"PONG {line[5..]}");
+                    WriteLine(writer, $"PONG {line[5..]}");
                     continue;
                 }
 
@@ -370,6 +440,14 @@ public sealed class TwitchChatClient : IDisposable
         finally
         {
             CloseConnection(generation);
+        }
+    }
+
+    private static void WriteLine(StreamWriter writer, string line)
+    {
+        lock (writer)
+        {
+            writer.WriteLine(line);
         }
     }
 

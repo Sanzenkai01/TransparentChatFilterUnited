@@ -9,8 +9,8 @@
         Title="TransparentChatFilterUnited"
         Icon="icon.ico"
         Width="460"
-        Height="620"
-        MinWidth="340"
+        Height="580"
+        MinWidth="440"
         MinHeight="280"
         WindowStyle="None"
         ResizeMode="CanResize"
@@ -45,6 +45,12 @@
                 <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
         </DataTemplate>
+        <DataTemplate x:Key="CenteredCategoryButtonContent">
+            <TextBlock Text="{Binding}"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"/>
+        </DataTemplate>
         <DropShadowEffect x:Key="ChatTextOutline" Color="#000000" BlurRadius="3" ShadowDepth="1" Direction="315" Opacity="0.95"/>
         <Style TargetType="{x:Type Button}">
             <Setter Property="Foreground" Value="#EAF2FF"/>
@@ -63,7 +69,18 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="7"
-                                SnapsToDevicePixels="True">
+                                SnapsToDevicePixels="True"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="ChromeTransform"/>
+                            </Border.RenderTransform>
+                            <Border.Effect>
+                                <DropShadowEffect x:Name="ChromeGlow"
+                                                  Color="#A970FF"
+                                                  BlurRadius="0"
+                                                  ShadowDepth="0"
+                                                  Opacity="0"/>
+                            </Border.Effect>
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                               Margin="{TemplateBinding Padding}"
@@ -73,6 +90,42 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Chrome" Property="Background" Value="#30425D"/>
                                 <Setter TargetName="Chrome" Property="BorderBrush" Value="#62799B"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ChromeGlow"
+                                                             Storyboard.TargetProperty="BlurRadius"
+                                                             To="12"
+                                                             Duration="0:0:0.16"/>
+                                            <DoubleAnimation Storyboard.TargetName="ChromeGlow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0.28"
+                                                             Duration="0:0:0.16"/>
+                                            <DoubleAnimation Storyboard.TargetName="ChromeTransform"
+                                                             Storyboard.TargetProperty="Y"
+                                                             To="-1"
+                                                             Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ChromeGlow"
+                                                             Storyboard.TargetProperty="BlurRadius"
+                                                             To="0"
+                                                             Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="ChromeGlow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0"
+                                                             Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="ChromeTransform"
+                                                             Storyboard.TargetProperty="Y"
+                                                             To="0"
+                                                             Duration="0:0:0.14"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Chrome" Property="Background" Value="#392D56"/>
@@ -103,7 +156,18 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="7">
+                                CornerRadius="7"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="ToggleChromeTransform"/>
+                            </Border.RenderTransform>
+                            <Border.Effect>
+                                <DropShadowEffect x:Name="ToggleChromeGlow"
+                                                  Color="#A970FF"
+                                                  BlurRadius="0"
+                                                  ShadowDepth="0"
+                                                  Opacity="0"/>
+                            </Border.Effect>
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                               Margin="{TemplateBinding Padding}"/>
@@ -112,6 +176,42 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Chrome" Property="Background" Value="#30425D"/>
                                 <Setter TargetName="Chrome" Property="BorderBrush" Value="#62799B"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeGlow"
+                                                             Storyboard.TargetProperty="BlurRadius"
+                                                             To="12"
+                                                             Duration="0:0:0.16"/>
+                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeGlow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0.28"
+                                                             Duration="0:0:0.16"/>
+                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeTransform"
+                                                             Storyboard.TargetProperty="Y"
+                                                             To="-1"
+                                                             Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeGlow"
+                                                             Storyboard.TargetProperty="BlurRadius"
+                                                             To="0"
+                                                             Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeGlow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0"
+                                                             Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeTransform"
+                                                             Storyboard.TargetProperty="Y"
+                                                             To="0"
+                                                             Duration="0:0:0.14"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Chrome" Property="Background" Value="#382954"/>
@@ -249,19 +349,34 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ComboBox}">
-                        <Grid>
+                        <Grid PreviewMouseLeftButtonDown="ComboBoxSurface_PreviewMouseLeftButtonDown">
                             <Border x:Name="ComboChrome"
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="5"/>
-                            <ContentPresenter Margin="9,0,32,0"
+                            <ContentPresenter x:Name="SelectionBoxPresenter"
+                                              Margin="9,0,32,0"
                                               VerticalAlignment="Center"
                                               HorizontalAlignment="Left"
                                               Content="{TemplateBinding SelectionBoxItem}"
                                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                               ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                                               IsHitTestVisible="False"/>
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Margin="9,0,32,0"
+                                     Padding="0"
+                                     VerticalContentAlignment="Center"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     CaretBrush="#EFF5FF"
+                                     SelectionBrush="#A970FF"
+                                     IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}"
+                                     MaxLength="{Binding MaxLength, RelativeSource={RelativeSource TemplatedParent}}"
+                                     Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, UpdateSourceTrigger=PropertyChanged}"
+                                     TextChanged="MainChannelTextBox_TextChanged"
+                                     Visibility="Collapsed"/>
                             <ToggleButton Focusable="False"
                                           ClickMode="Press"
                                           IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
@@ -281,13 +396,20 @@
                                         BorderBrush="#34445B"
                                         BorderThickness="1"
                                         CornerRadius="5">
-                                    <ScrollViewer MaxHeight="220" CanContentScroll="True">
-                                        <ItemsPresenter/>
-                                    </ScrollViewer>
+                                    <Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                        <ScrollViewer MaxHeight="220" CanContentScroll="True">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Grid>
                                 </Border>
                             </Popup>
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter TargetName="ComboChrome" Property="Background" Value="#0E1724"/>
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SelectionBoxPresenter" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="ComboChrome" Property="BorderBrush" Value="#A970FF"/>
                             </Trigger>
@@ -421,7 +543,6 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
                         <Button x:Name="SettingsButton" Content="⚙" Width="34" Height="28" Padding="4,2" Margin="0,0,5,0" ToolTip="Configurações" Click="ToggleSettingsButton_Click"/>
-                        <Button Content="{Binding ConnectButtonText}" Width="82" Height="28" Padding="6,4" ToolTip="Conectar ou desconectar a Twitch" Click="ConnectButton_Click"/>
                         <ToggleButton x:Name="QuickTransparencyToggle"
                                       Content="◉"
                                       Width="34"
@@ -467,6 +588,37 @@
                         </Grid>
                     </Border>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <Ellipse Width="7"
+                                 Height="7"
+                                 Margin="0,0,6,0"
+                                 VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="{x:Type Ellipse}">
+                                    <Setter Property="Fill" Value="#748095"/>
+                                    <Setter Property="Opacity" Value="0.7"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                            <Setter Property="Fill" Value="#7EE0A1"/>
+                                            <Setter Property="Opacity" Value="1"/>
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard x:Name="ConnectionPulse">
+                                                    <Storyboard RepeatBehavior="Forever">
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         From="1"
+                                                                         To="0.45"
+                                                                         Duration="0:0:0.9"
+                                                                         AutoReverse="True"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <StopStoryboard BeginStoryboardName="ConnectionPulse"/>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
                         <TextBlock Text="{Binding ConnectionStatus}"
                                    VerticalAlignment="Center"
                                    Foreground="#E5F0FF"
@@ -722,6 +874,22 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
+                    <Border Grid.Row="0"
+                            Grid.ColumnSpan="2"
+                            Height="1"
+                            Margin="12,0"
+                            VerticalAlignment="Top"
+                            IsHitTestVisible="False"
+                            Panel.ZIndex="6">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#00A970FF" Offset="0"/>
+                                <GradientStop Color="#A970FF" Offset="0.5"/>
+                                <GradientStop Color="#00A970FF" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+
                     <Thumb Grid.RowSpan="2"
                            Grid.ColumnSpan="2"
                            Panel.ZIndex="5"
@@ -793,12 +961,36 @@
                     </Border>
 
                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="TWITCH" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="4,4,0,6"/>
-                        <Button x:Name="ChatPreferencesButton" Content="Chat e filtros" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Background="#302544" BorderBrush="#8054C5" Foreground="#F1E8FF" Margin="0,0,0,4" Click="ChatPreferencesButton_Click"/>
-                        <Button x:Name="ConnectionsPreferencesButton" Content="Conexões" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,10" Click="ConnectionsPreferencesButton_Click"/>
-                        <TextBlock Text="GERAL" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" Margin="4,0,0,6"/>
-                        <Button x:Name="WidgetsPreferencesButton" Content="Widgets" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,4" Click="WidgetsPreferencesButton_Click"/>
-                        <Button x:Name="AboutPreferencesButton" Content="Sobre" HorizontalContentAlignment="Left" Height="28" Padding="6,3" Margin="0,0,0,4" Click="AboutPreferencesButton_Click"/>
+                        <Grid Margin="4,4,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="TWITCH" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}"/>
+                            <Border Grid.Column="1"
+                                    Height="1"
+                                    Margin="8,0,4,0"
+                                    VerticalAlignment="Center"
+                                    Background="{StaticResource SurfaceHoverBrush}"
+                                    Opacity="0.8"/>
+                        </Grid>
+                        <Button x:Name="ChatPreferencesButton" Content="Chat e filtros" ContentTemplate="{StaticResource CenteredCategoryButtonContent}" HorizontalContentAlignment="Stretch" Height="28" Padding="6,3" Background="#302544" BorderBrush="#8054C5" Foreground="#F1E8FF" Margin="0,0,0,4" Click="ChatPreferencesButton_Click"/>
+                        <Button x:Name="ConnectionsPreferencesButton" Content="Conexões" ContentTemplate="{StaticResource CenteredCategoryButtonContent}" HorizontalContentAlignment="Stretch" Height="28" Padding="6,3" Margin="0,0,0,10" Click="ConnectionsPreferencesButton_Click"/>
+                        <Grid Margin="4,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="GERAL" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}"/>
+                            <Border Grid.Column="1"
+                                    Height="1"
+                                    Margin="8,0,4,0"
+                                    VerticalAlignment="Center"
+                                    Background="{StaticResource SurfaceHoverBrush}"
+                                    Opacity="0.8"/>
+                        </Grid>
+                        <Button x:Name="WidgetsPreferencesButton" Content="Widgets" ContentTemplate="{StaticResource CenteredCategoryButtonContent}" HorizontalContentAlignment="Stretch" Height="28" Padding="6,3" Margin="0,0,0,4" Click="WidgetsPreferencesButton_Click"/>
+                        <Button x:Name="AboutPreferencesButton" Content="Sobre" ContentTemplate="{StaticResource CenteredCategoryButtonContent}" HorizontalContentAlignment="Stretch" Height="28" Padding="6,3" Margin="0,0,0,4" Click="AboutPreferencesButton_Click"/>
                     </StackPanel>
 
                     <Grid Grid.Row="1" Grid.Column="1">
@@ -842,8 +1034,16 @@
                                 <ColumnDefinition Width="1*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Text="{Binding MainChannel, UpdateSourceTrigger=PropertyChanged}" VerticalContentAlignment="Center" Height="30" Margin="0,0,8,0" TextChanged="SaveTextPreference_Changed"/>
-                            <Button Grid.Column="1" Content="Conectar" Width="90" Click="ApplyChannelButton_Click"/>
+                            <ComboBox x:Name="MainChannelComboBox"
+                                      ItemsSource="{Binding RecentChannels}"
+                                      IsEditable="True"
+                                      IsTextSearchEnabled="False"
+                                      Text="{Binding MainChannel, UpdateSourceTrigger=PropertyChanged}"
+                                      VerticalContentAlignment="Center"
+                                      Height="30"
+                                      Margin="0,0,8,0"
+                                      SelectionChanged="RecentChannelsComboBox_SelectionChanged"/>
+                            <Button Grid.Column="1" Content="{Binding ConnectButtonText}" Width="112" Click="ConnectButton_Click"/>
                         </Grid>
 
                         <StackPanel x:Name="AuthenticatedFilterControls">
@@ -852,6 +1052,11 @@
                                 <ComboBoxItem Content="Meu Chat"/>
                                 <ComboBoxItem Content="Chat Unido"/>
                             </ComboBox>
+                            <TextBlock Text="Meu Chat mostra apenas o canal principal.&#10;Chat Unido mostra o canal principal e os canais adicionais; os canais ignorados continuam excluídos."
+                                       TextWrapping="Wrap"
+                                       FontSize="10"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       Margin="0,0,0,10"/>
                             <CheckBox x:Name="DimOtherChannelsCheckBox"
                                       Content="Deixar mensagens de outros canais mais transparentes"
                                       IsChecked="{Binding DimOtherChannelMessages}"
@@ -861,7 +1066,7 @@
                                       ToolTip="Mantém as mensagens no chat com 50% de opacidade. Disponível enquanto conectado pelo IRC."/>
 
                             <TextBlock Text="Canais adicionais para unir · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                            <TextBox Text="{Binding SelectedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
+                            <TextBox x:Name="SelectedChannelsTextBox" Text="{Binding SelectedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
 
                             <TextBlock Text="Ignorar mensagens destes canais · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
                             <TextBox Text="{Binding BlockedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,10" TextChanged="SaveTextPreference_Changed"/>
@@ -870,10 +1075,8 @@
                             <TextBox Text="{Binding BlockedUsersText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
 
                             <CheckBox Content="Ocultar comandos que começam com !" IsChecked="{Binding HideCommands}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                            <Button Content="Aplicar filtro e conectar canais" HorizontalAlignment="Left" Margin="0,3,0,0" Click="ApplyChannelButton_Click"/>
-                            <TextBlock Text="Meu Chat mostra apenas o canal principal. Chat Unido mostra o canal principal e os canais adicionais; os canais ignorados continuam excluídos. Reconecte após alterar os canais." TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedTextBrush}" Margin="0,10,0,0"/>
                         </StackPanel>
-                        <TextBlock Text="Ignorar mensagens que contenham estes termos" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,12,0,5"/>
+                        <TextBlock Text="Ignorar mensagens que contenham estes termos · separados por vírgula ou linha" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,12,0,5"/>
                         <TextBox Text="{Binding BlockedTermsText, UpdateSourceTrigger=PropertyChanged}" Height="48" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
                         <TextBlock Text="Destacar termos no chat · separados por vírgula ou linha" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,2,0,5"/>
                         <TextBox Text="{Binding HighlightTermsText, UpdateSourceTrigger=PropertyChanged}" Height="48" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,6" TextChanged="SaveTextPreference_Changed"/>
@@ -884,14 +1087,14 @@
                         <ScrollViewer x:Name="ConnectionsPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <TextBlock Text="CONEXÕES" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3"/>
-                                <TextBlock Text="As mensagens públicas são integradas ao mesmo feed do aplicativo. O IRC autenticado oferece leitura estruturada e filtros de canal mais precisos." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,10"/>
+                                <TextBlock Text="Veja abaixo quais filtros estão disponíveis em cada método de conexão." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,10"/>
                                 <TextBlock Text="Método de conexão" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,0,0,5"/>
                                 <ComboBox x:Name="ConnectionModeComboBox" SelectionChanged="ConnectionModeComboBox_SelectionChanged" Margin="0,0,0,8">
                                     <ComboBoxItem Content="Chat público · sem autorização"/>
                                     <ComboBoxItem Content="IRC autenticado · filtros avançados"/>
                                 </ComboBox>
                                 <TextBlock x:Name="ConnectionModeDescription"
-                                           Text="Carrega o chat público da Twitch. Os filtros locais por mensagens e canais não se aplicam neste modo."
+                                           Text="Chat público: não requer autorização e mostra apenas o canal selecionado. Os filtros avançados por canais e usuários são exclusivos do IRC."
                                            TextWrapping="Wrap"
                                            Foreground="{StaticResource MutedTextBrush}"
                                            Margin="0,0,0,10"/>
@@ -913,11 +1116,7 @@
                                         <TextBlock Text="{Binding ConnectionStatus}" Foreground="#B88BFF" Margin="0,5,0,0"/>
                                     </StackPanel>
                                 </Border>
-                                <WrapPanel>
-                                    <Button Content="Conectar / reconectar" Margin="0,0,8,8" Click="ConnectButton_Click"/>
-                                    <Button Content="Desconectar" Margin="0,0,8,8" Click="DisconnectButton_Click"/>
-                                    <Button Content="Diagnóstico" Margin="0,0,8,8" Click="ShowDiagnosticButton_Click"/>
-                                </WrapPanel>
+                                <Button Content="Diagnóstico" HorizontalAlignment="Left" Margin="0,0,8,8" Click="ShowDiagnosticButton_Click"/>
                                 <TextBlock x:Name="TwitchAuthorizationHelp" Text="O acesso é somente leitura (chat:read), usa conexão criptografada e fica protegido pela conta Windows. O app nunca envia mensagens no chat." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
                             </StackPanel>
                         </ScrollViewer>
@@ -947,7 +1146,6 @@
                                 <Slider Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
                                         Value="{Binding NotificationVolumePercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         ValueChanged="NotificationVolumeSlider_ValueChanged"/>
-                                <Button Content="Ocultar overlay" HorizontalAlignment="Left" Margin="0,0,0,8" Click="ToggleOverlayButton_Click"/>
                                 <TextBlock Text="{Binding FontSize, StringFormat=Fonte do chat: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
                                 <Slider Minimum="10" Maximum="32" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="FontSizeSlider_ValueChanged"/>
                                 <TextBlock Text="Opacidade do fundo" Foreground="#D7E5FF" Margin="0,10,0,6"/>
@@ -984,7 +1182,6 @@
                                     <Border x:Name="MessageBackgroundColorPreviewDot" Width="12" Height="12" CornerRadius="6" BorderBrush="#9EADC2" BorderThickness="1" Margin="0,0,6,0"/>
                                     <TextBlock x:Name="MessageBackgroundColorPreviewText" Foreground="{StaticResource MutedTextBrush}" FontSize="10"/>
                                 </StackPanel>
-                                <TextBlock Text="As alterações são guardadas automaticamente." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
                             </StackPanel>
                         </ScrollViewer>
 

@@ -28,6 +28,8 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     {
         _settings = settings;
         Messages = new ObservableCollection<ChatRowView>();
+        RecentChannels = new ObservableCollection<string>(
+            settings.RecentChannels ?? Array.Empty<string>());
         MainChannel = settings.MainChannel;
         ConnectionStatus = "Desconectado";
         SelectedChannelsText = string.Join(", ", settings.SelectedChannels);
@@ -55,6 +57,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<ChatRowView> Messages { get; }
+    public ObservableCollection<string> RecentChannels { get; }
 
     public AppSettings Settings => _settings;
 
@@ -620,6 +623,7 @@ public partial class MainWindow : Window
     private bool _cursorOverResizeEdge;
     private readonly DispatcherTimer _windowPositionSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private readonly DispatcherTimer _settingsSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
+    private readonly DispatcherTimer _channelUpdateTimer = new() { Interval = TimeSpan.FromMilliseconds(450) };
     private readonly DispatcherTimer _chatOnlyHitTestTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private readonly DispatcherTimer _chatOnlyGearHoldTimer = new() { Interval = TimeSpan.FromMilliseconds(5) };
     private readonly DispatcherTimer _suppressGearClickTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
@@ -638,6 +642,7 @@ public partial class MainWindow : Window
     private bool _popoutNavigationHandlerRegistered;
     private bool _twitchCaptureScriptRegistered;
     private bool _twitchPublicChatActive;
+    private bool _channelUpdatePending;
     private int _connectionModeChangeVersion;
     private long _lastMessageNotificationSoundTimestamp;
     private const string TwitchCaptureScript = """
@@ -831,11 +836,13 @@ public partial class MainWindow : Window
         _settings.IsTransparent = false;
         DataContext = new OverlayViewModel(_settings);
         InitializeComponent();
+        MainChannelComboBox.ItemsSource = ViewModel.RecentChannels;
         AppVersionText.Text = $"Versão {GetType().Assembly.GetName().Version?.ToString(3) ?? "desconhecida"}";
         UpdateColorPreview(AccentColorInput.Text, AccentColorPreviewDot, AccentColorPreviewText);
         UpdateColorPreview(MessageBackgroundColorInput.Text, MessageBackgroundColorPreviewDot, MessageBackgroundColorPreviewText);
         RestoreWindowPosition();
         _windowPositionSaveTimer.Tick += WindowPositionSaveTimer_Tick;
+        _channelUpdateTimer.Tick += ChannelUpdateTimer_Tick;
         _settingsSaveTimer.Tick += (_, _) =>
         {
             _settingsSaveTimer.Stop();
@@ -1122,11 +1129,6 @@ public partial class MainWindow : Window
         await ConnectAsync();
     }
 
-    private void ToggleOverlayButton_Click(object sender, RoutedEventArgs e)
-    {
-        Visibility = Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
-    }
-
     private void ToggleSettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ToggleSettingsPopup(!SettingsPopup.IsOpen);
@@ -1258,24 +1260,22 @@ public partial class MainWindow : Window
         activeButton.Background = new SolidColorBrush(Color.FromRgb(48, 37, 68));
         activeButton.BorderBrush = new SolidColorBrush(Color.FromRgb(128, 84, 197));
         activeButton.Foreground = new SolidColorBrush(Color.FromRgb(241, 232, 255));
+        var transition = new TranslateTransform(0, 7);
+        page.RenderTransform = transition;
+        page.Opacity = 0;
         page.UpdateLayout();
+        page.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+        transition.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(7, 0, TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
         if (page is ScrollViewer scrollViewer)
         {
             scrollViewer.ScrollToTop();
         }
-    }
-
-    private void DisconnectButton_Click(object sender, RoutedEventArgs e)
-    {
-        _twitchPublicChatActive = false;
-        _chatClient.Disconnect();
-        TwitchPopoutView.CoreWebView2?.Stop();
-        TwitchPopoutView.Visibility = Visibility.Collapsed;
-        RefreshChatPanels();
-        UpdateChatOnlyControlsVisibility();
-        SetConnected(false);
-        ViewModel.ConnectionStatus = "Desconectado";
-        ViewModel.SaveSettings();
     }
 
     private void SavePreferences_Changed(object sender, RoutedEventArgs e)
@@ -1315,6 +1315,20 @@ public partial class MainWindow : Window
         _ = PlayNotificationSoundAsync(selectedSound, _settings.NotificationVolumePercent);
     }
 
+    private void ComboBoxSurface_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not Grid grid ||
+            grid.TemplatedParent is not ComboBox comboBox ||
+            e.GetPosition(grid).X >= grid.ActualWidth - 28)
+        {
+            return;
+        }
+
+        comboBox.Focus();
+        comboBox.IsDropDownOpen = true;
+        e.Handled = true;
+    }
+
     private void NotificationSoundPreviewButton_Click(object sender, RoutedEventArgs e)
     {
         if (NotificationSoundComboBox.SelectedIndex >= 0 &&
@@ -1352,7 +1366,113 @@ public partial class MainWindow : Window
         {
             RefreshMessageFeed();
             QueueSettingsSave();
+            if (ReferenceEquals(sender, SelectedChannelsTextBox))
+            {
+                ScheduleChannelUpdate();
+            }
         }
+    }
+
+    private void RecentChannelsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (MainChannelComboBox.SelectedItem is string channel)
+        {
+            ViewModel.MainChannel = channel;
+            ScheduleChannelUpdate();
+            QueueSettingsSave();
+        }
+    }
+
+    private void MainChannelTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!IsInitialized)
+        {
+            return;
+        }
+
+        RefreshMessageFeed();
+        QueueSettingsSave();
+        ScheduleChannelUpdate();
+    }
+
+    private void ScheduleChannelUpdate()
+    {
+        _channelUpdatePending = true;
+        _channelUpdateTimer.Stop();
+        _channelUpdateTimer.Start();
+    }
+
+    private async void ChannelUpdateTimer_Tick(object? sender, EventArgs e)
+    {
+        _channelUpdateTimer.Stop();
+        if (Volatile.Read(ref _connectInProgress) != 0)
+        {
+            _channelUpdatePending = true;
+            return;
+        }
+
+        _channelUpdatePending = false;
+        if (!_twitchConnectionActive)
+        {
+            return;
+        }
+
+        try
+        {
+            if (_settings.ConnectionMode == ChatConnectionMode.PublicPopout)
+            {
+                var channel = NormalizeChannel(ViewModel.MainChannel);
+                if (string.IsNullOrWhiteSpace(channel))
+                {
+                    return;
+                }
+
+                await ShowTwitchPopoutAsync(channel);
+                RefreshChatPanels();
+                UpdateChatOnlyControlsVisibility();
+                ViewModel.ConnectionStatus = "Conectado";
+                RememberRecentChannel(channel);
+            }
+            else
+            {
+                await _chatClient.UpdateChannelsAsync(GetChannelsToJoin(_settings), _lifetimeCts.Token);
+                RefreshMessageFeed();
+            }
+
+            ViewModel.SaveSettings();
+        }
+        catch (OperationCanceledException) when (_lifetimeCts.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (
+            ex is IOException or InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível atualizar os canais automaticamente: {ex.Message}");
+        }
+    }
+
+    private void RememberRecentChannel(string channel)
+    {
+        var normalized = NormalizeChannel(channel);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return;
+        }
+
+        var previous = ViewModel.RecentChannels.FirstOrDefault(
+            item => string.Equals(item, normalized, StringComparison.OrdinalIgnoreCase));
+        if (previous is not null)
+        {
+            ViewModel.RecentChannels.Remove(previous);
+        }
+
+        ViewModel.RecentChannels.Insert(0, normalized);
+        while (ViewModel.RecentChannels.Count > 10)
+        {
+            ViewModel.RecentChannels.RemoveAt(ViewModel.RecentChannels.Count - 1);
+        }
+
+        _settings.RecentChannels = ViewModel.RecentChannels.ToArray();
     }
 
     private void QueueSettingsSave()
@@ -1662,7 +1782,7 @@ public partial class MainWindow : Window
         SetConnected(false);
         RefreshChatPanels();
         UpdateChatOnlyControlsVisibility();
-        ViewModel.ConnectionStatus = _twitchPublicChatActive ? "Chat público da Twitch" : "Desconectado";
+        ViewModel.ConnectionStatus = _twitchPublicChatActive ? "Conectado" : "Desconectado";
     }
 
     private void ExitChatOnlyButton_Click(object sender, RoutedEventArgs e)
@@ -1872,12 +1992,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void ApplyChannelButton_Click(object sender, RoutedEventArgs e)
-    {
-        await ConnectAsync();
-    }
-
-    private async void FilterModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void FilterModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var comboBox = (ComboBox)sender;
         if (comboBox.SelectedIndex < 0)
@@ -1889,11 +2004,10 @@ public partial class MainWindow : Window
         _sharedChatFilterWarningShown = false;
         RefreshMessageFeed();
         ViewModel.SaveSettings();
-
-        if (_twitchConnectionActive && _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc)
+        if (_twitchConnectionActive &&
+            _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc)
         {
-            ViewModel.ConnectionStatus = "Atualizando canais do filtro...";
-            await ConnectAsync(allowAuthorization: false);
+            ScheduleChannelUpdate();
         }
     }
 
@@ -1983,16 +2097,18 @@ public partial class MainWindow : Window
     private void UpdateConnectionModeUi()
     {
         var ircMode = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc;
-        var filtersAvailable = ircMode && _twitchCredentials is not null;
-        DimOtherChannelsCheckBox.Visibility = ircMode && _twitchConnectionActive
+        var ircConnected = ircMode && _twitchConnectionActive && _chatClient.IsConnected;
+        DimOtherChannelsCheckBox.Visibility = ircConnected
             ? Visibility.Visible
             : Visibility.Collapsed;
         ConnectionModeDescription.Text = ircMode
-            ? "Usa conexão IRC autenticada para obter mensagens estruturadas e aplicar os filtros de canal, usuário e comandos."
-            : "Mostra as mensagens do chat público da Twitch no feed, sem autorização. Os filtros Meu Chat e Chat Unido também se aplicam.";
+            ? "IRC autenticado: requer autorização da Twitch. Só neste modo estão disponíveis Chat Unido e canais adicionais, ignorar mensagens por canal ou usuário, ocultar comandos e diminuir a opacidade de outros canais. Filtros de termos e personalização visual funcionam nos dois modos."
+            : "Chat público: não requer autorização e mostra apenas o canal selecionado. Filtros de termos e personalização visual continuam disponíveis; Chat Unido, canais adicionais, ignorar mensagens por canal ou usuário, ocultar comandos e opacidade por canal são exclusivos do IRC.";
         ChatFilterModeInfo.Visibility = Visibility.Collapsed;
-        AuthenticatedFilterControls.Visibility = filtersAvailable ? Visibility.Visible : Visibility.Collapsed;
-        FilterAuthenticationPrompt.Visibility = filtersAvailable ? Visibility.Collapsed : Visibility.Visible;
+        AuthenticatedFilterControls.Visibility = ircConnected ? Visibility.Visible : Visibility.Collapsed;
+        FilterAuthenticationPrompt.Visibility = ircMode && !ircConnected
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         TwitchAuthorizationPanel.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;
         TwitchAuthorizationHelp.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -2511,8 +2627,9 @@ public partial class MainWindow : Window
                 RefreshChatPanels();
                 UpdateChatOnlyControlsVisibility();
                 SetConnected(true);
-                viewModel.ConnectionStatus = $"Chat público · #{channel}";
+                viewModel.ConnectionStatus = "Conectado";
                 viewModel.UpdateDiagnostic($"Chat público da Twitch aberto para #{channel}; as mensagens são integradas ao feed do aplicativo.");
+                RememberRecentChannel(channel);
                 _settings.Save();
                 return;
             }
@@ -2554,8 +2671,9 @@ public partial class MainWindow : Window
             SetConnected(false);
             await _chatClient.ConnectAsync(channels, credentials.Username, credentials.AccessToken, _lifetimeCts.Token);
             SetConnected(true);
-            viewModel.ConnectionStatus = $"Conectado · {channels.Count} canal(is)";
+            viewModel.ConnectionStatus = "Conectado";
             viewModel.UpdateDiagnostic($"Conectado a: {string.Join(", ", channels.Select(channel => $"#{channel}"))}. O filtro de canais, usuários e comandos está ativo.");
+            RememberRecentChannel(viewModel.MainChannel);
             _settings.Save();
             TwitchAuthorizationStatus.Text = $"Autorizado como @{credentials.Username}.";
             TwitchDeviceCodeText.Visibility = Visibility.Collapsed;
@@ -2588,6 +2706,11 @@ public partial class MainWindow : Window
             _authorizationCts = null;
             TwitchCancelAuthorizationButton.Visibility = Visibility.Collapsed;
             Interlocked.Exchange(ref _connectInProgress, 0);
+            if (_channelUpdatePending)
+            {
+                _channelUpdatePending = false;
+                _channelUpdateTimer.Start();
+            }
         }
     }
 
@@ -2763,18 +2886,20 @@ public partial class MainWindow : Window
         var main = NormalizeChannel(settings.MainChannel);
         var selected = settings.SelectedChannels.Select(NormalizeChannel).Where(x => !string.IsNullOrEmpty(x)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var blocked = settings.BlockedChannels.Select(NormalizeChannel).Where(x => !string.IsNullOrEmpty(x)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var ircFiltersEnabled = settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc;
         var blockedUsers = settings.BlockedUsers
             .Select(user => user.Trim().TrimStart('@').ToLowerInvariant())
             .Where(user => !string.IsNullOrEmpty(user))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        if (blockedUsers.Contains(message.LoginName.Trim().TrimStart('@')) ||
-            blockedUsers.Contains(message.DisplayName.Trim().TrimStart('@')))
+        if (ircFiltersEnabled &&
+            (blockedUsers.Contains(message.LoginName.Trim().TrimStart('@')) ||
+             blockedUsers.Contains(message.DisplayName.Trim().TrimStart('@'))))
         {
             return false;
         }
 
-        if (settings.HideCommands && message.Message.TrimStart().StartsWith('!'))
+        if (ircFiltersEnabled && settings.HideCommands && message.Message.TrimStart().StartsWith('!'))
         {
             return false;
         }
@@ -2797,7 +2922,7 @@ public partial class MainWindow : Window
             return false;
         }
 
-        if (blocked.Contains(origin))
+        if (ircFiltersEnabled && blocked.Contains(origin))
         {
             return false;
         }
