@@ -2097,16 +2097,18 @@ public partial class MainWindow : Window
     private void UpdateConnectionModeUi()
     {
         var ircMode = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc;
-        var ircConnected = ircMode && _twitchConnectionActive && _chatClient.IsConnected;
-        DimOtherChannelsCheckBox.Visibility = ircConnected
+        var hasTwitchAuthorization = ircMode && _twitchCredentials is not null;
+        DimOtherChannelsCheckBox.Visibility = hasTwitchAuthorization
             ? Visibility.Visible
             : Visibility.Collapsed;
         ConnectionModeDescription.Text = ircMode
             ? "IRC autenticado: requer autorização da Twitch. Só neste modo estão disponíveis Chat Unido e canais adicionais, ignorar mensagens por canal ou usuário, ocultar comandos e diminuir a opacidade de outros canais. Filtros de termos e personalização visual funcionam nos dois modos."
             : "Chat público: não requer autorização e mostra apenas o canal selecionado. Filtros de termos e personalização visual continuam disponíveis; Chat Unido, canais adicionais, ignorar mensagens por canal ou usuário, ocultar comandos e opacidade por canal são exclusivos do IRC.";
         ChatFilterModeInfo.Visibility = Visibility.Collapsed;
-        AuthenticatedFilterControls.Visibility = ircConnected ? Visibility.Visible : Visibility.Collapsed;
-        FilterAuthenticationPrompt.Visibility = ircMode && !ircConnected
+        AuthenticatedFilterControls.Visibility = hasTwitchAuthorization
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        FilterAuthenticationPrompt.Visibility = ircMode && !hasTwitchAuthorization
             ? Visibility.Visible
             : Visibility.Collapsed;
         TwitchAuthorizationPanel.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;

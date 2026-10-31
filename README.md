@@ -21,11 +21,11 @@ Como usar:
 
 O programa verifica as atualizações ao iniciar. Quando uma nova versão estiver disponível, ele pedirá confirmação, baixará o pacote da release oficial no GitHub e reiniciará já atualizado.
 
-Para publicar uma versão, atualize a versão em `TransparentChatFilter.csproj`, crie e envie uma tag correspondente (por exemplo, `v1.1.3`). O GitHub Actions compilará o executável e publicará o ZIP usado pelo atualizador:
+Para publicar uma versão, atualize a versão em `TransparentChatFilter.csproj`, crie e envie uma tag correspondente (por exemplo, `v1.1.4`). O GitHub Actions compilará o executável e publicará o ZIP usado pelo atualizador:
 
 ```powershell
-git tag v1.1.3
-git push origin v1.1.3
+git tag v1.1.4
+git push origin v1.1.4
 ```
 
 Quem já usa uma versão anterior a `1.0.3` precisa baixar esta versão manualmente uma vez; as versões antigas não incluem o atualizador.
