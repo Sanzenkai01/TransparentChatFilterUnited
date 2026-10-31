@@ -62,6 +62,8 @@ public sealed class AppSettings
     public bool ShowSettingsPanel { get; set; } = true;
     public double BackgroundOpacity { get; set; } = 0.86;
     public double TextOpacity { get; set; } = 1.0;
+    public bool UseMessageBackgroundOpacity { get; set; }
+    public double MessageBackgroundOpacity { get; set; } = 0.75;
     public int FontSize { get; set; } = 14;
     public int MessageSpacing { get; set; } = 6;
     public int MaxVisibleMessages { get; set; } = 80;
@@ -120,6 +122,7 @@ public sealed class AppSettings
 
             settings.NotificationVolumePercent = Math.Clamp(settings.NotificationVolumePercent, 0, 100);
             settings.TextOpacity = Math.Clamp(settings.TextOpacity, 0.2, 1.0);
+            settings.MessageBackgroundOpacity = Math.Clamp(settings.MessageBackgroundOpacity, 0.1, 1.0);
             settings.MessageSpacing = Math.Clamp(settings.MessageSpacing, 0, 20);
             settings.BlockedTerms ??= string.Empty;
             settings.HighlightTerms ??= string.Empty;

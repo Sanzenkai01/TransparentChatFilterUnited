@@ -776,6 +776,19 @@
                                       VerticalAlignment="Stretch"
                                       DefaultBackgroundColor="Transparent"/>
                     </Grid>
+                    <Path Data="M 2,12 L 12,2 M 7,12 L 12,7"
+                          Stroke="#8B9AB0"
+                          StrokeThickness="1.5"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          Opacity="0.85"
+                          Width="14"
+                          Height="14"
+                          HorizontalAlignment="Right"
+                          VerticalAlignment="Bottom"
+                          Margin="0,0,5,5"
+                          IsHitTestVisible="False"
+                          ToolTip="Segure e arraste para redimensionar"/>
                 </Grid>
             </Border>
 
@@ -1201,6 +1214,19 @@
                                 <Slider Minimum="10" Maximum="32" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="FontSizeSlider_ValueChanged"/>
                                 <TextBlock Text="Opacidade do fundo" Foreground="#D7E5FF" Margin="0,10,0,6"/>
                                 <Slider Minimum="0.15" Maximum="1" Value="{Binding BackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="OpacitySlider_ValueChanged"/>
+                                <CheckBox Content="Aplicar opacidade ao fundo das mensagens"
+                                          IsChecked="{Binding UseMessageBackgroundOpacity, Mode=TwoWay}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,10,0,0"/>
+                                <TextBlock Text="{Binding MessageBackgroundOpacity, StringFormat=Opacidade do fundo das mensagens: {0:P0}}"
+                                           Foreground="#D7E5FF"
+                                           Margin="0,8,0,6"/>
+                                <Slider Minimum="0.1"
+                                        Maximum="1"
+                                        IsEnabled="{Binding UseMessageBackgroundOpacity}"
+                                        Value="{Binding MessageBackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        ValueChanged="AppearanceSlider_ValueChanged"/>
                                 <TextBlock Text="{Binding TextOpacity, StringFormat=Opacidade do texto: {0:P0}}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
                                 <Slider Minimum="0.2" Maximum="1" Value="{Binding TextOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
                                 <TextBlock Text="{Binding MessageSpacing, StringFormat=Espaçamento entre mensagens: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>

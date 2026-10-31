@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Version>1.1.4</Version>
+    <Version>1.1.5</Version>
     <AssemblyName>TransparentChatFilterUnited</AssemblyName>
     <AssemblyTitle>TransparentChatFilterUnited</AssemblyTitle>
     <Nullable>enable</Nullable>

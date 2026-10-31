@@ -233,6 +233,37 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool UseMessageBackgroundOpacity
+    {
+        get => _settings.UseMessageBackgroundOpacity;
+        set
+        {
+            if (_settings.UseMessageBackgroundOpacity == value)
+            {
+                return;
+            }
+
+            _settings.UseMessageBackgroundOpacity = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public double MessageBackgroundOpacity
+    {
+        get => Math.Clamp(_settings.MessageBackgroundOpacity, 0.1, 1.0);
+        set
+        {
+            var opacity = Math.Clamp(value, 0.1, 1.0);
+            if (Math.Abs(_settings.MessageBackgroundOpacity - opacity) < 0.001)
+            {
+                return;
+            }
+
+            _settings.MessageBackgroundOpacity = opacity;
+            OnPropertyChanged();
+        }
+    }
+
     public int MessageSpacing
     {
         get => Math.Clamp(_settings.MessageSpacing, 0, 20);
@@ -2989,8 +3020,12 @@ public partial class MainWindow : Window
     private static SolidColorBrush CreateMessageBackgroundBrush(AppSettings settings)
     {
         var color = ParseHexColor(settings.MessageBackgroundColor) ?? Color.FromRgb(22, 29, 44);
-        var opacity = settings.IsTransparent ? 184 : 255;
-        return new SolidColorBrush(Color.FromArgb((byte)opacity, color.R, color.G, color.B));
+        var baseAlpha = settings.IsTransparent ? 184 : 255;
+        var opacity = settings.UseMessageBackgroundOpacity
+            ? settings.MessageBackgroundOpacity
+            : 1.0;
+        var alpha = (byte)Math.Round(baseAlpha * opacity);
+        return new SolidColorBrush(Color.FromArgb(alpha, color.R, color.G, color.B));
     }
 
     private static bool IsOtherChannelMessage(ChatMessage message, AppSettings settings)
