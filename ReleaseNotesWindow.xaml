@@ -116,7 +116,7 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
                         Style="{StaticResource CloseButton}"
-                        Click="CloseButton_Click"
+                        Click="DismissButton_Click"
                         ToolTip="Fechar"/>
             </Grid>
             <StackPanel Grid.Row="1" Margin="0,18,0,16">
@@ -151,7 +151,7 @@
                 </Border>
                 <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,7,0,0">
                     <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  As novidades de cada versão são exibidas automaticamente uma única vez após a atualização."/>
+                        <Run Text="•  As novidades aparecem somente após uma atualização. Ao clicar em Entendi, não serão exibidas novamente até a próxima versão."/>
                     </TextBlock>
                 </Border>
             </StackPanel>
@@ -160,7 +160,7 @@
                     HorizontalAlignment="Right"
                     MinWidth="100"
                     Style="{StaticResource AcknowledgeButton}"
-                    Click="CloseButton_Click"/>
+                    Click="AcknowledgeButton_Click"/>
         </Grid>
     </Border>
 </Window>

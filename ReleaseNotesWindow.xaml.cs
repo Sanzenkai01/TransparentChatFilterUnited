@@ -28,8 +28,13 @@ public partial class ReleaseNotesWindow : Window
             });
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    private void DismissButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        DialogResult = false;
+    }
+
+    private void AcknowledgeButton_Click(object sender, RoutedEventArgs e)
+    {
+        DialogResult = true;
     }
 }

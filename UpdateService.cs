@@ -18,7 +18,12 @@ internal static class UpdateService
         "https://api.github.com/repos/Sanzenkai01/TransparentChatFilterUnited/releases/latest";
     private const long MaximumArchiveSize = 500 * 1024 * 1024;
     private const string UpdateScript = """
-        param([int]$ParentProcessId, [string]$ArchivePath, [string]$ExecutablePath)
+        param(
+            [int]$ParentProcessId,
+            [string]$ArchivePath,
+            [string]$ExecutablePath,
+            [string]$ReleaseNotesMarkerPath,
+            [string]$UpdatedVersion)
         $ErrorActionPreference = 'Stop'
         $updateId = [Guid]::NewGuid().ToString('N')
         $stagedPath = "$ExecutablePath.$updateId.tmp"
@@ -53,9 +58,17 @@ internal static class UpdateService
             }
 
             try {
+                [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($ReleaseNotesMarkerPath)) | Out-Null
+                [IO.File]::WriteAllText($ReleaseNotesMarkerPath, $UpdatedVersion, [Text.Encoding]::ASCII)
                 Start-Process -FilePath $ExecutablePath
             }
             catch {
+                try {
+                    [IO.File]::Delete($ReleaseNotesMarkerPath)
+                }
+                catch {
+                    Write-Warning "Nao foi possivel remover o marcador de novidades."
+                }
                 if ([IO.File]::Exists($ExecutablePath)) {
                     [IO.File]::Delete($ExecutablePath)
                 }
@@ -189,7 +202,7 @@ internal static class UpdateService
         }
     }
 
-    internal static void StartUpdate(string archivePath)
+    internal static void StartUpdate(string archivePath, Version updatedVersion)
     {
         var executablePath = Environment.ProcessPath
             ?? throw new InvalidOperationException("Não foi possível localizar o executável atual.");
@@ -220,6 +233,8 @@ internal static class UpdateService
         startInfo.ArgumentList.Add(Environment.ProcessId.ToString());
         startInfo.ArgumentList.Add(archivePath);
         startInfo.ArgumentList.Add(executablePath);
+        startInfo.ArgumentList.Add(AppSettings.PendingReleaseNotesPath);
+        startInfo.ArgumentList.Add(updatedVersion.ToString(3));
         try
         {
             if (Process.Start(startInfo) is null)

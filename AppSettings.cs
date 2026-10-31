@@ -78,6 +78,11 @@ public sealed class AppSettings
         "TransparentChatFilter",
         "settings.json");
 
+    internal static string PendingReleaseNotesPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "TransparentChatFilter",
+        "pending-release-notes.txt");
+
     public static AppSettings Load(string? path = null)
     {
         var targetPath = path ?? Path.Combine(
