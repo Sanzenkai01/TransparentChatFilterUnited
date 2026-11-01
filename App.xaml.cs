@@ -28,8 +28,8 @@ public partial class App : Application
         var updatedFromLegacyInstaller = lastSeenVersion is not null &&
                                          NormalizeReleaseVersion(lastSeenVersion) < releaseVersion;
         var upgradedFromUntrackedLegacyVersion = settingsFileExisted && lastSeenVersion is null;
-        var updateCheckStarted = false;
-        if (pendingUpdate || updatedFromLegacyInstaller || upgradedFromUntrackedLegacyVersion)
+        var showReleaseNotes = pendingUpdate || updatedFromLegacyInstaller || upgradedFromUntrackedLegacyVersion;
+        if (showReleaseNotes)
         {
             mainWindow.WindowState = WindowState.Normal;
             mainWindow.Loaded += (_, _) =>
@@ -40,7 +40,6 @@ public partial class App : Application
                 };
                 var notesDismissed = new TaskCompletionSource(
                     TaskCreationOptions.RunContinuationsAsynchronously);
-                updateCheckStarted = true;
                 _ = CheckForUpdatesAsync(notesDismissed.Task);
                 try
                 {
@@ -72,7 +71,7 @@ public partial class App : Application
         }
 
         mainWindow.Show();
-        if (!updateCheckStarted)
+        if (!showReleaseNotes)
         {
             _ = CheckForUpdatesAsync();
         }
