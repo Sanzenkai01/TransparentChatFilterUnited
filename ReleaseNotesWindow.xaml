@@ -97,7 +97,8 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
-                <StackPanel>
+                <StackPanel Cursor="SizeAll"
+                            MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                     <TextBlock Text="NOVIDADES DA VERSÃO"
                                Foreground="#C39AFF"
                                FontSize="10"
@@ -121,24 +122,43 @@
                         Click="DismissButton_Click"
                         ToolTip="Fechar"/>
             </Grid>
-            <StackPanel Grid.Row="1" Margin="0,18,0,16">
-                <TextBlock x:Name="ReleaseNotesIntro"
-                           Text="Confira as melhorias desta versão:"
-                           Foreground="#BCC8D9"
-                           FontSize="11"
-                           Margin="0,0,0,10"
-                           TextAlignment="Center"/>
-                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
-                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  Textos do popup de novidades agora ficam centralizados."/>
-                    </TextBlock>
-                </Border>
-                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10">
-                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  Otimização do uso de memória ao descartar o WebView2 ao mudar do chat público para o IRC."/>
-                    </TextBlock>
-                </Border>
-            </StackPanel>
+            <ScrollViewer Grid.Row="1"
+                          Margin="0,18,0,16"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <TextBlock x:Name="ReleaseNotesIntro"
+                               Text="Confira as melhorias desta versão:"
+                               Foreground="#BCC8D9"
+                               FontSize="11"
+                               Margin="0,0,0,10"
+                               TextAlignment="Center"/>
+                    <ItemsControl x:Name="ReleaseNotesItems">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#182333"
+                                        BorderBrush="#2D3B50"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="10"
+                                        Margin="0,0,0,7">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Version}"
+                                                   Foreground="#C39AFF"
+                                                   FontSize="10"
+                                                   FontWeight="Bold"
+                                                   Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding Description}"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="#D7E5FF"
+                                                   FontSize="11"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
             <Button Grid.Row="2"
                     Content="Entendi"
                     HorizontalAlignment="Right"

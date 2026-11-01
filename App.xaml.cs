@@ -28,39 +28,54 @@ public partial class App : Application
         var updatedFromLegacyInstaller = lastSeenVersion is not null &&
                                          NormalizeReleaseVersion(lastSeenVersion) < releaseVersion;
         var upgradedFromUntrackedLegacyVersion = settingsFileExisted && lastSeenVersion is null;
+        var updateCheckStarted = false;
         if (pendingUpdate || updatedFromLegacyInstaller || upgradedFromUntrackedLegacyVersion)
         {
             mainWindow.WindowState = WindowState.Normal;
             mainWindow.Loaded += (_, _) =>
             {
-                var releaseNotesWindow = new ReleaseNotesWindow(currentVersion)
+                var releaseNotesWindow = new ReleaseNotesWindow(currentVersion, lastSeenVersion)
                 {
                     Owner = mainWindow
                 };
-                if (releaseNotesWindow.ShowDialog() != true)
-                {
-                    return;
-                }
-
-                settings.LastSeenReleaseNotesVersion = releaseVersion.ToString(3);
+                var notesDismissed = new TaskCompletionSource(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                updateCheckStarted = true;
+                _ = CheckForUpdatesAsync(notesDismissed.Task);
                 try
                 {
-                    mainWindow.ViewModel.SaveSettings();
-                    if (pendingUpdate)
+                    if (releaseNotesWindow.ShowDialog() != true)
                     {
-                        File.Delete(AppSettings.PendingReleaseNotesPath);
+                        return;
+                    }
+
+                    settings.LastSeenReleaseNotesVersion = releaseVersion.ToString(3);
+                    try
+                    {
+                        mainWindow.ViewModel.SaveSettings();
+                        if (pendingUpdate)
+                        {
+                            File.Delete(AppSettings.PendingReleaseNotesPath);
+                        }
+                    }
+                    catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                    {
+                        mainWindow.ViewModel.UpdateDiagnostic(
+                            $"Não foi possível registrar que as novidades foram exibidas: {exception.Message}");
                     }
                 }
-                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                finally
                 {
-                    mainWindow.ViewModel.UpdateDiagnostic(
-                        $"Não foi possível registrar que as novidades foram exibidas: {exception.Message}");
+                    notesDismissed.TrySetResult();
                 }
             };
         }
 
         mainWindow.Show();
-        _ = CheckForUpdatesAsync();
+        if (!updateCheckStarted)
+        {
+            _ = CheckForUpdatesAsync();
+        }
     }
 
     private static Version NormalizeReleaseVersion(Version version)
@@ -95,27 +110,35 @@ public partial class App : Application
         return null;
     }
 
-    private static async Task CheckForUpdatesAsync()
+    private static async Task CheckForUpdatesAsync(Task? waitBeforeShowingUpdateUi = null)
     {
         UpdateCheckWindow? progressWindow = null;
 
         try
         {
-            progressWindow = new UpdateCheckWindow("Checando atualizações...")
+            if (waitBeforeShowingUpdateUi is null)
             {
-                Owner = Current.MainWindow
-            };
-            progressWindow.Show();
+                progressWindow = new UpdateCheckWindow("Checando atualizações...")
+                {
+                    Owner = Current.MainWindow
+                };
+                progressWindow.Show();
+            }
 
             var updateTask = UpdateService.CheckForUpdateAsync();
             await Task.WhenAll(updateTask, Task.Delay(TimeSpan.FromMilliseconds(1500)));
             var update = await updateTask;
-            progressWindow.Close();
+            progressWindow?.Close();
             progressWindow = null;
 
             if (update is null)
             {
                 return;
+            }
+
+            if (waitBeforeShowingUpdateUi is not null)
+            {
+                await waitBeforeShowingUpdateUi;
             }
 
             var updatePrompt = new UpdateAvailableWindow(update.Version)
@@ -139,6 +162,11 @@ public partial class App : Application
         }
         catch (Exception exception)
         {
+            if (waitBeforeShowingUpdateUi is not null)
+            {
+                await waitBeforeShowingUpdateUi;
+            }
+
             progressWindow?.Close();
             progressWindow = null;
             MessageBox.Show(
