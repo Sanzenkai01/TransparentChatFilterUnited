@@ -17,6 +17,7 @@ using System.Windows.Threading;
 using System.Text.Json;
 using Microsoft.Win32;
 using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.Wpf;
 
 namespace TransparentChatFilter;
 
@@ -690,6 +691,7 @@ public partial class MainWindow : Window
     private bool _popoutNavigationHandlerRegistered;
     private bool _twitchCaptureScriptRegistered;
     private bool _twitchPublicChatActive;
+    private WebView2? _twitchPopoutView;
     private bool _channelUpdatePending;
     private int _connectionModeChangeVersion;
     private long _lastMessageNotificationSoundTimestamp;
@@ -1064,6 +1066,7 @@ public partial class MainWindow : Window
         _chatOnlyHitTestTimer.Stop();
         _chatOnlyGearHoldTimer.Stop();
         _suppressGearClickTimer.Stop();
+        DisposeTwitchPopoutView();
         _chatClient.Dispose();
         UnregisterHotKey();
     }
@@ -1823,7 +1826,7 @@ public partial class MainWindow : Window
         if (_settings.ConnectionMode == ChatConnectionMode.PublicPopout &&
             _twitchPublicChatActive)
         {
-            TwitchPopoutView.CoreWebView2?.Stop();
+            _twitchPopoutView?.CoreWebView2?.Stop();
             _twitchPublicChatActive = false;
         }
 
@@ -2108,8 +2111,10 @@ public partial class MainWindow : Window
         RefreshMessageFeed();
         _chatClient.Disconnect();
         SetConnected(false);
-        TwitchPopoutView.CoreWebView2?.Stop();
-        _twitchPublicChatActive = false;
+        if (selectedMode == ChatConnectionMode.AuthenticatedIrc)
+        {
+            DisposeTwitchPopoutView();
+        }
         RefreshChatPanels();
         UpdateChatOnlyControlsVisibility();
         ViewModel.ConnectionStatus = resumeTwitchConnection
@@ -2189,7 +2194,7 @@ public partial class MainWindow : Window
     private void UpdateChatOnlyControlsVisibility()
     {
         var chatOnly = _settings.IsTransparent;
-        var publicChatVisible = TwitchPopoutView.Visibility == Visibility.Visible;
+        var publicChatVisible = _twitchPopoutView?.Visibility == Visibility.Visible;
         ExitChatOnlyButton.Visibility = chatOnly && !publicChatVisible
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -2199,9 +2204,12 @@ public partial class MainWindow : Window
     private void RefreshChatPanels()
     {
         ChatMessagesScrollViewer.Visibility = Visibility.Visible;
-        TwitchPopoutView.Visibility = _twitchPublicChatActive
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        if (_twitchPopoutView is not null)
+        {
+            _twitchPopoutView.Visibility = _twitchPublicChatActive
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
     }
 
     private void PublicChat_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
@@ -2549,18 +2557,20 @@ public partial class MainWindow : Window
 
     private async Task ShowTwitchPopoutAsync(string channel)
     {
+        var popoutView = GetOrCreateTwitchPopoutView();
         try
         {
-            await TwitchPopoutView.EnsureCoreWebView2Async();
+            await popoutView.EnsureCoreWebView2Async();
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
+            DisposeTwitchPopoutView();
             throw new InvalidOperationException(
                 "Não foi possível iniciar o navegador interno WebView2. Instale ou atualize o Microsoft Edge WebView2 Runtime e tente novamente.",
                 ex);
         }
 
-        var core = TwitchPopoutView.CoreWebView2
+        var core = popoutView.CoreWebView2
             ?? throw new InvalidOperationException("O navegador interno não foi inicializado.");
         core.Settings.AreDefaultContextMenusEnabled = false;
         core.Settings.IsStatusBarEnabled = false;
@@ -2578,26 +2588,77 @@ public partial class MainWindow : Window
             _twitchCaptureScriptRegistered = true;
         }
 
-        RegisterPopoutNavigationHandler();
+        RegisterPopoutNavigationHandler(popoutView);
         _twitchPublicChatActive = true;
-        TwitchPopoutView.Visibility = Visibility.Visible;
+        popoutView.Visibility = Visibility.Visible;
         core.Navigate($"https://www.twitch.tv/popout/{Uri.EscapeDataString(channel)}/chat?popout=");
     }
 
-    private void RegisterPopoutNavigationHandler()
+    private WebView2 GetOrCreateTwitchPopoutView()
+    {
+        if (_twitchPopoutView is not null)
+        {
+            return _twitchPopoutView;
+        }
+
+        var popoutView = new WebView2
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            DefaultBackgroundColor = System.Drawing.Color.FromArgb(0, 0, 0, 0)
+        };
+        TwitchPopoutHost.Children.Add(popoutView);
+        _twitchPopoutView = popoutView;
+        return popoutView;
+    }
+
+    private void DisposeTwitchPopoutView()
+    {
+        var popoutView = _twitchPopoutView;
+        if (popoutView is null)
+        {
+            _twitchPublicChatActive = false;
+            return;
+        }
+
+        var core = popoutView.CoreWebView2;
+        if (core is not null && _twitchCaptureScriptRegistered)
+        {
+            core.WebMessageReceived -= PublicChat_WebMessageReceived;
+        }
+
+        if (_popoutNavigationHandlerRegistered)
+        {
+            popoutView.NavigationCompleted -= TwitchPopoutView_NavigationCompleted;
+        }
+
+        core?.Stop();
+        popoutView.Visibility = Visibility.Collapsed;
+        TwitchPopoutHost.Children.Remove(popoutView);
+        _twitchPopoutView = null;
+        _popoutScriptRegistered = false;
+        _popoutNavigationHandlerRegistered = false;
+        _twitchCaptureScriptRegistered = false;
+        _twitchPublicChatActive = false;
+        popoutView.Dispose();
+    }
+
+    private void RegisterPopoutNavigationHandler(WebView2 popoutView)
     {
         if (_popoutNavigationHandlerRegistered)
         {
             return;
         }
 
-        TwitchPopoutView.NavigationCompleted += TwitchPopoutView_NavigationCompleted;
+        popoutView.NavigationCompleted += TwitchPopoutView_NavigationCompleted;
         _popoutNavigationHandlerRegistered = true;
     }
 
     private void TwitchPopoutView_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
-        if (TwitchPopoutView.Visibility != Visibility.Visible)
+        if (sender is not WebView2 popoutView ||
+            !ReferenceEquals(popoutView, _twitchPopoutView) ||
+            popoutView.Visibility != Visibility.Visible)
         {
             return;
         }
@@ -2617,7 +2678,7 @@ public partial class MainWindow : Window
         var reason = e.WebErrorStatus == CoreWebView2WebErrorStatus.CertificateIsInvalid
             ? "O certificado da página não pôde ser validado."
             : $"A página pública do chat não carregou ({e.WebErrorStatus}).";
-        TwitchPopoutView.Visibility = Visibility.Collapsed;
+        popoutView.Visibility = Visibility.Collapsed;
         RefreshChatPanels();
         UpdateChatOnlyControlsVisibility();
         ViewModel.ConnectionStatus = "Falha ao carregar chat público";
@@ -2627,7 +2688,7 @@ public partial class MainWindow : Window
 
     private async Task ApplyTwitchPublicChatScriptsAsync()
     {
-        var core = TwitchPopoutView.CoreWebView2;
+        var core = _twitchPopoutView?.CoreWebView2;
         if (core is null)
         {
             return;
@@ -2688,7 +2749,10 @@ public partial class MainWindow : Window
                 }
 
                 await ShowTwitchPopoutAsync(channel);
-                TwitchPopoutView.Visibility = Visibility.Visible;
+                if (_twitchPopoutView is { } popoutView)
+                {
+                    popoutView.Visibility = Visibility.Visible;
+                }
                 viewModel.Messages.Clear();
 
                 RefreshChatPanels();
@@ -2702,8 +2766,7 @@ public partial class MainWindow : Window
             }
 
             ChatMessagesScrollViewer.Visibility = Visibility.Visible;
-            TwitchPopoutView.CoreWebView2?.Stop();
-            TwitchPopoutView.Visibility = Visibility.Collapsed;
+            DisposeTwitchPopoutView();
             RefreshChatPanels();
             var credentials = _twitchCredentials;
             if (credentials is not null)
@@ -2924,7 +2987,10 @@ public partial class MainWindow : Window
         ChatContainer.BorderThickness = chatOnly ? new Thickness(0) : new Thickness(1);
         ChatContainer.CornerRadius = chatOnly ? new CornerRadius(0) : new CornerRadius(12);
         ChatMessagesScrollViewer.Padding = chatOnly ? new Thickness(0, 38, 0, 0) : new Thickness(0);
-        TwitchPopoutView.Margin = chatOnly ? new Thickness(0, 38, 0, 0) : new Thickness(0);
+        if (_twitchPopoutView is not null)
+        {
+            _twitchPopoutView.Margin = chatOnly ? new Thickness(0, 38, 0, 0) : new Thickness(0);
+        }
         Toolbar.Opacity = 0.82;
         UpdateClickThroughStyle();
     }

@@ -101,13 +101,15 @@
                     <TextBlock Text="NOVIDADES DA VERSÃO"
                                Foreground="#C39AFF"
                                FontSize="10"
-                               FontWeight="Bold"/>
+                               FontWeight="Bold"
+                               TextAlignment="Center"/>
                     <TextBlock x:Name="VersionTitle"
                                Text="Versão"
                                Foreground="#F1F5FF"
                                FontSize="22"
                                FontWeight="Bold"
-                               Margin="0,3,0,0"/>
+                               Margin="0,3,0,0"
+                               TextAlignment="Center"/>
                 </StackPanel>
                 <Button Content="×"
                         Width="28"
@@ -121,38 +123,19 @@
             </Grid>
             <StackPanel Grid.Row="1" Margin="0,18,0,16">
                 <TextBlock x:Name="ReleaseNotesIntro"
-                           Text="Veja o que mudou nesta atualização:"
+                           Text="Confira as melhorias desta versão:"
                            Foreground="#BCC8D9"
                            FontSize="11"
-                           Margin="0,0,0,10"/>
+                           Margin="0,0,0,10"
+                           TextAlignment="Center"/>
                 <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
                     <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  Mais controle visual: ajustes para a cor e a opacidade do fundo das mensagens, com botões de paleta mais legíveis."/>
-                    </TextBlock>
-                </Border>
-                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
-                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  As opções de canais agora acompanham o modo de filtro: Meu Chat mostra apenas o canal principal; Chat Unido permite configurar canais adicionais e ignorados."/>
-                    </TextBlock>
-                </Border>
-                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,7">
-                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  A conexão IRC é somente para leitura: o aplicativo não envia mensagens no chat."/>
+                        <Run Text="•  Textos do popup de novidades agora ficam centralizados."/>
                     </TextBlock>
                 </Border>
                 <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10">
                     <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  Indicador de conexão aprimorado e ícone de redimensionamento oculto no modo transparente."/>
-                    </TextBlock>
-                </Border>
-                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,7,0,0">
-                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  Títulos e descrições das páginas de configurações agora ficam centralizados."/>
-                    </TextBlock>
-                </Border>
-                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,7,0,0">
-                    <TextBlock TextWrapping="Wrap" Foreground="#D7E5FF" FontSize="11">
-                        <Run Text="•  As novidades aparecem somente após uma atualização. Ao clicar em Entendi, não serão exibidas novamente até a próxima versão."/>
+                        <Run Text="•  Otimização do uso de memória ao descartar o WebView2 ao mudar do chat público para o IRC."/>
                     </TextBlock>
                 </Border>
             </StackPanel>

@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TransparentChatFilter"
-        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
         Title="TransparentChatFilterUnited"
         Icon="icon.ico"
@@ -765,17 +764,12 @@
                         </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
-                    <Grid
+                    <Grid x:Name="TwitchPopoutHost"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
                           Panel.ZIndex="-1"
                           Opacity="0"
-                          IsHitTestVisible="False">
-                        <wv2:WebView2 x:Name="TwitchPopoutView"
-                                      HorizontalAlignment="Stretch"
-                                      VerticalAlignment="Stretch"
-                                      DefaultBackgroundColor="Transparent"/>
-                    </Grid>
+                          IsHitTestVisible="False"/>
                     <Path x:Name="ResizeGripIcon"
                           Data="M 2,12 L 12,2 M 7,12 L 12,7"
                           Stroke="#8B9AB0"
