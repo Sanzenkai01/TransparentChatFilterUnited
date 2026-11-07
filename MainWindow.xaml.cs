@@ -560,6 +560,8 @@ public partial class MainWindow : Window
                     nameof(ViewModel.StartWithWindows),
                     nameof(ViewModel.HideSettingsDuringUse),
                     nameof(ViewModel.MaxVisibleMessages));
+                TrimMessageHistory(_chatHistory, ViewModel.MaxVisibleMessages);
+                RefreshMessageFeed();
                 try
                 {
                     WindowsStartupRegistration.SetEnabled(defaults.StartWithWindows);
@@ -846,10 +848,15 @@ public partial class MainWindow : Window
 
     private void MaxVisibleMessagesSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (IsInitialized)
+        if (!IsInitialized)
         {
-            QueueSettingsSave();
+            return;
         }
+
+        ViewModel.MaxVisibleMessages = Math.Clamp((int)Math.Round(e.NewValue), 10, 300);
+        TrimMessageHistory(_chatHistory, ViewModel.MaxVisibleMessages);
+        RefreshMessageFeed();
+        QueueSettingsSave();
     }
 
     private void HighlightColor_TextChanged(object sender, TextChangedEventArgs e)
@@ -1795,10 +1802,7 @@ public partial class MainWindow : Window
     private void AppendMessageToFeed(ChatMessage message)
     {
         _chatHistory.Add(message);
-        while (_chatHistory.Count > ViewModel.Settings.MaxVisibleMessages)
-        {
-            _chatHistory.RemoveAt(0);
-        }
+        TrimMessageHistory(_chatHistory, ViewModel.MaxVisibleMessages);
 
         if (!ShouldDisplayMessage(message, ViewModel.Settings))
         {
@@ -1839,6 +1843,16 @@ public partial class MainWindow : Window
         if (_settings.IsTransparent && _settings.ClickThroughEnabled)
         {
             e.Handled = true;
+        }
+    }
+
+    internal static void TrimMessageHistory(List<ChatMessage> history, int maximum)
+    {
+        maximum = Math.Clamp(maximum, 10, 300);
+        var excessCount = history.Count - maximum;
+        if (excessCount > 0)
+        {
+            history.RemoveRange(0, excessCount);
         }
     }
 
@@ -2960,9 +2974,11 @@ public partial class MainWindow : Window
 
     private static double GetMessageHorizontalPadding(AppSettings settings)
     {
-        const double eventStripeAndTextInset = 11;
+        const double eventStripeAndTextInset = 3;
+        const double floatingTextInset = 8;
         var borderPadding = settings.IsTransparent ? 10 : 16;
-        return borderPadding + eventStripeAndTextInset;
+        return borderPadding + eventStripeAndTextInset +
+               (settings.UserNameAboveMessage ? floatingTextInset : 0);
     }
 
     private Brush GetSystemEventAccent(ChatMessageKind kind)
@@ -3387,7 +3403,7 @@ public partial class MainWindow : Window
             Height = 16,
             Stretch = Stretch.Uniform,
             ToolTip = "Canal em que a mensagem foi enviada",
-            Margin = new Thickness(0, 0, 3, 0)
+            Margin = new Thickness(0)
         };
         var inline = new InlineUIContainer(image) { BaselineAlignment = BaselineAlignment.Center };
         _ = LoadTwitchChannelImageAsync(inline, image, row.ChannelImageUrl);

@@ -270,7 +270,7 @@
                                                 Background="{Binding EventAccentBrush}"
                                                 CornerRadius="2"
                                                 Visibility="Collapsed"/>
-                                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                        <StackPanel Grid.Column="1">
                                             <TextBlock Text="{Binding DisplayName}"
                                                        Foreground="{Binding NameBrush}"
                                                        FontSize="{Binding FontSize}"

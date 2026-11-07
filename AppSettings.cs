@@ -25,7 +25,7 @@ public enum MessageNotificationSound
 
 public sealed class AppSettings
 {
-    private const int CurrentSettingsVersion = 8;
+    private const int CurrentSettingsVersion = 9;
 
     public string MainChannel { get; set; } = string.Empty;
     public string TwitchUsername { get; set; } = string.Empty;
@@ -71,7 +71,7 @@ public sealed class AppSettings
     public double MessageBackgroundOpacity { get; set; } = 0.75;
     public int FontSize { get; set; } = 14;
     public int MessageSpacing { get; set; } = 6;
-    public int MaxVisibleMessages { get; set; } = 80;
+    public int MaxVisibleMessages { get; set; } = 20;
     public string HighlightColor { get; set; } = RgbHex(94, 162, 255);
     public string MessageBackgroundColor { get; set; } = RgbHex(39, 43, 47);
     public string[] RecentChannels { get; set; } = Array.Empty<string>();
@@ -213,6 +213,11 @@ public sealed class AppSettings
             settings.ShowChatTextOutline = false;
         }
 
+        if (settings.SettingsVersion < 9 && settings.MaxVisibleMessages == 80)
+        {
+            settings.MaxVisibleMessages = 20;
+        }
+
         settings.SettingsVersion = CurrentSettingsVersion;
         if (!Enum.IsDefined(settings.FilterMode))
         {
@@ -233,6 +238,7 @@ public sealed class AppSettings
         settings.TextOpacity = Math.Clamp(settings.TextOpacity, 0.2, 1.0);
         settings.MessageBackgroundOpacity = Math.Clamp(settings.MessageBackgroundOpacity, 0.1, 1.0);
         settings.MessageSpacing = Math.Clamp(settings.MessageSpacing, 0, 20);
+        settings.MaxVisibleMessages = Math.Clamp(settings.MaxVisibleMessages, 10, 300);
         settings.BlockedTerms ??= string.Empty;
         settings.HighlightTerms ??= string.Empty;
         settings.HighlightColor ??= RgbHex(94, 162, 255);

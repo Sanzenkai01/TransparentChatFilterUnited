@@ -16,6 +16,7 @@ public sealed class AppSettingsTests
 
         Assert.Equal(path, settings.SettingsPath);
         Assert.Equal(0.86, settings.BackgroundOpacity);
+        Assert.Equal(20, settings.MaxVisibleMessages);
         Assert.False(settings.ShowChatTextOutline);
         Assert.False(settings.StartTransparentAndConnected);
         Assert.Null(settings.LoadWarning);
@@ -112,6 +113,31 @@ public sealed class AppSettingsTests
         Assert.True(settings.ShowChatTextOutline);
         Assert.True(settings.StartTransparentAndConnected);
         Assert.True(settings.UserNameAboveMessage);
+    }
+
+    [Theory]
+    [InlineData(0, 10)]
+    [InlineData(500, 300)]
+    public void LoadedMaximumVisibleMessagesIsClamped(int configuredMaximum, int expectedMaximum)
+    {
+        using var directory = new TemporaryDirectory();
+        var path = Path.Combine(directory.Path, "settings.json");
+        File.WriteAllText(path, $$"""{"SettingsVersion":8,"MaxVisibleMessages":{{configuredMaximum}}}""");
+
+        Assert.Equal(expectedMaximum, AppSettings.Load(path).MaxVisibleMessages);
+    }
+
+    [Fact]
+    public void PreviousDefaultMessageLimitMigratesToTwentyButCustomLimitIsPreserved()
+    {
+        using var directory = new TemporaryDirectory();
+        var oldDefaultPath = Path.Combine(directory.Path, "old-default.json");
+        var customPath = Path.Combine(directory.Path, "custom.json");
+        File.WriteAllText(oldDefaultPath, """{"SettingsVersion":8,"MaxVisibleMessages":80}""");
+        File.WriteAllText(customPath, """{"SettingsVersion":8,"MaxVisibleMessages":120}""");
+
+        Assert.Equal(20, AppSettings.Load(oldDefaultPath).MaxVisibleMessages);
+        Assert.Equal(120, AppSettings.Load(customPath).MaxVisibleMessages);
     }
 
     [Fact]
