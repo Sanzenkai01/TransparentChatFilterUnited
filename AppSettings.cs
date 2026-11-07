@@ -52,6 +52,7 @@ public sealed class AppSettings
     public bool DimOtherChannelMessages { get; set; }
     public bool EnableSound { get; set; } = false;
     public bool NotifyNewMessages { get; set; } = true;
+    public bool NotifyOtherChannelMessages { get; set; } = true;
     public int SettingsVersion { get; set; }
     public string LastSeenReleaseNotesVersion { get; set; } = string.Empty;
     public MessageNotificationSound NotificationSound { get; set; } = MessageNotificationSound.Neutral;

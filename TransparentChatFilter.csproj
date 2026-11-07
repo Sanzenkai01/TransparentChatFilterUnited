@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <AssemblyName>TransparentChatFilterUnited</AssemblyName>
     <AssemblyTitle>TransparentChatFilterUnited</AssemblyTitle>
     <Nullable>enable</Nullable>
@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Resource Include="icon.ico" />
+    <Resource Include="iconPNG.png" />
     <Resource Include="twitch.png" />
     <EmbeddedResource Include="Scripts\TwitchCaptureScript.js">
       <LogicalName>TransparentChatFilter.Scripts.TwitchCaptureScript.js</LogicalName>

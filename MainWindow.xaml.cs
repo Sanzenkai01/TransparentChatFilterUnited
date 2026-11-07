@@ -478,6 +478,7 @@ public partial class MainWindow : Window
                 _settings.ShowVips = defaults.ShowVips;
                 _settings.EnableSound = defaults.EnableSound;
                 _settings.NotifyNewMessages = defaults.NotifyNewMessages;
+                _settings.NotifyOtherChannelMessages = defaults.NotifyOtherChannelMessages;
                 _settings.NotificationSound = defaults.NotificationSound;
                 _settings.NotificationVolumePercent = defaults.NotificationVolumePercent;
                 _settings.BackgroundOpacity = defaults.BackgroundOpacity;
@@ -499,6 +500,7 @@ public partial class MainWindow : Window
                     nameof(ViewModel.ShowVips),
                     nameof(ViewModel.EnableSound),
                     nameof(ViewModel.NotifyNewMessages),
+                    nameof(ViewModel.NotifyOtherChannelMessages),
                     nameof(ViewModel.NotificationVolumePercent),
                     nameof(ViewModel.ShowChatTextOutline),
                     nameof(ViewModel.UseMessageBackgroundOpacity),
@@ -1825,11 +1827,13 @@ public partial class MainWindow : Window
         {
             ScrollChatToLatestMessage();
         }
-        if (ViewModel.Settings.NotifyNewMessages)
+        var shouldPlayNotification = ShouldPlayNotificationForMessage(message, ViewModel.Settings);
+        if (shouldPlayNotification && ViewModel.Settings.NotifyNewMessages)
         {
             PlayNewMessageNotificationSound();
         }
-        else if (ViewModel.Settings.EnableSound &&
+        else if (shouldPlayNotification &&
+                 ViewModel.Settings.EnableSound &&
                  ContainsAnyTerm(message.Message, ViewModel.Settings.HighlightTerms) &&
                  TryAcquireMessageNotificationSoundCooldown())
         {
@@ -1854,6 +1858,14 @@ public partial class MainWindow : Window
         {
             history.RemoveRange(0, excessCount);
         }
+    }
+
+    internal static bool ShouldPlayNotificationForMessage(ChatMessage message, AppSettings settings)
+    {
+        return settings.ConnectionMode != ChatConnectionMode.AuthenticatedIrc ||
+               !settings.DimOtherChannelMessages ||
+               settings.NotifyOtherChannelMessages ||
+               !IsOtherChannelMessage(message, settings);
     }
 
     private void CopyChatMessage_Click(object sender, RoutedEventArgs e)

@@ -200,6 +200,21 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool NotifyOtherChannelMessages
+    {
+        get => _settings.NotifyOtherChannelMessages;
+        set
+        {
+            if (_settings.NotifyOtherChannelMessages == value)
+            {
+                return;
+            }
+
+            _settings.NotifyOtherChannelMessages = value;
+            OnPropertyChanged();
+        }
+    }
+
     public int NotificationVolumePercent
     {
         get => Math.Clamp(_settings.NotificationVolumePercent, 0, 100);

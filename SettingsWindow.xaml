@@ -240,11 +240,6 @@
                                 <ComboBoxItem Content="Chat Unido"/>
                             </ComboBox>
                             <TextBlock Text="Meu Chat limita ao canal principal; Chat Unido inclui os canais adicionais." Style="{StaticResource SettingsHelpText}"/>
-                            <TextBlock Text="Meu Chat mostra apenas o canal principal.&#10;Chat Unido mostra o canal principal e os canais adicionais; os canais ignorados continuam excluídos."
-                                       TextWrapping="Wrap"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource MutedTextBrush}"
-                                       Margin="0,0,0,12"/>
                             <StackPanel x:Name="OtherChannelsFilterControls" x:FieldModifier="public">
                                 <CheckBox x:Name="DimOtherChannelsCheckBox" x:FieldModifier="public"
                                           Content="Deixar mensagens de outros canais transparentes"
@@ -474,6 +469,12 @@
                                 <TextBlock Text="Toca um alerta apenas quando a mensagem contém um termo destacado." Style="{StaticResource SettingsHelpText}"/>
                                 <CheckBox Content="Som ao receber cada nova mensagem" IsChecked="{Binding NotifyNewMessages, Mode=TwoWay}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
                                 <TextBlock Text="Toca um alerta para todas as mensagens; quando ativo, substitui o alerta por termo." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Som para mensagens de outros canais"
+                                          IsChecked="{Binding NotifyOtherChannelMessages, Mode=TwoWay}"
+                                          IsEnabled="{Binding DimOtherChannelMessages}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Quando a transparência de outros canais estiver ativada, permite controlar se essas mensagens também tocam alertas." Style="{StaticResource SettingsHelpText}"/>
                                 <TextBlock Text="Som de notificação" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
                                 <ComboBox x:Name="NotificationSoundComboBox" x:FieldModifier="public" SelectionChanged="NotificationSoundComboBox_SelectionChanged">
                                     <ComboBoxItem Content="Neutro"/>

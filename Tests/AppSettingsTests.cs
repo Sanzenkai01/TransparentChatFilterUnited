@@ -17,6 +17,7 @@ public sealed class AppSettingsTests
         Assert.Equal(path, settings.SettingsPath);
         Assert.Equal(0.86, settings.BackgroundOpacity);
         Assert.Equal(20, settings.MaxVisibleMessages);
+        Assert.True(settings.NotifyOtherChannelMessages);
         Assert.False(settings.ShowChatTextOutline);
         Assert.False(settings.StartTransparentAndConnected);
         Assert.Null(settings.LoadWarning);
@@ -113,6 +114,16 @@ public sealed class AppSettingsTests
         Assert.True(settings.ShowChatTextOutline);
         Assert.True(settings.StartTransparentAndConnected);
         Assert.True(settings.UserNameAboveMessage);
+    }
+
+    [Fact]
+    public void MissingOtherChannelSoundPreferenceDefaultsToEnabled()
+    {
+        using var directory = new TemporaryDirectory();
+        var path = Path.Combine(directory.Path, "settings.json");
+        File.WriteAllText(path, """{"SettingsVersion":9}""");
+
+        Assert.True(AppSettings.Load(path).NotifyOtherChannelMessages);
     }
 
     [Theory]

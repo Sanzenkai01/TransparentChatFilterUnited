@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:TransparentChatFilter"
         mc:Ignorable="d"
         Title="TransparentChatFilterUnited"
-        Icon="icon.ico"
+        Icon="iconPNG.png"
         Width="460"
         Height="580"
         MinWidth="280"
