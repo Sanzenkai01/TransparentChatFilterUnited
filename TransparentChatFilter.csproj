@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <AssemblyName>TransparentChatFilterUnited</AssemblyName>
     <AssemblyTitle>TransparentChatFilterUnited</AssemblyTitle>
     <Nullable>enable</Nullable>
@@ -13,8 +13,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Tests\**" />
+    <None Remove="Tests\**" />
+    <InternalsVisibleTo Include="TransparentChatFilter.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="icon.ico" />
     <Resource Include="twitch.png" />
+    <EmbeddedResource Include="Scripts\TwitchCaptureScript.js">
+      <LogicalName>TransparentChatFilter.Scripts.TwitchCaptureScript.js</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Scripts\TwitchMessagesOnlyScript.js">
+      <LogicalName>TransparentChatFilter.Scripts.TwitchMessagesOnlyScript.js</LogicalName>
+    </EmbeddedResource>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
   </ItemGroup>
 

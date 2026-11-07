@@ -1,4 +1,4 @@
-﻿<Window x:Class="TransparentChatFilter.MainWindow"
+<Window x:Class="TransparentChatFilter.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -9,7 +9,7 @@
         Icon="icon.ico"
         Width="460"
         Height="580"
-        MinWidth="440"
+        MinWidth="280"
         MinHeight="280"
         WindowStyle="None"
         ResizeMode="CanResize"
@@ -21,11 +21,12 @@
         SizeChanged="MainWindow_SizeChanged"
         x:Name="RootWindow">
     <Window.Resources>
-        <SolidColorBrush x:Key="SurfaceBrush" Color="#182333"/>
-        <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#26374D"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#A970FF"/>
-        <SolidColorBrush x:Key="MutedTextBrush" Color="#9EADC2"/>
-        <DataTemplate x:Key="DragGripTemplate">
+            <DropShadowEffect x:Key="FloatingNameShadow"
+                              Color="#000000"
+                              BlurRadius="6"
+                              ShadowDepth="2"
+                              Opacity="0.35"/>
+    <DataTemplate x:Key="DragGripTemplate">
             <Grid Width="10" Height="8" IsHitTestVisible="False">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -36,535 +37,68 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Ellipse Grid.Row="0" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource ThemeBrush_8B9AB0}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource ThemeBrush_8B9AB0}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="0" Grid.Column="2" Width="2" Height="2" Fill="{DynamicResource ThemeBrush_8B9AB0}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource ThemeBrush_8B9AB0}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource ThemeBrush_8B9AB0}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="{DynamicResource ThemeBrush_8B9AB0}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
         </DataTemplate>
-        <DataTemplate x:Key="CenteredCategoryButtonContent">
-            <TextBlock Text="{Binding}"
-                       HorizontalAlignment="Stretch"
-                       VerticalAlignment="Center"
-                       TextAlignment="Center"/>
-        </DataTemplate>
-        <DropShadowEffect x:Key="ChatTextOutline" Color="#000000" BlurRadius="3" ShadowDepth="1" Direction="315" Opacity="0.95"/>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="Foreground" Value="#EAF2FF"/>
-            <Setter Property="Background" Value="#202D40"/>
-            <Setter Property="BorderBrush" Value="#34445B"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,7"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="Chrome"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="7"
-                                SnapsToDevicePixels="True"
-                                RenderTransformOrigin="0.5,0.5">
-                            <Border.RenderTransform>
-                                <TranslateTransform x:Name="ChromeTransform"/>
-                            </Border.RenderTransform>
-                            <Border.Effect>
-                                <DropShadowEffect x:Name="ChromeGlow"
-                                                  Color="#A970FF"
-                                                  BlurRadius="0"
-                                                  ShadowDepth="0"
-                                                  Opacity="0"/>
-                            </Border.Effect>
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                              Margin="{TemplateBinding Padding}"
-                                              RecognizesAccessKey="True"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#30425D"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#62799B"/>
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ChromeGlow"
-                                                             Storyboard.TargetProperty="BlurRadius"
-                                                             To="12"
-                                                             Duration="0:0:0.16"/>
-                                            <DoubleAnimation Storyboard.TargetName="ChromeGlow"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="0.28"
-                                                             Duration="0:0:0.16"/>
-                                            <DoubleAnimation Storyboard.TargetName="ChromeTransform"
-                                                             Storyboard.TargetProperty="Y"
-                                                             To="-1"
-                                                             Duration="0:0:0.12"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ChromeGlow"
-                                                             Storyboard.TargetProperty="BlurRadius"
-                                                             To="0"
-                                                             Duration="0:0:0.18"/>
-                                            <DoubleAnimation Storyboard.TargetName="ChromeGlow"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="0"
-                                                             Duration="0:0:0.18"/>
-                                            <DoubleAnimation Storyboard.TargetName="ChromeTransform"
-                                                             Storyboard.TargetProperty="Y"
-                                                             To="0"
-                                                             Duration="0:0:0.14"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#392D56"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#A970FF"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Chrome" Property="Opacity" Value="0.45"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
-        <Style TargetType="{x:Type ToggleButton}">
-            <Setter Property="Foreground" Value="#EAF2FF"/>
-            <Setter Property="Background" Value="#202D40"/>
-            <Setter Property="BorderBrush" Value="#34445B"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ToggleButton}">
-                        <Border x:Name="Chrome"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="7"
-                                RenderTransformOrigin="0.5,0.5">
-                            <Border.RenderTransform>
-                                <TranslateTransform x:Name="ToggleChromeTransform"/>
-                            </Border.RenderTransform>
-                            <Border.Effect>
-                                <DropShadowEffect x:Name="ToggleChromeGlow"
-                                                  Color="#A970FF"
-                                                  BlurRadius="0"
-                                                  ShadowDepth="0"
-                                                  Opacity="0"/>
-                            </Border.Effect>
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                              Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#30425D"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#62799B"/>
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeGlow"
-                                                             Storyboard.TargetProperty="BlurRadius"
-                                                             To="12"
-                                                             Duration="0:0:0.16"/>
-                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeGlow"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="0.28"
-                                                             Duration="0:0:0.16"/>
-                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeTransform"
-                                                             Storyboard.TargetProperty="Y"
-                                                             To="-1"
-                                                             Duration="0:0:0.12"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeGlow"
-                                                             Storyboard.TargetProperty="BlurRadius"
-                                                             To="0"
-                                                             Duration="0:0:0.18"/>
-                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeGlow"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="0"
-                                                             Duration="0:0:0.18"/>
-                                            <DoubleAnimation Storyboard.TargetName="ToggleChromeTransform"
-                                                             Storyboard.TargetProperty="Y"
-                                                             To="0"
-                                                             Duration="0:0:0.14"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#382954"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#A970FF"/>
-                                <Setter Property="Foreground" Value="#E9D9FF"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="{x:Type Slider}">
-            <Setter Property="Foreground" Value="#A970FF"/>
-            <Setter Property="Height" Value="24"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Slider}">
-                        <Grid x:Name="SliderRoot" Height="24">
-                            <Track x:Name="PART_Track"
-                                   Minimum="{TemplateBinding Minimum}"
-                                   Maximum="{TemplateBinding Maximum}"
-                                   Value="{TemplateBinding Value}"
-                                   Orientation="{TemplateBinding Orientation}"
-                                   IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Command="Slider.DecreaseLarge"
-                                                  IsTabStop="False"
-                                                  Height="4"
-                                                  VerticalAlignment="Center"
-                                                  Background="#A970FF"
-                                                  BorderThickness="0">
-                                        <RepeatButton.Template>
-                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                <Border Height="4"
-                                                        CornerRadius="2"
-                                                        Background="{TemplateBinding Background}"/>
-                                            </ControlTemplate>
-                                        </RepeatButton.Template>
-                                    </RepeatButton>
-                                </Track.DecreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb Width="14" Height="14" Focusable="False">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="{x:Type Thumb}">
-                                                <Border x:Name="ThumbChrome"
-                                                        Width="14"
-                                                        Height="14"
-                                                        CornerRadius="7"
-                                                        Background="#EAF2FF"
-                                                        BorderBrush="#A970FF"
-                                                        BorderThickness="2"/>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="#C39AFF"/>
-                                                        <Setter TargetName="ThumbChrome" Property="BorderBrush" Value="#E6D5FF"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsDragging" Value="True">
-                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="#A970FF"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Command="Slider.IncreaseLarge"
-                                                  IsTabStop="False"
-                                                  Height="4"
-                                                  VerticalAlignment="Center"
-                                                  Background="#34445B"
-                                                  BorderThickness="0">
-                                        <RepeatButton.Template>
-                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
-                                                <Border Height="4"
-                                                        CornerRadius="2"
-                                                        Background="{TemplateBinding Background}"/>
-                                            </ControlTemplate>
-                                        </RepeatButton.Template>
-                                    </RepeatButton>
-                                </Track.IncreaseRepeatButton>
-                            </Track>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="{x:Type TextBox}">
-            <Setter Property="Foreground" Value="#EFF5FF"/>
-            <Setter Property="Background" Value="#0E1724"/>
-            <Setter Property="BorderBrush" Value="#34445B"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="9,5"/>
-            <Setter Property="CaretBrush" Value="#B88BFF"/>
-            <Setter Property="SelectionBrush" Value="#7040A5"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-
-        <Style x:Key="DarkComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
-            <Setter Property="Foreground" Value="#EAF2FF"/>
-            <Setter Property="Background" Value="#182333"/>
-            <Setter Property="Padding" Value="9,7"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
-                        <Border x:Name="ItemChrome" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="ItemChrome" Property="Background" Value="#30425D"/>
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemChrome" Property="Background" Value="#382954"/>
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="#78869A"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="Foreground" Value="#EFF5FF"/>
-            <Setter Property="Background" Value="#0E1724"/>
-            <Setter Property="BorderBrush" Value="#34445B"/>
-            <Setter Property="Padding" Value="8,5"/>
-            <Setter Property="MinHeight" Value="32"/>
-            <Setter Property="ItemContainerStyle" Value="{StaticResource DarkComboBoxItemStyle}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ComboBox}">
-                        <Grid PreviewMouseLeftButtonDown="ComboBoxSurface_PreviewMouseLeftButtonDown">
-                            <Border x:Name="ComboChrome"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="5"/>
-                            <ContentPresenter x:Name="SelectionBoxPresenter"
-                                              Margin="9,0,32,0"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Left"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
-                                              IsHitTestVisible="False"/>
-                            <TextBox x:Name="PART_EditableTextBox"
-                                     Margin="9,0,32,0"
-                                     Padding="0"
-                                     VerticalContentAlignment="Center"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     Foreground="{TemplateBinding Foreground}"
-                                     CaretBrush="#EFF5FF"
-                                     SelectionBrush="#A970FF"
-                                     IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}"
-                                     MaxLength="{Binding MaxLength, RelativeSource={RelativeSource TemplatedParent}}"
-                                     Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, UpdateSourceTrigger=PropertyChanged}"
-                                     TextChanged="MainChannelTextBox_TextChanged"
-                                     Visibility="Collapsed"/>
-                            <ToggleButton Focusable="False"
-                                          ClickMode="Press"
-                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                          Background="Transparent"
-                                          BorderThickness="0"
-                                          HorizontalAlignment="Right"
-                                          Width="28">
-                                <Path Data="M 0 0 L 4 4 L 8 0 Z" Fill="#D4DFEF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </ToggleButton>
-                            <Popup x:Name="Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Fade">
-                                <Border Background="#182333"
-                                        BorderBrush="#34445B"
-                                        BorderThickness="1"
-                                        CornerRadius="5">
-                                    <Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
-                                        <ScrollViewer MaxHeight="220" CanContentScroll="True">
-                                            <ItemsPresenter/>
-                                        </ScrollViewer>
-                                    </Grid>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsEditable" Value="True">
-                                <Setter TargetName="ComboChrome" Property="Background" Value="#0E1724"/>
-                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="SelectionBoxPresenter" Property="Visibility" Value="Collapsed"/>
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter TargetName="ComboChrome" Property="BorderBrush" Value="#A970FF"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ComboChrome" Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="{x:Type CheckBox}">
-            <Setter Property="Foreground" Value="#D4DFEF"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Margin" Value="0,0,14,10"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type CheckBox}">
-                        <Grid MinHeight="22">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Border x:Name="CheckBoxChrome"
-                                    Width="16"
-                                    Height="16"
-                                    VerticalAlignment="Center"
-                                    Background="#0E1724"
-                                    BorderBrush="#53647D"
-                                    BorderThickness="1"
-                                    CornerRadius="4">
-                                <Path x:Name="CheckMark"
-                                      Data="M 2,7 L 6,11 L 13,3"
-                                      Stroke="#FFFFFF"
-                                      StrokeThickness="2"
-                                      StrokeStartLineCap="Round"
-                                      StrokeEndLineCap="Round"
-                                      Visibility="Collapsed"/>
-                            </Border>
-                            <ContentPresenter Grid.Column="1"
-                                              Margin="8,0,0,0"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="CheckBoxChrome" Property="Background" Value="#8B5BD6"/>
-                                <Setter TargetName="CheckBoxChrome" Property="BorderBrush" Value="#B88BFF"/>
-                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CheckBoxChrome" Property="BorderBrush" Value="#C39AFF"/>
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="CheckBoxChrome" Property="BorderBrush" Value="#D6BCFF"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.5"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="{x:Type ScrollBar}">
-            <Setter Property="Width" Value="9"/>
-            <Setter Property="Background" Value="#0D1420"/>
-            <Setter Property="Foreground" Value="#53647D"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ScrollBar}">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="2">
-                            <Track x:Name="PART_Track"
-                                   Orientation="{TemplateBinding Orientation}"
-                                   Minimum="{TemplateBinding Minimum}"
-                                   Maximum="{TemplateBinding Maximum}"
-                                   Value="{TemplateBinding Value}"
-                                   ViewportSize="{TemplateBinding ViewportSize}"
-                                   IsDirectionReversed="True">
-                                <Track.Thumb>
-                                    <Thumb Background="#53647D" BorderThickness="0">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="{x:Type Thumb}">
-                                                <Border x:Name="ThumbChrome"
-                                                        Background="{TemplateBinding Background}"
-                                                        CornerRadius="3"/>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="#A970FF"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsDragging" Value="True">
-                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="#C39AFF"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="WindowControlButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="FontSize" Value="16"/>
-        </Style>
-    </Window.Resources>
-    <Border x:Name="RootBorder" CornerRadius="18" BorderThickness="1" BorderBrush="#5A6474" Background="#0F1723" MouseEnter="RootBorder_MouseEnter" MouseLeave="RootBorder_MouseLeave">
-        <Border.Effect>
-            <DropShadowEffect Color="#8D5BDA" BlurRadius="26" ShadowDepth="0" Opacity="0.22"/>
-        </Border.Effect>
+</Window.Resources>
+    <Grid x:Name="WindowSurfaceGrid">
+        <Border x:Name="WindowShadow"
+                CornerRadius="8"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource ThemeBrush_5A6474}"
+                Background="Transparent"
+                Effect="{StaticResource WindowShadowEffect}"
+                IsHitTestVisible="False">
+        </Border>
+        <Border x:Name="RootBorder" Style="{StaticResource WindowSurfaceBorderStyle}" CornerRadius="8" BorderThickness="1" MouseEnter="RootBorder_MouseEnter" MouseLeave="RootBorder_MouseLeave">
         <Grid x:Name="MainLayoutGrid" Margin="8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Border x:Name="Toolbar" Grid.Row="0" CornerRadius="10" Background="#1A2330" Margin="0,0,0,6" Opacity="0.92" PreviewMouseLeftButtonDown="Toolbar_PreviewMouseLeftButtonDown">
-                <Grid Margin="6,4">
+            <Border x:Name="Toolbar" Grid.Row="0" CornerRadius="4" Background="{DynamicResource PanelSurfaceBrush}" Margin="0,0,0,8" Opacity="0.92" PreviewMouseLeftButtonDown="Toolbar_PreviewMouseLeftButtonDown">
+                <Grid Margin="4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
-                        <Button x:Name="SettingsButton" Content="⚙" Width="34" Height="28" Padding="4,2" Margin="0,0,5,0" ToolTip="Configurações" Click="ToggleSettingsButton_Click"/>
+                        <Button x:Name="SettingsButton" Width="32" Height="32" MinWidth="28" MinHeight="28" Padding="4" Margin="0,0,4,0" ToolTip="Configurações" Click="ToggleSettingsButton_Click" AutomationProperties.Name="Abrir configurações">
+                            <Path Data="M10,1 L14,1 L15,4 L17,5 L20,4 L22,7 L20,9 L20,11 L22,13 L20,16 L17,15 L15,16 L14,19 L10,19 L9,16 L7,15 L4,16 L2,13 L4,11 L4,9 L2,7 L4,4 L7,5 L9,4 Z M12,7 A3,3 0 1 0 12,13 A3,3 0 1 0 12,7 Z" Fill="Transparent" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" StrokeThickness="1" Width="16" Height="16" Stretch="Uniform"/>
+                        </Button>
                         <ToggleButton x:Name="QuickTransparencyToggle"
-                                      Content="◉"
-                                      Width="34"
-                                      Height="28"
-                                      Padding="4,2"
-                                      Margin="5,0,0,0"
+                                      Width="32"
+                                      Height="32"
+                                      MinWidth="28"
+                                      MinHeight="28"
+                                      Padding="4"
+                                      Margin="0"
                                       ToolTipService.InitialShowDelay="0"
                                       ToolTipService.BetweenShowDelay="0"
                                       IsChecked="{Binding IsTransparent, Mode=TwoWay}"
                                       Checked="QuickTransparencyToggle_Changed"
-                                      Unchecked="QuickTransparencyToggle_Changed">
+                                      Unchecked="QuickTransparencyToggle_Changed"
+                                      AutomationProperties.Name="Ativar ou desativar modo de transparência">
+                            <Path Data="M1,10 C4,3 16,3 19,10 C16,17 4,17 1,10 Z M10,7 A3,3 0 1 0 10,13 A3,3 0 1 0 10,7 Z" Fill="Transparent" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type ToggleButton}}}" StrokeThickness="1.5" Width="18" Height="18" Stretch="Uniform"/>
                             <ToggleButton.ToolTip>
                                 <ToolTip Background="Transparent"
                                          BorderThickness="0"
                                          Padding="0"
-                                         HasDropShadow="True"
                                          ToolTipService.InitialShowDelay="0"
                                          ToolTipService.ShowDuration="60000">
-                                    <Border Background="#121B29" BorderBrush="#53647D" BorderThickness="1" CornerRadius="9" Padding="11">
+                                    <Border Background="{DynamicResource PanelSurfaceBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12">
                                         <StackPanel MaxWidth="210">
-                                            <TextBlock Text="MODO TRANSPARÊNCIA" Foreground="#C39AFF" FontSize="9" FontWeight="Bold" Margin="0,0,0,5"/>
-                                            <TextBlock Text="Mostra apenas as mensagens, sem a janela e os controles do aplicativo." Foreground="#F1F5FF" FontSize="11" TextWrapping="Wrap"/>
-                                            <TextBlock Text="Clique para ativar ou desativar." Foreground="#AAB9CE" FontSize="10" Margin="0,5,0,0"/>
+                                            <TextBlock Text="Modo transparência" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                            <TextBlock Text="Mostra apenas as mensagens, sem a janela e os controles do aplicativo." Foreground="{DynamicResource PrimaryTextBrush}" FontSize="13" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Clique para ativar ou desativar." Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" Margin="0,8,0,0"/>
                                         </StackPanel>
                                     </Border>
                                 </ToolTip>
@@ -578,51 +112,39 @@
                                         HorizontalAlignment="Center">
                                 <ContentControl ContentTemplate="{StaticResource DragGripTemplate}"
                                                 VerticalAlignment="Center"
-                                                Margin="0,0,7,0"/>
+                                                Margin="0,0,8,0"/>
                                 <TextBlock Text="Chat"
                                            VerticalAlignment="Center"
-                                           Foreground="#E5F0FF"
+                                           Foreground="{DynamicResource ThemeBrush_E5F0FF}"
                                            FontWeight="SemiBold"/>
                             </StackPanel>
                         </Grid>
                     </Border>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                        <Ellipse Width="7"
+                        <Ellipse x:Name="ConnectionStatusDot"
+                                 Width="7"
                                  Height="7"
-                                 Margin="0,0,6,0"
+                                 Margin="0,0,8,0"
                                  VerticalAlignment="Center">
                             <Ellipse.Style>
                                 <Style TargetType="{x:Type Ellipse}">
-                                    <Setter Property="Fill" Value="#748095"/>
+                                    <Setter Property="Fill" Value="{DynamicResource ThemeBrush_748095}"/>
                                     <Setter Property="Opacity" Value="0.7"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                            <Setter Property="Fill" Value="#7EE0A1"/>
+                                            <Setter Property="Fill" Value="{DynamicResource ThemeBrush_7EE0A1}"/>
                                             <Setter Property="Opacity" Value="1"/>
-                                            <DataTrigger.EnterActions>
-                                                <BeginStoryboard x:Name="ConnectionPulse">
-                                                    <Storyboard RepeatBehavior="Forever">
-                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         From="1"
-                                                                         To="0.45"
-                                                                         Duration="0:0:0.9"
-                                                                         AutoReverse="True"/>
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.EnterActions>
-                                            <DataTrigger.ExitActions>
-                                                <StopStoryboard BeginStoryboardName="ConnectionPulse"/>
-                                            </DataTrigger.ExitActions>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Ellipse.Style>
                         </Ellipse>
-                        <TextBlock Text="{Binding ConnectionStatus}"
+                        <TextBlock x:Name="ConnectionStatusText"
+                                   Text="{Binding ConnectionStatus}"
                                    VerticalAlignment="Center"
-                                   Foreground="#E5F0FF"
-                                   FontSize="11"
-                                   Margin="0,0,6,0"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   FontSize="12"
+                                   Margin="0,0,8,0"
                                    MaxWidth="112"
                                    TextTrimming="CharacterEllipsis"
                                    ToolTipService.InitialShowDelay="0"
@@ -632,138 +154,257 @@
                                          Background="Transparent"
                                          BorderThickness="0"
                                          Padding="0"
-                                         HasDropShadow="True"
                                          ToolTipService.InitialShowDelay="0"
                                          ToolTipService.ShowDuration="60000">
-                                    <Border Background="#121B29"
-                                            BorderBrush="#53647D"
+                                    <Border Background="{DynamicResource ThemeBrush_121B29}"
+                                            BorderBrush="{DynamicResource ThemeBrush_53647D}"
                                             BorderThickness="1"
-                                            CornerRadius="9"
+                                            CornerRadius="4"
                                             Padding="12">
                                         <StackPanel MinWidth="190">
-                                            <TextBlock Text="ESTADO DA CONEXÃO"
-                                                       Foreground="#9EADC2"
-                                                       FontSize="9"
-                                                       FontWeight="Bold"
-                                                       Margin="0,0,0,6"/>
+                                            <TextBlock Text="Estado da conexão"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold"
+                                                       Margin="0,0,0,8"/>
                                             <TextBlock Text="{Binding ConnectionStatus}"
-                                                       Foreground="#F1F5FF"
+                                                       Foreground="{DynamicResource PrimaryTextBrush}"
                                                        FontSize="12"
                                                        FontWeight="SemiBold"
                                                        TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding MainChannel, StringFormat=Canal: #{0}}"
-                                                       Foreground="#C2CEE0"
-                                                       FontSize="11"
-                                                       Margin="0,5,0,0"/>
+                                                       Foreground="{DynamicResource SecondaryTextBrush}"
+                                                       FontSize="12"
+                                                       Margin="0,8,0,0"/>
                                         </StackPanel>
                                     </Border>
                                 </ToolTip>
                             </TextBlock.ToolTip>
                         </TextBlock>
-                        <Button Style="{StaticResource WindowControlButton}" Content="−" Width="22" Height="28" ToolTip="Minimizar" Click="MinimizeButton_Click"/>
-                        <Button Style="{StaticResource WindowControlButton}" x:Name="MaximizeButton" Content="□" Width="22" Height="28" ToolTip="Maximizar" Click="MaximizeRestoreButton_Click"/>
-                        <Button Style="{StaticResource WindowControlButton}" Content="×" Width="22" Height="28" ToolTip="Fechar" Click="CloseButton_Click"/>
+                        <Button Style="{StaticResource WindowControlButton}" ToolTip="Minimizar" Click="MinimizeButton_Click" AutomationProperties.Name="Minimizar janela">
+                            <Path Data="M4,12 L20,12" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" StrokeThickness="1.5" Stretch="Uniform" Width="16" Height="16"/>
+                        </Button>
+                        <Button Style="{StaticResource WindowControlButton}" x:Name="MaximizeButton" ToolTip="Maximizar" Click="MaximizeRestoreButton_Click" AutomationProperties.Name="Maximizar janela">
+                            <Path x:Name="MaximizeIcon" Data="M4,4 L20,4 L20,20 L4,20 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" StrokeThickness="1.5" Fill="Transparent" Stretch="Uniform" Width="16" Height="16"/>
+                        </Button>
+                        <Button ToolTip="Fechar" Click="CloseButton_Click" AutomationProperties.Name="Fechar janela">
+                            <Button.Style>
+                                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource WindowControlButton}">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource ThemeBrush_A33B4B}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource ThemeBrush_FFFFFF}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Path Data="M5,5 L19,19 M19,5 L5,19" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" StrokeThickness="1.5" Stretch="Uniform" Width="16" Height="16"/>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <Border x:Name="ChatContainer" Grid.Row="1" CornerRadius="12" BorderBrush="#2D3747" BorderThickness="1" ClipToBounds="True">
+            <Border x:Name="ChatContainer" Grid.Row="1" CornerRadius="8" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" ClipToBounds="True">
                 <Border.Style>
                     <Style TargetType="{x:Type Border}">
-                        <Setter Property="Background" Value="#0D1420"/>
+                        <Setter Property="Background" Value="{DynamicResource ThemeBrush_0D1420}"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsAuthenticatedIrc}" Value="True">
-                                <Setter Property="Background" Value="#18181B"/>
+                                <Setter Property="Background" Value="{DynamicResource ThemeBrush_18181B}"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
                 <Grid>
-                    <ScrollViewer x:Name="ChatMessagesScrollViewer" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True">
+                    <ScrollViewer x:Name="ChatMessagesScrollViewer" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" CanContentScroll="True" SizeChanged="ChatMessagesScrollViewer_SizeChanged" ScrollChanged="ChatMessagesScrollViewer_ScrollChanged">
                         <ItemsControl ItemsSource="{Binding Messages}">
                         <ItemsControl.ItemContainerStyle>
-                            <Style TargetType="{x:Type ContentPresenter}">
-                                <Setter Property="Opacity" Value="0"/>
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <TranslateTransform Y="8"/>
-                                    </Setter.Value>
-                                </Setter>
-                                <Style.Triggers>
-                                    <EventTrigger RoutedEvent="Loaded">
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.22"/>
-                                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="0" Duration="0:0:0.22">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <CubicEase EasingMode="EaseOut"/>
-                                                    </DoubleAnimation.EasingFunction>
-                                                </DoubleAnimation>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </EventTrigger>
-                                </Style.Triggers>
-                            </Style>
+                            <Style TargetType="{x:Type ContentPresenter}"/>
                         </ItemsControl.ItemContainerStyle>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="{Binding RowMargin}" Opacity="{Binding RowOpacity}">
+                                <Border Margin="{Binding RowMargin}"
+                                        Opacity="{Binding RowOpacity}"
+                                        ContextMenuOpening="ChatMessage_ContextMenuOpening">
+                                    <Border.ContextMenu>
+                                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}"
+                                                     Background="{DynamicResource ThemeBrush_182333}"
+                                                     Foreground="{DynamicResource ThemeBrush_EAF2FF}"
+                                                     BorderBrush="{DynamicResource ThemeBrush_53647D}">
+                                            <MenuItem Header="Copiar texto" Click="CopyChatMessage_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="Bloquear usuário" Click="BlockChatUser_Click"/>
+                                            <MenuItem Header="Destacar usuário" Click="HighlightChatUser_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="Abrir canal no navegador" Click="OpenChatChannel_Click"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
                                     <Border.Style>
                                         <Style TargetType="{x:Type Border}">
                                             <Setter Property="HorizontalAlignment" Value="Left"/>
                                             <Setter Property="Padding" Value="8,5"/>
-                                            <Setter Property="CornerRadius" Value="7"/>
+                                            <Setter Property="CornerRadius" Value="4"/>
                                             <Setter Property="Background" Value="{Binding MessageBackgroundBrush}"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding DataContext.IsAuthenticatedIrc, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
-                                                    <Setter Property="Padding" Value="6,2"/>
-                                                    <Setter Property="CornerRadius" Value="0"/>
-                                                    <Setter Property="Background" Value="{Binding MessageBackgroundBrush}"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding DataContext.IsTransparent, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
+                                                <DataTrigger Binding="{Binding IsTransparent}" Value="True">
                                                     <Setter Property="Padding" Value="5,3"/>
                                                     <Setter Property="CornerRadius" Value="4"/>
                                                     <Setter Property="Background" Value="{Binding MessageBackgroundBrush}"/>
-                                                    <Setter Property="Effect">
-                                                        <Setter.Value>
-                                                            <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="1" Direction="315" Opacity="0.7"/>
-                                                        </Setter.Value>
-                                                    </Setter>
                                                 </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsSystemEvent}" Value="True">
-                                                    <Setter Property="Padding" Value="8,5"/>
-                                                    <Setter Property="CornerRadius" Value="6"/>
-                                                    <Setter Property="Background" Value="{Binding MessageBackgroundBrush}"/>
+                                                <DataTrigger Binding="{Binding UserNameAboveMessage}" Value="True">
+                                                    <Setter Property="Padding" Value="0"/>
+                                                    <Setter Property="Background" Value="Transparent"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                <TextBlock MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type ScrollViewer}}}"
-                                           TextWrapping="Wrap"
-                                           VerticalAlignment="Center"
-                                           Loaded="ChatMessageTextBlock_Loaded"
-                                           Opacity="{Binding DataContext.TextOpacity, RelativeSource={RelativeSource AncestorType={x:Type Window}}}">
-                                                                    <TextBlock.Style>
-                                                                        <Style TargetType="{x:Type TextBlock}">
-                                                                            <Setter Property="FontSize" Value="{Binding DataContext.FontSize, RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
-                                                                            <Setter Property="Effect" Value="{StaticResource ChatTextOutline}"/>
-                                                                            <Style.Triggers>
-                                                                                <MultiDataTrigger>
-                                                                                    <MultiDataTrigger.Conditions>
-                                                                                        <Condition Binding="{Binding DataContext.IsAuthenticatedIrc, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True"/>
-                                                                                        <Condition Binding="{Binding DataContext.IsTransparent, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="False"/>
-                                                                                    </MultiDataTrigger.Conditions>
-                                                                                    <Setter Property="Effect" Value="{x:Null}"/>
-                                                                                </MultiDataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </TextBlock.Style>
-                                    </TextBlock>
+                                    <Grid>
+                                    <Grid x:Name="InlineMessageLayout">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="3"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="SystemEventStripe"
+                                                Grid.Column="0"
+                                                Margin="0,0,0,0"
+                                                Background="{Binding EventAccentBrush}"
+                                                CornerRadius="2"
+                                                Visibility="Collapsed"/>
+                                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       Foreground="{Binding NameBrush}"
+                                                       FontSize="{Binding FontSize}"
+                                                       FontWeight="Bold"
+                                                       TextWrapping="Wrap">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="{x:Type TextBlock}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding UserNameAboveMessage}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock MaxWidth="{Binding MaxWidth}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="{Binding LineHeight}"
+                                                       VerticalAlignment="Center"
+                                                       Loaded="ChatMessageTextBlock_Loaded"
+                                                       Opacity="{Binding TextOpacity}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="{x:Type TextBlock}">
+                                                        <Setter Property="FontSize" Value="{Binding FontSize}"/>
+                                                        <Setter Property="Effect" Value="{x:Null}"/>
+                                                        <Style.Triggers>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsTransparent}" Value="True"/>
+                                                                    <Condition Binding="{Binding ShowChatTextOutline}" Value="True"/>
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter Property="Effect" Value="{DynamicResource ChatTextOutline}"/>
+                                                            </MultiDataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid x:Name="FloatingMessageLayout" Visibility="Collapsed">
+                                        <Border Background="{Binding MessageBackgroundBrush}"
+                                                CornerRadius="4"
+                                                Padding="8,20,8,5"
+                                                Margin="0,10,0,0">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="3"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0"
+                                                        Background="{Binding EventAccentBrush}"
+                                                        CornerRadius="2"
+                                                        Visibility="Collapsed"/>
+                                                <TextBlock Grid.Column="1"
+                                                           MaxWidth="{Binding MaxWidth}"
+                                                           Margin="8,0,0,0"
+                                                           TextWrapping="Wrap"
+                                                           LineHeight="{Binding LineHeight}"
+                                                           VerticalAlignment="Center"
+                                                           Loaded="ChatMessageTextBlock_Loaded"
+                                                           Opacity="{Binding TextOpacity}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="{x:Type TextBlock}">
+                                                            <Setter Property="FontSize" Value="{Binding FontSize}"/>
+                                                            <Setter Property="Effect" Value="{x:Null}"/>
+                                                            <Style.Triggers>
+                                                                <MultiDataTrigger>
+                                                                    <MultiDataTrigger.Conditions>
+                                                                        <Condition Binding="{Binding IsTransparent}" Value="True"/>
+                                                                        <Condition Binding="{Binding ShowChatTextOutline}" Value="True"/>
+                                                                    </MultiDataTrigger.Conditions>
+                                                                    <Setter Property="Effect" Value="{DynamicResource ChatTextOutline}"/>
+                                                                </MultiDataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+                                        <Border HorizontalAlignment="Left"
+                                                VerticalAlignment="Top"
+                                                Margin="8,0,8,0"
+                                                Padding="5,2"
+                                                Background="{DynamicResource PanelSurfaceBrush}"
+                                                BorderBrush="{DynamicResource ControlBorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="4"
+                                                Effect="{StaticResource FloatingNameShadow}"
+                                                Panel.ZIndex="1">
+                                            <TextBlock Loaded="ChatMessageHeaderTextBlock_Loaded"
+                                                       FontSize="{Binding FontSize}"
+                                                       TextWrapping="NoWrap"/>
+                                        </Border>
+                                    </Grid>
+                                    </Grid>
                                 </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsSystemEvent}" Value="True">
+                                        <Setter TargetName="SystemEventStripe" Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding UserNameAboveMessage}" Value="True">
+                                        <Setter TargetName="InlineMessageLayout" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="FloatingMessageLayout" Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
+                    <Button x:Name="NewMessagesButton"
+                                        Visibility="Collapsed"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Margin="8"
+                                Padding="12,8"
+                                Background="{DynamicResource ThemeBrush_26374D}"
+                                Foreground="{DynamicResource ThemeBrush_F1F5FF}"
+                                BorderBrush="{DynamicResource AccentBrush}"
+                                BorderThickness="1"
+                                Click="NewMessagesButton_Click"
+                                AutomationProperties.Name="Rolar para as novas mensagens">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="NewMessagesCountText" Text="1 nova mensagem" VerticalAlignment="Center"/>
+                            <Path Data="M4,2 L4,12 M0,8 L4,12 L8,8"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"
+                                  StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  Width="12"
+                                  Height="14"
+                                  Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Button>
                     <Grid x:Name="TwitchPopoutHost"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
@@ -772,7 +413,7 @@
                           IsHitTestVisible="False"/>
                     <Path x:Name="ResizeGripIcon"
                           Data="M 2,12 L 12,2 M 7,12 L 12,7"
-                          Stroke="#8B9AB0"
+                          Stroke="{DynamicResource ThemeBrush_8B9AB0}"
                           StrokeThickness="1.5"
                           StrokeStartLineCap="Round"
                           StrokeEndLineCap="Round"
@@ -781,7 +422,7 @@
                           Height="14"
                           HorizontalAlignment="Right"
                           VerticalAlignment="Bottom"
-                          Margin="0,0,5,5"
+                          Margin="0,0,4,4"
                           IsHitTestVisible="False"
                           ToolTip="Segure e arraste para redimensionar"/>
                 </Grid>
@@ -795,7 +436,7 @@
                     Margin="4"
                     Width="48"
                     Height="34"
-                    Padding="5,2"
+                    Padding="4,4"
                     Opacity="0.75"
                     Visibility="Collapsed"
                     PreviewMouseLeftButtonDown="ExitChatOnlyButton_PreviewMouseLeftButtonDown"
@@ -803,7 +444,14 @@
                     Click="ExitChatOnlyButton_Click">
                 <Button.Content>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="⚙" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <Path Data="M10,1 L14,1 L15,4 L17,5 L20,4 L22,7 L20,9 L20,11 L22,13 L20,16 L17,15 L15,16 L14,19 L10,19 L9,16 L7,15 L4,16 L2,13 L4,11 L4,9 L2,7 L4,4 L7,5 L9,4 Z M12,7 A3,3 0 1 0 12,13 A3,3 0 1 0 12,7 Z"
+                              Fill="Transparent"
+                              Stroke="{DynamicResource SecondaryTextBrush}"
+                              StrokeThickness="1"
+                              Width="16"
+                              Height="16"
+                              Margin="0,0,4,0"
+                              Stretch="Uniform"/>
                         <ContentControl ContentTemplate="{StaticResource DragGripTemplate}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button.Content>
@@ -812,14 +460,14 @@
                 </Button.ToolTip>
                 <Button.Style>
                     <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
-                        <Setter Property="Background" Value="#182333"/>
-                        <Setter Property="BorderBrush" Value="#6D7890"/>
+                        <Setter Property="Background" Value="{DynamicResource ThemeBrush_182333}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource ThemeBrush_6D7890}"/>
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Opacity" Value="1"/>
-                                <Setter Property="Content" Value="⚙  Sair do chat"/>
+                                <Setter Property="Content" Value="Sair do chat"/>
                                 <Setter Property="Width" Value="132"/>
-                                <Setter Property="Background" Value="#26374D"/>
+                                <Setter Property="Background" Value="{DynamicResource ThemeBrush_26374D}"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -835,475 +483,38 @@
                 <Button x:Name="ChatOnlyGearPopupButton"
                         Width="48"
                         Height="34"
-                        Padding="5,2"
+                        Padding="4,4"
                         ToolTip="Segure para arrastar · clique para sair do modo somente chat"
                         PreviewMouseLeftButtonDown="ExitChatOnlyButton_PreviewMouseLeftButtonDown"
                         PreviewMouseLeftButtonUp="ExitChatOnlyButton_PreviewMouseLeftButtonUp"
                         Click="ExitChatOnlyButton_Click"
                         Opacity="0.75">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="⚙" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <Path Data="M10,1 L14,1 L15,4 L17,5 L20,4 L22,7 L20,9 L20,11 L22,13 L20,16 L17,15 L15,16 L14,19 L10,19 L9,16 L7,15 L4,16 L2,13 L4,11 L4,9 L2,7 L4,4 L7,5 L9,4 Z M12,7 A3,3 0 1 0 12,13 A3,3 0 1 0 12,7 Z"
+                              Fill="Transparent"
+                              Stroke="{DynamicResource SecondaryTextBrush}"
+                              StrokeThickness="1"
+                              Width="16"
+                              Height="16"
+                              Margin="0,0,4,0"
+                              Stretch="Uniform"/>
                         <ContentControl ContentTemplate="{StaticResource DragGripTemplate}" VerticalAlignment="Center"/>
                     </StackPanel>
                     <Button.Style>
                         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
-                            <Setter Property="Background" Value="#182333"/>
-                            <Setter Property="BorderBrush" Value="#6D7890"/>
+                            <Setter Property="Background" Value="{DynamicResource ThemeBrush_182333}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBrush_6D7890}"/>
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Opacity" Value="1"/>
-                                    <Setter Property="Background" Value="#26374D"/>
+                                    <Setter Property="Background" Value="{DynamicResource ThemeBrush_26374D}"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
                     </Button.Style>
                 </Button>
             </Popup>
-
-            <Popup x:Name="SettingsPopup"
-                   Placement="Center"
-                   PlacementTarget="{Binding ElementName=RootWindow}"
-                   StaysOpen="True"
-                   AllowsTransparency="True"
-                   PopupAnimation="Fade"
-                   DataContext="{Binding DataContext, ElementName=RootWindow}"
-                   Closed="SettingsPopup_Closed">
-                <Border x:Name="SettingsPanel" Width="560" Height="500" MinWidth="420" MinHeight="340" CornerRadius="12" Background="#121B29" BorderBrush="#47566C" BorderThickness="1" Padding="14" PreviewMouseDown="SettingsPopup_PreviewMouseDown">
-                    <Border.Effect>
-                        <DropShadowEffect Color="#000000" BlurRadius="22" ShadowDepth="4" Opacity="0.55"/>
-                    </Border.Effect>
-                    <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="112"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="32"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0"
-                            Grid.ColumnSpan="2"
-                            Height="1"
-                            Margin="12,0"
-                            VerticalAlignment="Top"
-                            IsHitTestVisible="False"
-                            Panel.ZIndex="6">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#00A970FF" Offset="0"/>
-                                <GradientStop Color="#A970FF" Offset="0.5"/>
-                                <GradientStop Color="#00A970FF" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-
-                    <Thumb Grid.RowSpan="2"
-                           Grid.ColumnSpan="2"
-                           Panel.ZIndex="5"
-                           Width="18"
-                           Height="18"
-                           HorizontalAlignment="Right"
-                           VerticalAlignment="Bottom"
-                           Cursor="SizeNWSE"
-                           DragDelta="SettingsResizeThumb_DragDelta"
-                           ToolTip="Arraste para redimensionar">
-                        <Thumb.Template>
-                            <ControlTemplate TargetType="{x:Type Thumb}">
-                                <Grid Background="Transparent">
-                                    <Path Data="M 4,16 L 16,4 M 10,16 L 16,10"
-                                          Stroke="#71819A"
-                                          StrokeThickness="1.5"
-                                          StrokeStartLineCap="Round"
-                                          StrokeEndLineCap="Round"
-                                          HorizontalAlignment="Right"
-                                          VerticalAlignment="Bottom"
-                                          Margin="0,0,2,2"/>
-                                </Grid>
-                            </ControlTemplate>
-                        </Thumb.Template>
-                    </Thumb>
-
-                    <Border Grid.Row="0" Grid.ColumnSpan="2"
-                            Background="Transparent"
-                            Cursor="SizeAll"
-                            ToolTip="Arraste para mover as configurações"
-                            MouseLeftButtonDown="SettingsPopupDrag_MouseLeftButtonDown"
-                            MouseMove="SettingsPopupDrag_MouseMove"
-                            MouseLeftButtonUp="SettingsPopupDrag_MouseLeftButtonUp">
-                        <Grid>
-                            <ContentControl ContentTemplate="{StaticResource DragGripTemplate}"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Center"
-                                            Margin="2,0,0,0"/>
-                            <TextBlock Text="CONFIGURAÇÕES  ·  arraste para mover"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Foreground="{StaticResource MutedTextBrush}"
-                                       FontSize="10"
-                                       FontWeight="SemiBold"
-                                       IsHitTestVisible="False"/>
-                            <Button Content="×"
-                                    Width="24"
-                                    Height="24"
-                                    Padding="0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Cursor="Hand"
-                                    ToolTip="Fechar configurações"
-                                    Click="CloseSettingsButton_Click">
-                                <Button.Style>
-                                    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource WindowControlButton}">
-                                        <Setter Property="Foreground" Value="#9EADC2"/>
-                                        <Setter Property="FontSize" Value="18"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Foreground" Value="#FFFFFF"/>
-                                                <Setter Property="Background" Value="#A33B4B"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                        </Grid>
-                    </Border>
-
-                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
-                        <Grid Margin="4,4,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="TWITCH" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}"/>
-                            <Border Grid.Column="1"
-                                    Height="1"
-                                    Margin="8,0,4,0"
-                                    VerticalAlignment="Center"
-                                    Background="{StaticResource SurfaceHoverBrush}"
-                                    Opacity="0.8"/>
-                        </Grid>
-                        <Button x:Name="ChatPreferencesButton" Content="Chat e filtros" ContentTemplate="{StaticResource CenteredCategoryButtonContent}" HorizontalContentAlignment="Stretch" Height="28" Padding="6,3" Background="#302544" BorderBrush="#8054C5" Foreground="#F1E8FF" Margin="0,0,0,4" Click="ChatPreferencesButton_Click"/>
-                        <Button x:Name="ConnectionsPreferencesButton" Content="Conexões" ContentTemplate="{StaticResource CenteredCategoryButtonContent}" HorizontalContentAlignment="Stretch" Height="28" Padding="6,3" Margin="0,0,0,10" Click="ConnectionsPreferencesButton_Click"/>
-                        <Grid Margin="4,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="GERAL" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}"/>
-                            <Border Grid.Column="1"
-                                    Height="1"
-                                    Margin="8,0,4,0"
-                                    VerticalAlignment="Center"
-                                    Background="{StaticResource SurfaceHoverBrush}"
-                                    Opacity="0.8"/>
-                        </Grid>
-                        <Button x:Name="WidgetsPreferencesButton" Content="Widgets" ContentTemplate="{StaticResource CenteredCategoryButtonContent}" HorizontalContentAlignment="Stretch" Height="28" Padding="6,3" Margin="0,0,0,4" Click="WidgetsPreferencesButton_Click"/>
-                        <Button x:Name="AboutPreferencesButton" Content="Sobre" ContentTemplate="{StaticResource CenteredCategoryButtonContent}" HorizontalContentAlignment="Stretch" Height="28" Padding="6,3" Margin="0,0,0,4" Click="AboutPreferencesButton_Click"/>
-                    </StackPanel>
-
-                    <Grid Grid.Row="1" Grid.Column="1">
-                        <ScrollViewer x:Name="ChatPreferencesPage" VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                        <TextBlock Text="CHAT E FILTRO" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3" TextAlignment="Center"/>
-                        <TextBlock Text="Conecte canais e filtre mensagens." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,13" TextAlignment="Center"/>
-                        <TextBlock x:Name="ChatFilterModeInfo"
-                                   Text="Os filtros locais só funcionam no modo IRC autenticado. O chat público exibe as mensagens direto da Twitch."
-                                   TextWrapping="Wrap"
-                                   Foreground="#E5C27A"
-                                   FontSize="10"
-                                   Margin="0,0,0,10"
-                                   Visibility="Collapsed"/>
-                        <Border x:Name="FilterAuthenticationPrompt"
-                                Background="#182333"
-                                BorderBrush="#47566C"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="10"
-                                Margin="0,0,0,10"
-                                Visibility="Collapsed">
-                            <StackPanel>
-                                <TextBlock Text="Quer mais filtros?"
-                                           FontWeight="SemiBold"
-                                           Foreground="#F1F5FF"
-                                           Margin="0,0,0,4"/>
-                                <TextBlock Text="Conecte sua conta Twitch para liberar filtros extras e escolher quais canais e pessoas aparecem no chat."
-                                           TextWrapping="Wrap"
-                                           FontSize="10"
-                                           Foreground="{StaticResource MutedTextBrush}"
-                                           Margin="0,0,0,8"/>
-                                <Button Content="Configurar autenticação"
-                                        HorizontalAlignment="Left"
-                                        Click="OpenFilterAuthentication_Click"/>
-                            </StackPanel>
-                        </Border>
-                        <TextBlock Text="Canal da Twitch" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ComboBox x:Name="MainChannelComboBox"
-                                      ItemsSource="{Binding RecentChannels}"
-                                      IsEditable="True"
-                                      IsTextSearchEnabled="False"
-                                      Text="{Binding MainChannel, UpdateSourceTrigger=PropertyChanged}"
-                                      VerticalContentAlignment="Center"
-                                      Height="30"
-                                      Margin="0,0,8,0"
-                                      SelectionChanged="RecentChannelsComboBox_SelectionChanged"/>
-                            <Button Grid.Column="1"
-                                    Width="136"
-                                    Padding="4,7"
-                                    HorizontalContentAlignment="Center"
-                                    Click="ConnectButton_Click">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <Ellipse Width="13"
-                                             Height="13"
-                                             Margin="0,0,6,0"
-                                             Stroke="#D7C2FF"
-                                             StrokeThickness="2"
-                                             StrokeDashArray="2,2"
-                                             RenderTransformOrigin="0.5,0.5">
-                                        <Ellipse.RenderTransform>
-                                            <RotateTransform Angle="0"/>
-                                        </Ellipse.RenderTransform>
-                                        <Ellipse.Style>
-                                            <Style TargetType="Ellipse">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsConnecting}" Value="True">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                        <DataTrigger.EnterActions>
-                                                            <BeginStoryboard x:Name="ConnectSpinnerStoryboard">
-                                                                <Storyboard>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
-                                                                                     From="0"
-                                                                                     To="360"
-                                                                                     Duration="0:0:0.8"
-                                                                                     RepeatBehavior="Forever"/>
-                                                                </Storyboard>
-                                                            </BeginStoryboard>
-                                                        </DataTrigger.EnterActions>
-                                                        <DataTrigger.ExitActions>
-                                                            <RemoveStoryboard BeginStoryboardName="ConnectSpinnerStoryboard"/>
-                                                        </DataTrigger.ExitActions>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Ellipse.Style>
-                                    </Ellipse>
-                                    <TextBlock Text="{Binding ConnectButtonText}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-
-                        <StackPanel x:Name="AuthenticatedFilterControls">
-                            <TextBlock Text="Modo de filtro" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,12,0,5"/>
-                            <ComboBox x:Name="FilterModeComboBox" Margin="0,0,0,8" SelectionChanged="FilterModeComboBox_SelectionChanged">
-                                <ComboBoxItem Content="Meu Chat"/>
-                                <ComboBoxItem Content="Chat Unido"/>
-                            </ComboBox>
-                            <TextBlock Text="Meu Chat mostra apenas o canal principal.&#10;Chat Unido mostra o canal principal e os canais adicionais; os canais ignorados continuam excluídos."
-                                       TextWrapping="Wrap"
-                                       FontSize="10"
-                                       Foreground="{StaticResource MutedTextBrush}"
-                                       Margin="0,0,0,10"/>
-                            <StackPanel x:Name="OtherChannelsFilterControls">
-                                <CheckBox x:Name="DimOtherChannelsCheckBox"
-                                          Content="Deixar mensagens de outros canais transparentes"
-                                          IsChecked="{Binding DimOtherChannelMessages}"
-                                          Checked="SavePreferences_Changed"
-                                          Unchecked="SavePreferences_Changed"
-                                          Margin="0,0,0,8"
-                                          ToolTip="Mantém as mensagens no chat com 50% de opacidade. Disponível enquanto conectado pelo IRC."/>
-                            </StackPanel>
-
-                            <StackPanel x:Name="AdditionalChannelsFilterControls">
-                                <TextBlock Text="Canais adicionais para unir · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                                <TextBox x:Name="SelectedChannelsTextBox" Text="{Binding SelectedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
-                            </StackPanel>
-
-                            <StackPanel x:Name="BlockedChannelsFilterControls">
-                                <TextBlock Text="Ignorar mensagens destes canais · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                                <TextBox Text="{Binding BlockedChannelsText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,10" TextChanged="SaveTextPreference_Changed"/>
-                            </StackPanel>
-
-                            <TextBlock Text="Usuários ignorados · separados por vírgula" FontSize="11" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                            <TextBox Text="{Binding BlockedUsersText, UpdateSourceTrigger=PropertyChanged}" Height="30" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
-
-                            <CheckBox Content="Ocultar comandos que começam com !" IsChecked="{Binding HideCommands}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                        </StackPanel>
-                        <TextBlock Text="Ignorar mensagens que contenham estes termos · separados por vírgula ou linha" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,12,0,5"/>
-                        <TextBox Text="{Binding BlockedTermsText, UpdateSourceTrigger=PropertyChanged}" Height="48" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8" TextChanged="SaveTextPreference_Changed"/>
-                        <TextBlock Text="Destacar termos no chat · separados por vírgula ou linha" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,2,0,5"/>
-                        <TextBox Text="{Binding HighlightTermsText, UpdateSourceTrigger=PropertyChanged}" Height="48" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,0,0,6" TextChanged="SaveTextPreference_Changed"/>
-                        <TextBlock Text="Cor dos termos destacados" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="AccentColorInput" Text="{Binding AccentColor, UpdateSourceTrigger=PropertyChanged}" Height="30" TextChanged="AccentColor_TextChanged"/>
-                            <Button x:Name="AccentColorPaletteButton" Grid.Column="1" Content="Paleta de Cores" Width="110" Padding="6,0" Margin="6,0,0,0" Click="ChooseAccentColorButton_Click" ToolTip="Escolher a cor dos termos destacados"/>
-                        </Grid>
-                        <TextBlock x:Name="AccentColorStatus" Foreground="#F0A5A5" FontSize="10" Margin="0,3,0,0" Visibility="Collapsed"/>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,4,0,0">
-                            <Border x:Name="AccentColorPreviewDot" Width="12" Height="12" CornerRadius="6" BorderBrush="#9EADC2" BorderThickness="1" Margin="0,0,6,0"/>
-                            <TextBlock x:Name="AccentColorPreviewText" Foreground="{StaticResource MutedTextBrush}" FontSize="10"/>
-                        </StackPanel>
-                        <TextBlock Text="As regras valem para o feed integrado; mensagens bloqueadas somem e os termos destacados podem emitir alerta sonoro." TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,8"/>
-                            </StackPanel>
-                        </ScrollViewer>
-
-                        <ScrollViewer x:Name="ConnectionsPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="CONEXÕES" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3" TextAlignment="Center"/>
-                                <TextBlock Text="Método de conexão" FontSize="11" FontWeight="SemiBold" Foreground="#D7E5FF" Margin="0,0,0,5"/>
-                                <ComboBox x:Name="ConnectionModeComboBox" SelectionChanged="ConnectionModeComboBox_SelectionChanged" Margin="0,0,0,8">
-                                    <ComboBoxItem Content="Chat público · sem autorização"/>
-                                    <ComboBoxItem Content="IRC autenticado · filtros avançados"/>
-                                </ComboBox>
-                                <TextBlock x:Name="ConnectionModeDescription"
-                                           Text="Chat público: não requer autorização e mostra apenas o canal selecionado. Os filtros avançados por canais e usuários são exclusivos do IRC."
-                                           TextWrapping="Wrap"
-                                           Foreground="{StaticResource MutedTextBrush}"
-                                           Margin="0,0,0,10"/>
-                                <Border x:Name="TwitchAuthorizationPanel" Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="9" Padding="10" Margin="0,0,0,10">
-                                    <StackPanel>
-                                        <TextBlock Text="AUTORIZAÇÃO TWITCH" FontSize="9" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}"/>
-                                        <TextBlock x:Name="TwitchAuthorizationStatus" Text="Ainda não autorizado. Clique em Conectar para iniciar." TextWrapping="Wrap" Foreground="#D7E5FF" Margin="0,4,0,5"/>
-                                        <TextBlock x:Name="TwitchDeviceCodeText" FontSize="20" FontWeight="Bold" Foreground="#C5A2FF" Visibility="Collapsed"/>
-                                        <WrapPanel Margin="0,5,0,0">
-                                            <Button x:Name="TwitchOpenAuthorizationButton" Content="Abrir Twitch" Visibility="Collapsed" Click="TwitchOpenAuthorizationButton_Click" Margin="0,0,7,0"/>
-                                            <Button x:Name="TwitchCancelAuthorizationButton" Content="Cancelar autorização" Visibility="Collapsed" Click="TwitchCancelAuthorizationButton_Click"/>
-                                        </WrapPanel>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="#182333" BorderBrush="#2D3B50" BorderThickness="1" CornerRadius="9" Padding="12" Margin="0,0,0,12">
-                                    <StackPanel>
-                                        <TextBlock Text="Canal conectado" FontWeight="SemiBold" Foreground="#EAF2FF"/>
-                                        <TextBlock Text="{Binding MainChannel, StringFormat={}#{0}}" Foreground="#AEBBD0" Margin="0,5,0,0"/>
-                                        <TextBlock Text="{Binding ConnectionStatus}" Foreground="#B88BFF" Margin="0,5,0,0"/>
-                                    </StackPanel>
-                                </Border>
-                                <Button Content="Diagnóstico" HorizontalAlignment="Left" Margin="0,0,8,8" Click="ShowDiagnosticButton_Click"/>
-                                <TextBlock x:Name="TwitchAuthorizationHelp" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0">
-                                    <Run Text="A conexão IRC permite "/>
-                                    <Run Text="somente a leitura do chat" Foreground="#FFD166" FontWeight="Bold"/>
-                                    <Run Text=". O aplicativo não pode enviar mensagens. A conexão é criptografada e o acesso fica protegido pela conta Windows."/>
-                                </TextBlock>
-                            </StackPanel>
-                        </ScrollViewer>
-
-                        <ScrollViewer x:Name="WidgetsPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="WIDGETS" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3" TextAlignment="Center"/>
-                                <TextBlock Text="Ajustes rápidos da sobreposição." FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,16" TextAlignment="Center"/>
-                                <CheckBox Content="Permitir cliques atravessando o overlay" IsChecked="{Binding ClickThroughEnabled}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Mostrar nomes de usuários" IsChecked="{Binding ShowUserNames}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Usar cores individuais dos nomes" IsChecked="{Binding UseTwitchNameColors}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Mostrar timestamps" IsChecked="{Binding ShowTimestamps}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Mostrar badges" IsChecked="{Binding ShowBadges}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Mostrar badges de moderadores" IsChecked="{Binding ShowModerators}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Mostrar badges VIP" IsChecked="{Binding ShowVips}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Iniciar minimizado" IsChecked="{Binding StartMinimized}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Som ao receber termo destacado" IsChecked="{Binding EnableSound}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <CheckBox Content="Som ao receber cada nova mensagem" IsChecked="{Binding NotifyNewMessages, Mode=TwoWay}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
-                                <TextBlock Text="Som de notificação" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <ComboBox x:Name="NotificationSoundComboBox" SelectionChanged="NotificationSoundComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="Neutro"/>
-                                    <ComboBoxItem Content="Suave"/>
-                                    <ComboBoxItem Content="Sino"/>
-                                </ComboBox>
-                                <Button Content="Ouvir exemplo" HorizontalAlignment="Left" Margin="0,6,0,0" Click="NotificationSoundPreviewButton_Click"/>
-                                <TextBlock Text="{Binding NotificationVolumePercent, StringFormat=Volume do som: {0}%}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Slider Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
-                                        Value="{Binding NotificationVolumePercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        ValueChanged="NotificationVolumeSlider_ValueChanged"/>
-                                <TextBlock Text="{Binding FontSize, StringFormat=Fonte do chat: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Slider Minimum="10" Maximum="32" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="FontSizeSlider_ValueChanged"/>
-                                <TextBlock Text="Opacidade do Fundo do Aplicativo" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Slider Minimum="0.15" Maximum="1" Value="{Binding BackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="OpacitySlider_ValueChanged"/>
-                                <CheckBox Content="Aplicar cor ao fundo das mensagens"
-                                          IsChecked="{Binding UseMessageBackgroundOpacity, Mode=TwoWay}"
-                                          Checked="SavePreferences_Changed"
-                                          Unchecked="SavePreferences_Changed"
-                                          Margin="0,10,0,0"/>
-                                <TextBlock Text="{Binding MessageBackgroundOpacity, StringFormat=Opacidade do fundo das mensagens: {0:P0}}"
-                                           Foreground="#D7E5FF"
-                                           Margin="0,8,0,6"/>
-                                <Slider Minimum="0.1"
-                                        Maximum="1"
-                                        IsEnabled="{Binding UseMessageBackgroundOpacity}"
-                                        Value="{Binding MessageBackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        ValueChanged="AppearanceSlider_ValueChanged"/>
-                                <TextBlock Text="Cor do fundo das mensagens" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="MessageBackgroundColorInput" Text="{Binding MessageBackgroundColor, UpdateSourceTrigger=PropertyChanged}" Height="30" TextChanged="MessageBackgroundColor_TextChanged"/>
-                                    <Button x:Name="MessageBackgroundColorPaletteButton" Grid.Column="1" Content="Paleta de Cores" Width="110" Padding="6,0" Margin="6,0,0,0" Click="ChooseMessageBackgroundColorButton_Click" ToolTip="Escolher o fundo das mensagens"/>
-                                </Grid>
-                                <TextBlock x:Name="MessageBackgroundColorStatus" Foreground="#F0A5A5" FontSize="10" Margin="0,3,0,0" Visibility="Collapsed"/>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,4,0,0">
-                                    <Border x:Name="MessageBackgroundColorPreviewDot" Width="12" Height="12" CornerRadius="6" BorderBrush="#9EADC2" BorderThickness="1" Margin="0,0,6,0"/>
-                                    <TextBlock x:Name="MessageBackgroundColorPreviewText" Foreground="{StaticResource MutedTextBrush}" FontSize="10"/>
-                                </StackPanel>
-                                <TextBlock Text="{Binding TextOpacity, StringFormat=Opacidade do texto: {0:P0}}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Slider Minimum="0.2" Maximum="1" Value="{Binding TextOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
-                                <TextBlock Text="{Binding MessageSpacing, StringFormat=Espaçamento entre mensagens: {0} px}" Foreground="#D7E5FF" Margin="0,10,0,6"/>
-                                <Slider Minimum="0" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding MessageSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
-                            </StackPanel>
-                        </ScrollViewer>
-
-                        <ScrollViewer x:Name="AboutPreferencesPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="SOBRE" FontSize="18" FontWeight="Bold" Foreground="#F1F5FF" Margin="0,0,0,3" TextAlignment="Center"/>
-                                <TextBlock Text="TransparentChatFilterUnited" FontSize="15" FontWeight="SemiBold" Foreground="#E6D5FF" Margin="0,18,0,4" TextAlignment="Center"/>
-                                <TextBlock x:Name="AppVersionText" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,9" TextAlignment="Center"/>
-                                <TextBlock Text="Overlay leve para acompanhar o chat da Twitch enquanto joga. Configure um canal, escolha um modo de filtragem e ajuste o visual do widget." TextWrapping="Wrap" Foreground="#BCC8D9" Margin="0,0,0,14" TextAlignment="Center"/>
-                                <TextBlock Text="Mostrar/ocultar: Ctrl + Alt + T · Alternar chat-only: Ctrl + Alt + Shift + T" TextWrapping="Wrap" Foreground="#D7E5FF"/>
-                                <TextBlock Text="As preferências ficam salvas localmente neste computador." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0"/>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Grid>
-                    </Grid>
-                </Border>
-            </Popup>
-            <Popup x:Name="ColorPalettePopup"
-                   Placement="Bottom"
-                   AllowsTransparency="True"
-                   StaysOpen="False">
-                <Border Background="#121B29" BorderBrush="#53647D" BorderThickness="1" CornerRadius="8" Padding="8">
-                    <StackPanel>
-                        <TextBlock Text="Escolha uma cor" Foreground="#EAF2FF" FontWeight="SemiBold" Margin="2,0,2,6"/>
-                        <WrapPanel Width="224">
-                            <Button Background="#000000" Tag="#000000" ToolTip="Preto" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#FFFFFF" Tag="#FFFFFF" ToolTip="Branco" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#808080" Tag="#808080" ToolTip="Cinza" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#C0C0C0" Tag="#C0C0C0" ToolTip="Cinza claro" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#7F0000" Tag="#7F0000" ToolTip="Vinho" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#FF0000" Tag="#FF0000" ToolTip="Vermelho" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#FF7F00" Tag="#FF7F00" ToolTip="Laranja" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#FFFF00" Tag="#FFFF00" ToolTip="Amarelo" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#7F7F00" Tag="#7F7F00" ToolTip="Oliva" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#00FF00" Tag="#00FF00" ToolTip="Verde" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#007F00" Tag="#007F00" ToolTip="Verde escuro" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#00FFFF" Tag="#00FFFF" ToolTip="Ciano" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#007FFF" Tag="#007FFF" ToolTip="Azul claro" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#0000FF" Tag="#0000FF" ToolTip="Azul" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#00007F" Tag="#00007F" ToolTip="Azul escuro" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#7F00FF" Tag="#7F00FF" ToolTip="Violeta" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#FF00FF" Tag="#FF00FF" ToolTip="Magenta" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#FF007F" Tag="#FF007F" ToolTip="Rosa" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#5EA2FF" Tag="#5EA2FF" ToolTip="Azul Twitch Filter" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                            <Button Background="#A970FF" Tag="#A970FF" ToolTip="Violeta Twitch" Click="PaletteColorButton_Click" Width="24" Height="24" Padding="0" Margin="2"/>
-                        </WrapPanel>
-                    </StackPanel>
-                </Border>
-            </Popup>
         </Grid>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

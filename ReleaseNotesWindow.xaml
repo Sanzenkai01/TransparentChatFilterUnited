@@ -14,122 +14,24 @@
         WindowStyle="None"
         Loaded="Window_Loaded">
     <Window.Resources>
-        <Style TargetType="{x:Type ScrollBar}">
-            <Setter Property="Width" Value="9"/>
-            <Setter Property="Background" Value="#0D1420"/>
-            <Setter Property="Foreground" Value="#53647D"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ScrollBar}">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="2">
-                            <Track x:Name="PART_Track"
-                                   Orientation="{TemplateBinding Orientation}"
-                                   Minimum="{TemplateBinding Minimum}"
-                                   Maximum="{TemplateBinding Maximum}"
-                                   Value="{TemplateBinding Value}"
-                                   ViewportSize="{TemplateBinding ViewportSize}"
-                                   IsDirectionReversed="True">
-                                <Track.Thumb>
-                                    <Thumb Background="#53647D" BorderThickness="0">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="{x:Type Thumb}">
-                                                <Border x:Name="ThumbChrome"
-                                                        Background="{TemplateBinding Background}"
-                                                        CornerRadius="3"/>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="#A970FF"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsDragging" Value="True">
-                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="#C39AFF"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="CloseButton" TargetType="{x:Type Button}">
-            <Setter Property="Foreground" Value="#9EADC2"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Button}">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="#FFFFFF"/>
-                    <Setter Property="Background" Value="#A33B4B"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        <Style x:Key="AcknowledgeButton" TargetType="{x:Type Button}">
-            <Setter Property="Foreground" Value="#F1E8FF"/>
-            <Setter Property="Background" Value="#7040A5"/>
-            <Setter Property="BorderBrush" Value="#A970FF"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="22,9"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="Chrome"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="7">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#8050B8"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#C39AFF"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#54327D"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <Style x:Key="AcknowledgeButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Padding" Value="16,4"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
         </Style>
     </Window.Resources>
+    <Grid>
+    <Border CornerRadius="8"
+            BorderThickness="0"
+            Background="Transparent"
+            Effect="{StaticResource WindowShadowEffect}"
+            IsHitTestVisible="False"/>
     <Border x:Name="DialogBorder"
-            CornerRadius="14"
+            Style="{StaticResource WindowSurfaceBorderStyle}"
+            CornerRadius="8"
             BorderThickness="1"
-            BorderBrush="#5A6474"
-            Background="#121B29"
-            Padding="20"
-            Opacity="0"
-            RenderTransformOrigin="0.5,0.5">
-        <Border.RenderTransform>
-            <TranslateTransform Y="12"/>
-        </Border.RenderTransform>
-        <Border.Effect>
-            <DropShadowEffect Color="#8D5BDA" BlurRadius="26" ShadowDepth="0" Opacity="0.28"/>
-        </Border.Effect>
+            Padding="16">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -139,59 +41,61 @@
             <Grid Grid.Row="0">
                 <StackPanel Cursor="SizeAll"
                             MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                    <TextBlock Text="NOVIDADES DA VERSÃO"
-                               Foreground="#C39AFF"
-                               FontSize="10"
-                               FontWeight="Bold"
-                               TextAlignment="Center"/>
+                    <TextBlock Text="Novidades da versão"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               FontSize="14"
+                               FontWeight="SemiBold"/>
                     <TextBlock x:Name="VersionTitle"
                                Text="Versão"
-                               Foreground="#F1F5FF"
-                               FontSize="22"
-                               FontWeight="Bold"
-                               Margin="0,3,0,0"
-                               TextAlignment="Center"/>
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,4,0,0"/>
                 </StackPanel>
-                <Button Content="×"
-                        Width="28"
-                        Height="28"
+                <Button Style="{StaticResource DialogCloseButton}"
                         Padding="0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
-                        Style="{StaticResource CloseButton}"
                         Click="DismissButton_Click"
-                        ToolTip="Fechar"/>
+                        ToolTip="Fechar"
+                        AutomationProperties.Name="Fechar">
+                    <Path Data="M4,4 L12,12 M12,4 L4,12"
+                          Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"
+                          StrokeThickness="1.5"
+                          Width="16"
+                          Height="16"/>
+                </Button>
             </Grid>
             <ScrollViewer Grid.Row="1"
-                          Margin="0,18,0,16"
+                          Margin="0,16,0,16"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
                     <TextBlock x:Name="ReleaseNotesIntro"
                                Text="Confira as melhorias desta versão:"
-                               Foreground="#BCC8D9"
-                               FontSize="11"
-                               Margin="0,0,0,10"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               FontSize="12"
+                               Margin="0,0,0,12"
                                TextAlignment="Center"/>
                     <ItemsControl x:Name="ReleaseNotesItems">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#182333"
-                                        BorderBrush="#2D3B50"
+                                <Border Background="{DynamicResource PanelSurfaceBrush}"
+                                        BorderBrush="{DynamicResource ControlBorderBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="8"
-                                        Padding="10"
-                                        Margin="0,0,0,7">
+                                        CornerRadius="4"
+                                        Padding="12"
+                                        Margin="0,0,0,8">
                                     <StackPanel>
                                         <TextBlock Text="{Binding Version}"
-                                                   Foreground="#C39AFF"
-                                                   FontSize="10"
-                                                   FontWeight="Bold"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
                                                    Margin="0,0,0,4"/>
                                         <TextBlock Text="{Binding Description}"
                                                    TextWrapping="Wrap"
-                                                   Foreground="#D7E5FF"
-                                                   FontSize="11"/>
+                                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                                   FontSize="13"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -207,4 +111,5 @@
                     Click="AcknowledgeButton_Click"/>
         </Grid>
     </Border>
+    </Grid>
 </Window>

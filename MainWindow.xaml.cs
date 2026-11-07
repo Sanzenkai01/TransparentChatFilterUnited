@@ -1,10 +1,12 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
@@ -21,633 +23,32 @@ using Microsoft.Web.WebView2.Wpf;
 
 namespace TransparentChatFilter;
 
-public sealed class OverlayViewModel : INotifyPropertyChanged
-{
-    private readonly AppSettings _settings;
-
-    public OverlayViewModel(AppSettings settings)
-    {
-        _settings = settings;
-        Messages = new ObservableCollection<ChatRowView>();
-        RecentChannels = new ObservableCollection<string>(
-            settings.RecentChannels ?? Array.Empty<string>());
-        MainChannel = settings.MainChannel;
-        ConnectionStatus = "Desconectado";
-        SelectedChannelsText = string.Join(", ", settings.SelectedChannels);
-        BlockedChannelsText = string.Join(", ", settings.BlockedChannels);
-        BlockedUsersText = string.Join(", ", settings.BlockedUsers);
-        BlockedTermsText = settings.BlockedTerms;
-        HighlightTermsText = settings.HighlightTerms;
-        SettingsVisibility = settings.ShowSettingsPanel ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    public int FontSize
-    {
-        get => _settings.FontSize;
-        set
-        {
-            var fontSize = Math.Clamp(value, 10, 32);
-            if (_settings.FontSize == fontSize)
-            {
-                return;
-            }
-
-            _settings.FontSize = fontSize;
-            OnPropertyChanged();
-        }
-    }
-
-    public ObservableCollection<ChatRowView> Messages { get; }
-    public ObservableCollection<string> RecentChannels { get; }
-
-    public AppSettings Settings => _settings;
-
-    public string MainChannel
-    {
-        get => _mainChannelText;
-        set
-        {
-            if (string.Equals(_mainChannelText, value, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            _mainChannelText = value;
-            _settings.MainChannel = NormalizedChannel(value);
-            OnPropertyChanged();
-        }
-    }
-
-    public string TwitchUsername
-    {
-        get => _settings.TwitchUsername;
-        set
-        {
-            var normalized = value.Trim().TrimStart('#').ToLowerInvariant();
-            if (string.Equals(_settings.TwitchUsername, normalized, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            _settings.TwitchUsername = normalized;
-            OnPropertyChanged();
-        }
-    }
-
-    public ChatConnectionMode ConnectionMode
-    {
-        get => _settings.ConnectionMode;
-        set
-        {
-            if (_settings.ConnectionMode == value)
-            {
-                return;
-            }
-
-            _settings.ConnectionMode = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsAuthenticatedIrc));
-        }
-    }
-
-    public bool IsAuthenticatedIrc => _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc;
-
-    public string SelectedChannelsText
-    {
-        get => _selectedChannelsText;
-        set
-        {
-            _selectedChannelsText = value;
-            _settings.SelectedChannels = ParseList(value);
-        }
-    }
-
-    public string BlockedChannelsText
-    {
-        get => _blockedChannelsText;
-        set
-        {
-            _blockedChannelsText = value;
-            _settings.BlockedChannels = ParseList(value);
-        }
-    }
-
-    public string BlockedUsersText
-    {
-        get => _blockedUsersText;
-        set
-        {
-            _blockedUsersText = value;
-            _settings.BlockedUsers = ParseUserList(value);
-        }
-    }
-
-    public string BlockedTermsText
-    {
-        get => _settings.BlockedTerms;
-        set
-        {
-            _settings.BlockedTerms = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public string HighlightTermsText
-    {
-        get => _settings.HighlightTerms;
-        set
-        {
-            _settings.HighlightTerms = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool EnableSound
-    {
-        get => _settings.EnableSound;
-        set
-        {
-            _settings.EnableSound = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool NotifyNewMessages
-    {
-        get => _settings.NotifyNewMessages;
-        set
-        {
-            if (_settings.NotifyNewMessages == value)
-            {
-                return;
-            }
-
-            _settings.NotifyNewMessages = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public int NotificationVolumePercent
-    {
-        get => Math.Clamp(_settings.NotificationVolumePercent, 0, 100);
-        set
-        {
-            var volume = Math.Clamp(value, 0, 100);
-            if (_settings.NotificationVolumePercent == volume)
-            {
-                return;
-            }
-
-            _settings.NotificationVolumePercent = volume;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool DimOtherChannelMessages
-    {
-        get => _settings.DimOtherChannelMessages;
-        set
-        {
-            if (_settings.DimOtherChannelMessages == value)
-            {
-                return;
-            }
-
-            _settings.DimOtherChannelMessages = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public double TextOpacity
-    {
-        get => Math.Clamp(_settings.TextOpacity, 0.2, 1.0);
-        set
-        {
-            var opacity = Math.Clamp(value, 0.2, 1.0);
-            if (Math.Abs(_settings.TextOpacity - opacity) < 0.001)
-            {
-                return;
-            }
-
-            _settings.TextOpacity = opacity;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool UseMessageBackgroundOpacity
-    {
-        get => _settings.UseMessageBackgroundOpacity;
-        set
-        {
-            if (_settings.UseMessageBackgroundOpacity == value)
-            {
-                return;
-            }
-
-            _settings.UseMessageBackgroundOpacity = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public double MessageBackgroundOpacity
-    {
-        get => Math.Clamp(_settings.MessageBackgroundOpacity, 0.1, 1.0);
-        set
-        {
-            var opacity = Math.Clamp(value, 0.1, 1.0);
-            if (Math.Abs(_settings.MessageBackgroundOpacity - opacity) < 0.001)
-            {
-                return;
-            }
-
-            _settings.MessageBackgroundOpacity = opacity;
-            OnPropertyChanged();
-        }
-    }
-
-    public int MessageSpacing
-    {
-        get => Math.Clamp(_settings.MessageSpacing, 0, 20);
-        set
-        {
-            var spacing = Math.Clamp(value, 0, 20);
-            if (_settings.MessageSpacing == spacing)
-            {
-                return;
-            }
-
-            _settings.MessageSpacing = spacing;
-            OnPropertyChanged();
-        }
-    }
-
-    public string AccentColor
-    {
-        get => _settings.AccentColor;
-        set
-        {
-            if (!IsValidColor(value))
-            {
-                return;
-            }
-
-            _settings.AccentColor = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public string MessageBackgroundColor
-    {
-        get => _settings.MessageBackgroundColor;
-        set
-        {
-            if (!IsValidColor(value))
-            {
-                return;
-            }
-
-            _settings.MessageBackgroundColor = value;
-            OnPropertyChanged();
-        }
-    }
-
-    private string _connectionStatus = string.Empty;
-    private string _mainChannelText = string.Empty;
-    private string _selectedChannelsText = string.Empty;
-    private string _blockedChannelsText = string.Empty;
-    private string _blockedUsersText = string.Empty;
-    private bool _isConnected;
-    private bool _isTwitchConnected;
-    private bool _isConnecting;
-
-    public bool IsConnected
-    {
-        get => _isConnected;
-        set
-        {
-            if (_isConnected == value)
-            {
-                return;
-            }
-
-            _isConnected = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(ConnectButtonText));
-        }
-    }
-
-    public bool IsTwitchConnected
-    {
-        get => _isTwitchConnected;
-        set
-        {
-            if (_isTwitchConnected == value)
-            {
-                return;
-            }
-
-            _isTwitchConnected = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(ConnectButtonText));
-        }
-    }
-
-    public bool IsConnecting
-    {
-        get => _isConnecting;
-        set
-        {
-            if (_isConnecting == value)
-            {
-                return;
-            }
-
-            _isConnecting = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(ConnectButtonText));
-        }
-    }
-
-    public string ConnectButtonText => IsConnecting ? "Conectando..." : IsTwitchConnected ? "Desconectar" : "Conectar";
-
-    public string ConnectionStatus
-    {
-        get => _connectionStatus;
-        set
-        {
-            if (_connectionStatus == value)
-            {
-                return;
-            }
-
-            _connectionStatus = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public string LastDiagnostic { get; set; } = "Nenhum diagnóstico registrado.";
-
-    public ChatFilterMode FilterMode
-    {
-        get => _settings.FilterMode;
-        set
-        {
-            _settings.FilterMode = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool ShowTimestamps
-    {
-        get => _settings.ShowTimestamps;
-        set
-        {
-            _settings.ShowTimestamps = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool ShowBadges
-    {
-        get => _settings.ShowBadges;
-        set
-        {
-            _settings.ShowBadges = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool ShowUserNames
-    {
-        get => _settings.ShowUserNames;
-        set
-        {
-            _settings.ShowUserNames = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool UseTwitchNameColors
-    {
-        get => _settings.UseTwitchNameColors;
-        set
-        {
-            _settings.UseTwitchNameColors = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool ShowModerators
-    {
-        get => _settings.ShowModerators;
-        set
-        {
-            _settings.ShowModerators = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool ShowVips
-    {
-        get => _settings.ShowVips;
-        set
-        {
-            _settings.ShowVips = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool HideCommands
-    {
-        get => _settings.HideCommands;
-        set
-        {
-            _settings.HideCommands = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool ClickThroughEnabled
-    {
-        get => _settings.ClickThroughEnabled;
-        set
-        {
-            _settings.ClickThroughEnabled = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsTransparent
-    {
-        get => _settings.IsTransparent;
-        set
-        {
-            _settings.IsTransparent = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool StartMinimized
-    {
-        get => _settings.StartMinimized;
-        set
-        {
-            _settings.StartMinimized = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public Visibility SettingsVisibility { get; set; }
-
-    public double BackgroundOpacity
-    {
-        get => Math.Clamp(_settings.BackgroundOpacity, 0.15, 1.0);
-        set
-        {
-            _settings.BackgroundOpacity = Math.Clamp(value, 0.15, 1.0);
-            OnPropertyChanged();
-        }
-    }
-
-    private static bool IsValidColor(string value)
-    {
-        try
-        {
-            return value.StartsWith('#') && value.Length == 7 &&
-                   ColorConverter.ConvertFromString(value) is Color;
-        }
-        catch (FormatException)
-        {
-            return false;
-        }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    public void SetSettingsVisible(bool visible)
-    {
-        SettingsVisibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        _settings.ShowSettingsPanel = visible;
-        OnPropertyChanged(nameof(SettingsVisibility));
-    }
-
-    public void SaveSettings() => _settings.Save();
-
-    public void UpdateDiagnostic(string message)
-    {
-        LastDiagnostic = message;
-        OnPropertyChanged(nameof(LastDiagnostic));
-    }
-
-    private static List<string> ParseList(string value)
-    {
-        return value
-            .Split(',', ';')
-            .Select(item => NormalizedChannel(item))
-            .Where(item => !string.IsNullOrWhiteSpace(item))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static List<string> ParseUserList(string value)
-    {
-        return value
-            .Split(',', ';')
-            .Select(item => item.Trim().TrimStart('@'))
-            .Where(item => !string.IsNullOrWhiteSpace(item))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static string NormalizedChannel(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return string.Empty;
-        }
-
-        var trimmed = value.Trim();
-        if (trimmed.StartsWith('#'))
-        {
-            trimmed = trimmed[1..];
-        }
-
-        return trimmed.Trim();
-    }
-
-    private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-}
-
-public sealed class ChatRowView : INotifyPropertyChanged
-{
-    private Brush _nameBrush = Brushes.White;
-    private string _timestampText = string.Empty;
-
-    public static ImageSource TwitchImage { get; } = new BitmapImage(new Uri("pack://application:,,,/twitch.png"));
-    public ImageSource PlatformImage { get; set; } = TwitchImage;
-    public string ChannelImageUrl { get; set; } = string.Empty;
-    public Brush MessageBackgroundBrush { get; set; } = Brushes.Transparent;
-    public IReadOnlyList<TwitchChatBadge> Badges { get; set; } = Array.Empty<TwitchChatBadge>();
-    public string PlatformName { get; set; } = "Twitch";
-    public ChatMessage SourceMessage { get; set; } = new();
-    public IReadOnlyList<TwitchEmoteRange> Emotes { get; set; } = Array.Empty<TwitchEmoteRange>();
-    public bool IsSystemEvent { get; set; }
-    public string SystemText { get; set; } = string.Empty;
-    public Thickness RowMargin { get; set; }
-    public double RowOpacity { get; set; } = 1;
-    public string FullTimestampText { get; set; } = string.Empty;
-    public string TimestampText
-    {
-        get => _timestampText;
-        private set
-        {
-            if (_timestampText == value)
-            {
-                return;
-            }
-
-            _timestampText = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TimestampText)));
-        }
-    }
-    public string DisplayName { get; set; } = string.Empty;
-    public string BadgeText { get; set; } = string.Empty;
-    public string NameSeparator { get; set; } = string.Empty;
-    public string Text { get; set; } = string.Empty;
-    public Brush DefaultNameBrush { get; set; } = Brushes.White;
-    public Brush NameBrush
-    {
-        get => _nameBrush;
-        private set
-        {
-            if (ReferenceEquals(_nameBrush, value))
-            {
-                return;
-            }
-
-            _nameBrush = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(NameBrush)));
-        }
-    }
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    public void SetTransparentAppearance(bool enabled)
-    {
-        TimestampText = enabled ? string.Empty : FullTimestampText;
-        NameBrush = DefaultNameBrush;
-    }
-}
-
 public partial class MainWindow : Window
 {
-    private const int WmHotkey = 0x0312;
     private const long MessageNotificationSoundCooldownMilliseconds = 500;
-    private static readonly HttpClient TwitchBadgeImageHttpClient = new()
+    private const int PublicEmoteImageCacheCapacity = 512;
+    private const int PublicBadgeImageCacheCapacity = 256;
+    private const int PublicChannelImageCacheCapacity = 128;
+    private const int IrcEmoteImageCacheCapacity = 128;
+    private const int IrcBadgeImageCacheCapacity = 64;
+    private const int IrcChannelImageCacheCapacity = 32;
+    private static readonly TimeSpan MessageNotificationRenderDelay = TimeSpan.FromMilliseconds(250);
+    private static readonly string[] TwitchVideoResourceFilters =
+    [
+        "https://usher.ttvnw.net/*",
+        "https://*.hls.ttvnw.net/*"
+    ];
+    private static readonly string[] TwitchTrackingResourceFilters =
+    [
+        "https://ads.twitch.tv/*",
+        "https://*.ads.twitch.tv/*",
+        "https://spade.twitch.tv/*",
+        "https://countess.twitch.tv/*",
+        "https://analytics.twitch.tv/*"
+    ];
+    private static readonly HttpClient TwitchImageHttpClient = new()
     {
-        Timeout = TimeSpan.FromSeconds(10)
+        Timeout = Timeout.InfiniteTimeSpan
     };
     private readonly TwitchChatClient _chatClient = new();
     private readonly TwitchBadgeClient _twitchBadgeClient = new();
@@ -656,19 +57,22 @@ public partial class MainWindow : Window
     private readonly AppSettings _settings;
     private readonly CancellationTokenSource _lifetimeCts = new();
     private readonly List<ChatMessage> _chatHistory = new();
-    private readonly Dictionary<string, ImageSource> _twitchEmoteImageCache = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Task<ImageSource>> _twitchBadgeImageCache = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Task<ImageSource>> _twitchChannelImageCache = new(StringComparer.Ordinal);
+    private readonly BoundedAsyncCache<string, TwitchEmoteImageAsset> _twitchEmoteImageCache = new(PublicEmoteImageCacheCapacity, StringComparer.Ordinal);
+    private readonly BoundedAsyncCache<string, ImageSource> _twitchBadgeImageCache = new(PublicBadgeImageCacheCapacity, StringComparer.Ordinal);
+    private readonly BoundedAsyncCache<string, ImageSource> _twitchChannelImageCache = new(PublicChannelImageCacheCapacity, StringComparer.Ordinal);
     private TwitchCredentials? _twitchCredentials;
     private CancellationTokenSource? _authorizationCts;
     private Uri? _twitchVerificationUri;
     private int _connectInProgress;
-    private int _hotKeyId = 9000;
     private bool _isConnected;
+    private bool _ircReconnectPending;
+    private long _lastBadgeImageErrorReportedUtcTicks;
     private bool _twitchConnectionActive;
     private bool _sharedChatFilterWarningShown;
     private int _reconnectScheduled;
     private bool _windowPositionReady;
+    private bool _isAutoScrollPaused;
+    private int _newMessagesWhilePaused;
     private bool _cursorOverResizeEdge;
     private readonly DispatcherTimer _windowPositionSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private readonly DispatcherTimer _settingsSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
@@ -680,223 +84,53 @@ public partial class MainWindow : Window
     private bool _chatOnlyGearDragActive;
     private bool _suppressNextGearClick;
     private TextBox? _activeColorInput;
-    private bool _settingsPopupDragging;
-    private Point _settingsPopupDragStart;
-    private Point _settingsPopupDragOrigin;
+    private SettingsWindow _settingsWindow = null!;
     private bool _chatOnlyGearPopupOffsetNudge;
     private NativeMethods.Point _chatOnlyGearDragStart;
     private double _chatOnlyGearWindowStartLeft;
     private double _chatOnlyGearWindowStartTop;
     private bool _popoutScriptRegistered;
     private bool _popoutNavigationHandlerRegistered;
+    private bool _popoutResourceRequestHandlerRegistered;
     private bool _twitchCaptureScriptRegistered;
     private bool _twitchPublicChatActive;
     private WebView2? _twitchPopoutView;
     private bool _channelUpdatePending;
     private int _connectionModeChangeVersion;
     private long _lastMessageNotificationSoundTimestamp;
-    private const string TwitchCaptureScript = """
-        (() => {
-            if (window.__transparentChatFilterTwitchCapture) return;
-            const capturedLines = new WeakMap();
-            const messageSelector = [
-                '[data-a-target="chat-line-message"]',
-                '[data-test-selector="chat-line-message"]',
-                '.chat-line__message'
-            ].join(',');
-            const start = () => {
-                if (!document.documentElement) return false;
-                const send = () => {
-                    document.querySelectorAll(messageSelector).forEach(line => {
-                        const user = line.querySelector([
-                            '[data-a-target="chat-message-username"]',
-                            '[data-test-selector="message-username"]',
-                            '.chat-author__display-name'
-                        ].join(','));
-                        const body = line.querySelector([
-                            '[data-a-target="chat-line-message-body"]',
-                            '[data-test-selector="message-body"]',
-                            '.text-fragment'
-                        ].join(','));
-                        if (!user || !body) return;
-                        const displayName = (user.textContent || '').trim();
-                        const message = (body.textContent || '').trim();
-                        if (!displayName || !message) return;
-                        const precedingImages = Array.from(line.querySelectorAll('img'))
-                            .filter(image =>
-                                (user.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_PRECEDING) !== 0);
-                        const sharedChatImage = line.querySelector([
-                            '[data-a-target*="shared-chat"] img',
-                            '[data-test-selector*="shared-chat"] img',
-                            '[class*="shared-chat"] img',
-                            '[data-a-target*="sharedChat"] img',
-                            '[data-test-selector*="sharedChat"] img',
-                            '[data-a-target*="channel-badge"] img',
-                            '[data-test-selector*="channel-badge"] img',
-                            'img[data-a-target*="shared-chat"]',
-                            'img[data-test-selector*="shared-chat"]',
-                            'img[data-a-target*="sharedChat"]',
-                            'img[data-test-selector*="sharedChat"]'
-                        ].join(','));
-                        const getImageUrl = image =>
-                            image.currentSrc || image.src || image.getAttribute('data-src') ||
-                            image.getAttribute('src') || '';
-                        const isChannelProfileImage = image => {
-                            const imageUrl = getImageUrl(image);
-                            const imagePath = imageUrl.split(/[?#]/, 1)[0];
-                            const accessibleName = [
-                                image.alt,
-                                image.getAttribute('aria-label'),
-                                image.title,
-                                image.parentElement?.getAttribute('aria-label'),
-                                image.parentElement?.title
-                            ].filter(Boolean).join(' ').toLowerCase();
-                            return /\/(?:jtv_user_pictures|user-pictures|channel_images|profiles)\//i.test(imagePath) ||
-                                /shared chat|channel (?:profile|picture|avatar)|channel icon/i.test(accessibleName);
-                        };
-                        const channelImage = sharedChatImage || precedingImages.find(isChannelProfileImage);
-                        const channelImageUrl = channelImage
-                            ? getImageUrl(channelImage)
-                            : '';
-                        const signature = `${displayName}\n${message}\n${channelImageUrl}`;
-                        if (capturedLines.get(line) === signature) return;
-                        const badges = precedingImages
-                            .map(image => {
-                                const imageUrl = getImageUrl(image);
-                                if (!/^https:\/\/(?:[^/]+\.)?(?:jtvnw\.net|twitch\.tv)\//i.test(imageUrl)) return null;
-                                const title = (image.alt || image.getAttribute('aria-label') ||
-                                    image.title || image.parentElement?.getAttribute('aria-label') ||
-                                    image.parentElement?.title || 'Twitch badge').trim();
-                                const label = title.toLowerCase();
-                                const setId = label.includes('moderator') ? 'moderator' :
-                                    label.includes('vip') ? 'vip' :
-                                    label.includes('subscriber') ? 'subscriber' : label;
-                                return { setId, title, imageUrl };
-                            })
-                            .filter(badge => badge && badge.imageUrl && badge.imageUrl !== channelImageUrl);
-                        const pathSegments = location.pathname.split('/').filter(Boolean);
-                        const channel = pathSegments[0] === 'popout' ? pathSegments[1] || '' : pathSegments[0] || '';
-                        window.chrome.webview.postMessage({
-                            kind:'message',
-                            displayName, message, channel, channelImageUrl,
-                            isModerator:badges.some(badge => badge.setId === 'moderator'),
-                            isVip:badges.some(badge => badge.setId === 'vip'),
-                            isSubscriber:badges.some(badge => badge.setId === 'subscriber'),
-                            badges
-                        });
-                        capturedLines.set(line, signature);
-                    });
-                };
-                new MutationObserver(send).observe(document.documentElement, {
-                    childList:true, subtree:true, characterData:true
-                });
-                window.__transparentChatFilterTwitchCapture = true;
-                window.chrome.webview.postMessage({ kind:'capture-ready' });
-                setInterval(send, 1000);
-                send();
-                return true;
-            };
-            if (!start()) {
-                document.addEventListener('DOMContentLoaded', start, { once:true });
-            }
-        })();
-        """;
-    private const string TwitchMessagesOnlyScript = """
-        (() => {
-            const existingApply = window.__transparentChatFilterTwitchScrollFix;
-            if (typeof existingApply === 'function') {
-                existingApply();
-                return;
-            }
-            const styleId = 'transparent-chat-filter-messages-only';
-            const messageSelector = [
-                '[data-test-selector="chat-scrollable-area__message-container"]',
-                '[data-a-target="chat-scrollable-area__message-container"]',
-                '[role="log"].chat-scrollable-area__message-container'
-            ].join(',');
-            const css = `
-                html, body { width:100%!important; height:100%!important; margin:0!important; overflow:hidden!important; background:transparent!important; }
-                *, *::before, *::after { scrollbar-width:none!important; -ms-overflow-style:none!important; }
-                *::-webkit-scrollbar { display:none!important; width:0!important; height:0!important; }
-                body * { visibility:hidden!important; }
-                ${messageSelector} {
-                    position:fixed!important; inset:0!important; z-index:2147483647!important;
-                    display:block!important; width:100vw!important; height:100vh!important;
-                    max-height:100vh!important; overflow-x:hidden!important; overflow-y:auto!important;
-                    scrollbar-width:none!important; -ms-overflow-style:none!important;
-                    margin:0!important; padding:0!important; background:transparent!important;
-                    visibility:hidden!important;
-                }
-                ${messageSelector} [data-a-target="chat-line-message"] {
-                    display:block!important;
-                    width:max-content!important;
-                    max-width:100%!important;
-                    box-sizing:border-box!important;
-                    margin:2px 0!important;
-                    padding:3px 7px!important;
-                    border-radius:4px!important;
-                    background:rgba(0,0,0,0.72)!important;
-                }
-                ${messageSelector} [data-a-target="chat-line-message"] * {
-                    background-color:transparent!important;
-                    -webkit-text-stroke:0!important;
-                    text-shadow:0 1px 1px rgba(0,0,0,0.95), 0 0 3px rgba(0,0,0,0.8)!important;
-                    visibility:hidden!important;
-                }
-            `;
-            const observedContainers = new WeakSet();
-            const scrollToLatest = container => {
-                const scroll = () => { container.scrollTop = container.scrollHeight; };
-                requestAnimationFrame(scroll);
-                setTimeout(scroll, 80);
-            };
-            const apply = () => {
-                const messages = document.querySelector(messageSelector);
-                const root = document.head || document.documentElement;
-                if (root) {
-                    let style = document.getElementById(styleId);
-                    if (!style) {
-                        style = document.createElement('style');
-                        style.id = styleId;
-                        root.appendChild(style);
-                    }
-                    if (style.textContent !== css) {
-                        style.textContent = css;
-                    }
-                }
-                if (!messages) return;
-                if (!observedContainers.has(messages)) {
-                    observedContainers.add(messages);
-                    new MutationObserver(() => scrollToLatest(messages)).observe(messages, {
-                        childList:true, subtree:true, characterData:true
-                    });
-                }
-                scrollToLatest(messages);
-            };
-            const observer = new MutationObserver(apply);
-            observer.observe(document, { childList:true, subtree:true });
-            window.__transparentChatFilterTwitchScrollFix = apply;
-            apply();
-        })();
-        """;
+    private static readonly string TwitchCaptureScript = ScriptLoader.Load("TwitchCaptureScript.js");
+    private static readonly string TwitchMessagesOnlyScript = ScriptLoader.Load("TwitchMessagesOnlyScript.js");
 
     public MainWindow()
     {
         _settings = AppSettings.Load();
+        SetImageCacheCapacities(_settings.ConnectionMode);
         _settings.IsTransparent = false;
         DataContext = new OverlayViewModel(_settings);
         InitializeComponent();
-        MainChannelComboBox.ItemsSource = ViewModel.RecentChannels;
-        AppVersionText.Text = $"Versão {GetType().Assembly.GetName().Version?.ToString(3) ?? "desconhecida"}";
-        UpdateColorPreview(AccentColorInput.Text, AccentColorPreviewDot, AccentColorPreviewText);
-        UpdateColorPreview(MessageBackgroundColorInput.Text, MessageBackgroundColorPreviewDot, MessageBackgroundColorPreviewText);
+        _settingsWindow = new SettingsWindow(this);
+        _settingsWindow.AddHandler(
+            ComboBox.PreviewMouseLeftButtonDownEvent,
+            new MouseButtonEventHandler(ComboBoxSurface_PreviewMouseLeftButtonDown),
+            true);
+        _settingsWindow.AddHandler(
+            TextBox.TextChangedEvent,
+            new TextChangedEventHandler(MainChannelTextBox_TextChanged),
+            true);
+        AddHandler(FrameworkElement.LoadedEvent, new RoutedEventHandler(EnsureButtonAutomationName), true);
+        EnsureLoadedButtonAutomationNames(this);
+        _settingsWindow.MainChannelComboBox.ItemsSource = ViewModel.RecentChannels;
+        _settingsWindow.AppVersionText.Text = $"Versão {GetType().Assembly.GetName().Version?.ToString(3) ?? "desconhecida"}";
+        UpdateColorPreview(_settingsWindow.AccentColorInput.Text, _settingsWindow.AccentColorPreviewDot, _settingsWindow.AccentColorPreviewText);
+        UpdateSettingsPreview();
+        UpdateColorPreview(_settingsWindow.MessageBackgroundColorInput.Text, _settingsWindow.MessageBackgroundColorPreviewDot, _settingsWindow.MessageBackgroundColorPreviewText);
         RestoreWindowPosition();
         _windowPositionSaveTimer.Tick += WindowPositionSaveTimer_Tick;
         _channelUpdateTimer.Tick += ChannelUpdateTimer_Tick;
         _settingsSaveTimer.Tick += (_, _) =>
         {
             _settingsSaveTimer.Stop();
-            ViewModel.SaveSettings();
+            SaveSettingsNow();
         };
         ChatOnlyGearPopup.CustomPopupPlacementCallback = ChatOnlyGearPopup_Placement;
         LocationChanged += MainWindow_LocationChanged;
@@ -907,9 +141,9 @@ public partial class MainWindow : Window
             _suppressNextGearClick = false;
             _suppressGearClickTimer.Stop();
         };
-        FilterModeComboBox.SelectedIndex = (int)_settings.FilterMode;
-        ConnectionModeComboBox.SelectedIndex = (int)_settings.ConnectionMode;
-        NotificationSoundComboBox.SelectedIndex = (int)_settings.NotificationSound;
+        _settingsWindow.FilterModeComboBox.SelectedIndex = (int)_settings.FilterMode;
+        _settingsWindow.ConnectionModeComboBox.SelectedIndex = (int)_settings.ConnectionMode;
+        _settingsWindow.NotificationSoundComboBox.SelectedIndex = (int)_settings.NotificationSound;
         UpdateConnectionModeUi();
         try
         {
@@ -921,7 +155,7 @@ public partial class MainWindow : Window
 
             if (_twitchCredentials is not null)
             {
-                TwitchAuthorizationStatus.Text = string.IsNullOrWhiteSpace(_twitchCredentials.Username)
+                _settingsWindow.TwitchAuthorizationStatus.Text = string.IsNullOrWhiteSpace(_twitchCredentials.Username)
                     ? "Credenciais Twitch salvas neste dispositivo."
                     : $"Credenciais Twitch salvas para @{_twitchCredentials.Username}.";
             }
@@ -931,10 +165,27 @@ public partial class MainWindow : Window
             ViewModel.UpdateDiagnostic($"Não foi possível ler a autorização Twitch armazenada: {ex.Message}");
         }
 
+        if (!string.IsNullOrWhiteSpace(_settings.LoadWarning))
+        {
+            ViewModel.ConnectionStatus = "Configuração recuperada";
+            ViewModel.UpdateDiagnostic(_settings.LoadWarning);
+        }
+
+        try
+        {
+            WindowsStartupRegistration.SetEnabled(_settings.StartWithWindows);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível atualizar a inicialização com o Windows: {ex.Message}");
+        }
+
         UpdateConnectionModeUi();
         this.Closed += MainWindow_Closed;
         this.Loaded += MainWindow_Loaded;
         this.StateChanged += MainWindow_StateChanged;
+        Activated += (_, _) => UpdateTwitchWebViewMemoryTarget();
+        Deactivated += (_, _) => UpdateTwitchWebViewMemoryTarget();
         _chatClient.StatusChanged += (_, status) =>
         {
             DispatchToUi(() =>
@@ -952,7 +203,7 @@ public partial class MainWindow : Window
                     }
                 }
                 RefreshChatPanels();
-                ViewModel.SaveSettings();
+                QueueSettingsSave();
             });
         };
 
@@ -988,6 +239,7 @@ public partial class MainWindow : Window
                 (clear.Username is null ||
                  string.Equals(message.LoginName, clear.Username, StringComparison.OrdinalIgnoreCase)));
 
+            UpdateSettingsPreview();
             RefreshMessageFeed();
         });
 
@@ -1007,17 +259,29 @@ public partial class MainWindow : Window
                 }
             });
         };
+        _chatClient.ParseErrorReported += (_, diagnostic) =>
+            DispatchToUi(() => ViewModel.UpdateDiagnostic(diagnostic));
+        _chatClient.ReconnectRequested += (_, _) => DispatchToUi(() =>
+        {
+            ViewModel.UpdateDiagnostic("A Twitch solicitou uma reconexão.");
+            if (_settings.AutoReconnect &&
+                Interlocked.CompareExchange(ref _reconnectScheduled, 1, 0) == 0)
+            {
+                _ircReconnectPending = true;
+                _ = ReconnectAsync();
+            }
+        });
 
-        if (_settings.StartMinimized)
+        if (_settings.StartMinimized && !_settings.StartTransparentAndConnected)
         {
             WindowState = WindowState.Minimized;
         }
 
         var viewModel = ViewModel;
         var defaultFilterMode = (int)_settings.FilterMode;
-        if (FilterModeComboBox.SelectedIndex != defaultFilterMode)
+        if (_settingsWindow.FilterModeComboBox.SelectedIndex != defaultFilterMode)
         {
-            FilterModeComboBox.SelectedIndex = defaultFilterMode;
+            _settingsWindow.FilterModeComboBox.SelectedIndex = defaultFilterMode;
         }
     }
 
@@ -1025,31 +289,25 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        UpdateSettingsPreview();
         ApplyAppearance();
-        RootBorder.Opacity = 0;
-        RootBorder.RenderTransform = new ScaleTransform(0.985, 0.985);
-        RootBorder.RenderTransformOrigin = new Point(0.5, 0.5);
-        RootBorder.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(260))
-        {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        });
-        ((ScaleTransform)RootBorder.RenderTransform).BeginAnimation(ScaleTransform.ScaleXProperty,
-            new DoubleAnimation(0.985, 1, TimeSpan.FromMilliseconds(300)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
-        ((ScaleTransform)RootBorder.RenderTransform).BeginAnimation(ScaleTransform.ScaleYProperty,
-            new DoubleAnimation(0.985, 1, TimeSpan.FromMilliseconds(300)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
-
         if (string.IsNullOrWhiteSpace(ViewModel.MainChannel))
         {
             WindowState = WindowState.Normal;
             ViewModel.ConnectionStatus = "Selecione uma live nas configurações";
-            ShowPreferencesPage(ChatPreferencesPage, ChatPreferencesButton);
+            ShowPreferencesPage(_settingsWindow.ChatPreferencesPage, _settingsWindow.ChatPreferencesButton);
             ToggleSettingsPopup(true);
             return;
         }
 
-        if (_settings.StartMinimized)
+        if (_settings.StartMinimized && !_settings.StartTransparentAndConnected)
         {
             return;
+        }
+
+        if (_settings.StartTransparentAndConnected)
+        {
+            SetChatOnlyMode(true);
         }
 
         await ConnectAsync(showError: false, allowAuthorization: false);
@@ -1057,10 +315,12 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
+        _settingsWindow.AllowClose = true;
+        _settingsWindow.Close();
         _windowPositionSaveTimer.Stop();
         _settingsSaveTimer.Stop();
-        ViewModel.SaveSettings();
         SaveWindowPosition();
+        SaveSettingsNow();
         _lifetimeCts.Cancel();
         _authorizationCts?.Cancel();
         _chatOnlyHitTestTimer.Stop();
@@ -1069,104 +329,6 @@ public partial class MainWindow : Window
         DisposeTwitchPopoutView();
         _chatClient.Dispose();
         UnregisterHotKey();
-    }
-
-    protected override void OnSourceInitialized(EventArgs e)
-    {
-        base.OnSourceInitialized(e);
-        if (PresentationSource.FromVisual(this) is HwndSource source)
-        {
-            source.AddHook(WindowMessageHook);
-        }
-
-        RegisterHotKey();
-        UpdateClickThroughStyle();
-    }
-
-    private IntPtr WindowMessageHook(
-        IntPtr hwnd,
-        int message,
-        IntPtr wParam,
-        IntPtr lParam,
-        ref bool handled)
-    {
-        if (message != NativeMethods.WmNcHitTest ||
-            ResizeMode != ResizeMode.CanResize ||
-            WindowState != WindowState.Normal)
-        {
-            return IntPtr.Zero;
-        }
-
-        var packedPoint = lParam.ToInt64();
-        var screenX = unchecked((short)(packedPoint & 0xFFFF));
-        var screenY = unchecked((short)((packedPoint >> 16) & 0xFFFF));
-        var point = PointFromScreen(new Point(screenX, screenY));
-        const double resizeBorder = 8;
-        var left = point.X <= resizeBorder;
-        var right = point.X >= ActualWidth - resizeBorder;
-        var top = point.Y <= resizeBorder;
-        var bottom = point.Y >= ActualHeight - resizeBorder;
-        var hitTest = (left, right, top, bottom) switch
-        {
-            (true, _, true, _) => NativeMethods.HtTopLeft,
-            (_, true, true, _) => NativeMethods.HtTopRight,
-            (true, _, _, true) => NativeMethods.HtBottomLeft,
-            (_, true, _, true) => NativeMethods.HtBottomRight,
-            (true, _, _, _) => NativeMethods.HtLeft,
-            (_, true, _, _) => NativeMethods.HtRight,
-            (_, _, true, _) => NativeMethods.HtTop,
-            (_, _, _, true) => NativeMethods.HtBottom,
-            _ => 0
-        };
-
-        if (hitTest == 0)
-        {
-            return IntPtr.Zero;
-        }
-
-        handled = true;
-        return new IntPtr(hitTest);
-    }
-
-    private void RegisterHotKey()
-    {
-        var helper = new WindowInteropHelper(this);
-        var handle = helper.Handle;
-        if (handle == IntPtr.Zero)
-        {
-            return;
-        }
-
-        NativeMethods.RegisterHotKey(handle, _hotKeyId, NativeMethods.ModAlt | NativeMethods.ModControl, (int)KeyInterop.VirtualKeyFromKey(Key.T));
-        NativeMethods.RegisterHotKey(handle, _hotKeyId + 1, NativeMethods.ModAlt | NativeMethods.ModControl | NativeMethods.ModShift, (int)KeyInterop.VirtualKeyFromKey(Key.T));
-        HwndSource.FromHwnd(handle)?.AddHook(WndProc);
-    }
-
-    private void UnregisterHotKey()
-    {
-        var helper = new WindowInteropHelper(this);
-        var handle = helper.Handle;
-        if (handle != IntPtr.Zero)
-        {
-            NativeMethods.UnregisterHotKey(handle, _hotKeyId);
-            NativeMethods.UnregisterHotKey(handle, _hotKeyId + 1);
-        }
-    }
-
-    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        if (msg == WmHotkey && wParam.ToInt32() == _hotKeyId)
-        {
-            Visibility = Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
-            handled = true;
-        }
-        else if (msg == WmHotkey && wParam.ToInt32() == _hotKeyId + 1)
-        {
-            SetChatOnlyMode(!_settings.IsTransparent);
-            handled = true;
-        }
-
-        return IntPtr.Zero;
     }
 
     private async void ConnectButton_Click(object sender, RoutedEventArgs e)
@@ -1182,7 +344,7 @@ public partial class MainWindow : Window
 
     private void ToggleSettingsButton_Click(object sender, RoutedEventArgs e)
     {
-        ToggleSettingsPopup(!SettingsPopup.IsOpen);
+        ToggleSettingsPopup(!_settingsWindow.IsVisible);
     }
 
     private void CloseSettingsButton_Click(object sender, RoutedEventArgs e)
@@ -1193,141 +355,238 @@ public partial class MainWindow : Window
     private void ToggleSettingsPopup(bool isOpen)
     {
         ViewModel.SetSettingsVisible(isOpen);
-        SettingsPanel.Visibility = isOpen ? Visibility.Visible : Visibility.Collapsed;
         if (isOpen)
         {
-            Activate();
-            NativeMethods.SetForegroundWindow(new WindowInteropHelper(this).Handle);
+            if (_settingsWindow.Owner is null)
+            {
+                _settingsWindow.Owner = this;
+            }
+
+            _settingsWindow.Show();
+            _settingsWindow.Activate();
+        }
+        else if (_settingsWindow.IsVisible)
+        {
+            _settingsWindow.Hide();
         }
 
-        SettingsPopup.IsOpen = isOpen;
-        ViewModel.SaveSettings();
+        QueueSettingsSave();
     }
 
-    private void SettingsPopup_Closed(object? sender, EventArgs e)
+    internal void SettingsWindowHidden()
     {
         ViewModel.SetSettingsVisible(false);
-        ViewModel.SaveSettings();
+        QueueSettingsSave();
     }
 
-    private void SettingsPopup_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    internal void InvokeSettingsHandler(string handlerName, object sender, RoutedEventArgs e)
     {
-        if (!IsActive)
+        var handler = GetType().GetMethod(
+            handlerName,
+            BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new MissingMethodException(GetType().FullName, handlerName);
+
+        try
         {
-            Activate();
-            NativeMethods.SetForegroundWindow(new WindowInteropHelper(this).Handle);
+            handler.Invoke(this, [sender, e]);
+        }
+        catch (TargetInvocationException exception) when (exception.InnerException is { } innerException)
+        {
+            ExceptionDispatchInfo.Capture(innerException).Throw();
         }
     }
 
-    private void SettingsResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+    private void MainChannelTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        var maximumWidth = Math.Max(SettingsPanel.MinWidth, SystemParameters.WorkArea.Width - 32);
-        var maximumHeight = Math.Max(SettingsPanel.MinHeight, SystemParameters.WorkArea.Height - 32);
-        SettingsPanel.Width = Math.Clamp(
-            SettingsPanel.Width + e.HorizontalChange,
-            SettingsPanel.MinWidth,
-            maximumWidth);
-        SettingsPanel.Height = Math.Clamp(
-            SettingsPanel.Height + e.VerticalChange,
-            SettingsPanel.MinHeight,
-            maximumHeight);
-    }
-
-    private void SettingsPopupDrag_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is not FrameworkElement dragSurface
-            || e.ChangedButton != MouseButton.Left
-            || IsWindowControl(e.OriginalSource as DependencyObject))
+        if (!IsInitialized ||
+            e.OriginalSource is not TextBox { TemplatedParent: ComboBox comboBox } ||
+            !ReferenceEquals(comboBox, _settingsWindow.MainChannelComboBox))
         {
             return;
         }
 
-        _settingsPopupDragStart = dragSurface.PointToScreen(e.GetPosition(dragSurface));
-        _settingsPopupDragOrigin = new Point(SettingsPopup.HorizontalOffset, SettingsPopup.VerticalOffset);
-        _settingsPopupDragging = dragSurface.CaptureMouse();
-        e.Handled = true;
+        RefreshMessageFeed();
+        QueueSettingsSave();
+        ScheduleChannelUpdate();
     }
 
-    private void SettingsPopupDrag_MouseMove(object sender, MouseEventArgs e)
-    {
-        if (!_settingsPopupDragging || sender is not FrameworkElement dragSurface)
-        {
-            return;
-        }
+    private void ChatPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(_settingsWindow.ChatPreferencesPage, _settingsWindow.ChatPreferencesButton);
 
-        var currentPosition = dragSurface.PointToScreen(e.GetPosition(dragSurface));
-        var delta = currentPosition - _settingsPopupDragStart;
-        if (PresentationSource.FromVisual(dragSurface)?.CompositionTarget is { } target)
-        {
-            delta = target.TransformFromDevice.Transform(delta);
-        }
+    private void ConnectionsPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(_settingsWindow.ConnectionsPreferencesPage, _settingsWindow.ConnectionsPreferencesButton);
 
-        SettingsPopup.HorizontalOffset = _settingsPopupDragOrigin.X + delta.X;
-        SettingsPopup.VerticalOffset = _settingsPopupDragOrigin.Y + delta.Y;
-        e.Handled = true;
-    }
+    private void GeneralPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(_settingsWindow.GeneralPreferencesPage, _settingsWindow.GeneralPreferencesButton);
 
-    private void SettingsPopupDrag_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        if (!_settingsPopupDragging || sender is not FrameworkElement dragSurface)
-        {
-            return;
-        }
-
-        _settingsPopupDragging = false;
-        dragSurface.ReleaseMouseCapture();
-        e.Handled = true;
-    }
-
-    private void ChatPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(ChatPreferencesPage, ChatPreferencesButton);
-
-    private void ConnectionsPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(ConnectionsPreferencesPage, ConnectionsPreferencesButton);
-
-    private void WidgetsPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(WidgetsPreferencesPage, WidgetsPreferencesButton);
-
-    private void AboutPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(AboutPreferencesPage, AboutPreferencesButton);
+    private void WidgetsPreferencesButton_Click(object sender, RoutedEventArgs e) => ShowPreferencesPage(_settingsWindow.WidgetsPreferencesPage, _settingsWindow.WidgetsPreferencesButton);
 
     private void ShowPreferencesPage(FrameworkElement page, Button activeButton)
     {
-        ChatPreferencesPage.Visibility = Visibility.Collapsed;
-        ConnectionsPreferencesPage.Visibility = Visibility.Collapsed;
-        WidgetsPreferencesPage.Visibility = Visibility.Collapsed;
-        AboutPreferencesPage.Visibility = Visibility.Collapsed;
+        _settingsWindow.ChatPreferencesPage.Visibility = Visibility.Collapsed;
+        _settingsWindow.ConnectionsPreferencesPage.Visibility = Visibility.Collapsed;
+        _settingsWindow.GeneralPreferencesPage.Visibility = Visibility.Collapsed;
+        _settingsWindow.WidgetsPreferencesPage.Visibility = Visibility.Collapsed;
         page.Visibility = Visibility.Visible;
 
         foreach (var button in new[]
                  {
-                     ChatPreferencesButton,
-                     ConnectionsPreferencesButton,
-                     WidgetsPreferencesButton,
-                     AboutPreferencesButton
+                     _settingsWindow.ChatPreferencesButton,
+                     _settingsWindow.ConnectionsPreferencesButton,
+                     _settingsWindow.GeneralPreferencesButton,
+                     _settingsWindow.WidgetsPreferencesButton
                  })
         {
-            button.Background = new SolidColorBrush(Color.FromRgb(32, 45, 64));
-            button.BorderBrush = new SolidColorBrush(Color.FromRgb(52, 68, 91));
-            button.Foreground = new SolidColorBrush(Color.FromRgb(234, 242, 255));
+            button.Tag = null;
         }
 
-        activeButton.Background = new SolidColorBrush(Color.FromRgb(48, 37, 68));
-        activeButton.BorderBrush = new SolidColorBrush(Color.FromRgb(128, 84, 197));
-        activeButton.Foreground = new SolidColorBrush(Color.FromRgb(241, 232, 255));
-        var transition = new TranslateTransform(0, 7);
-        page.RenderTransform = transition;
-        page.Opacity = 0;
-        page.UpdateLayout();
-        page.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
+        activeButton.Tag = "Selected";
+        if (SystemParameters.ClientAreaAnimation)
         {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        });
-        transition.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(7, 0, TimeSpan.FromMilliseconds(180))
+            page.Opacity = 0;
+            page.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
+        }
+        else
         {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        });
+            page.BeginAnimation(OpacityProperty, null);
+            page.Opacity = 1;
+        }
         if (page is ScrollViewer scrollViewer)
         {
             scrollViewer.ScrollToTop();
         }
     }
+
+    private void RestoreSectionDefaults_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string section })
+        {
+            return;
+        }
+
+        var defaults = new AppSettings();
+        switch (section)
+        {
+            case "Appearance":
+                _settings.ClickThroughEnabled = defaults.ClickThroughEnabled;
+                _settings.ShowUserNames = defaults.ShowUserNames;
+                _settings.UserNameAboveMessage = defaults.UserNameAboveMessage;
+                _settings.UseTwitchNameColors = defaults.UseTwitchNameColors;
+                _settings.ShowTimestamps = defaults.ShowTimestamps;
+                _settings.ShowBadges = defaults.ShowBadges;
+                _settings.ShowModerators = defaults.ShowModerators;
+                _settings.ShowVips = defaults.ShowVips;
+                _settings.EnableSound = defaults.EnableSound;
+                _settings.NotifyNewMessages = defaults.NotifyNewMessages;
+                _settings.NotificationSound = defaults.NotificationSound;
+                _settings.NotificationVolumePercent = defaults.NotificationVolumePercent;
+                _settings.BackgroundOpacity = defaults.BackgroundOpacity;
+                _settings.TextOpacity = defaults.TextOpacity;
+                _settings.ShowChatTextOutline = defaults.ShowChatTextOutline;
+                _settings.UseMessageBackgroundOpacity = defaults.UseMessageBackgroundOpacity;
+                _settings.MessageBackgroundOpacity = defaults.MessageBackgroundOpacity;
+                _settings.FontSize = defaults.FontSize;
+                _settings.MessageSpacing = defaults.MessageSpacing;
+                _settings.MessageBackgroundColor = defaults.MessageBackgroundColor;
+                ViewModel.RefreshSettingsBindings(
+                    nameof(ViewModel.ClickThroughEnabled),
+                    nameof(ViewModel.ShowUserNames),
+                    nameof(ViewModel.UserNameAboveMessage),
+                    nameof(ViewModel.UseTwitchNameColors),
+                    nameof(ViewModel.ShowTimestamps),
+                    nameof(ViewModel.ShowBadges),
+                    nameof(ViewModel.ShowModerators),
+                    nameof(ViewModel.ShowVips),
+                    nameof(ViewModel.EnableSound),
+                    nameof(ViewModel.NotifyNewMessages),
+                    nameof(ViewModel.NotificationVolumePercent),
+                    nameof(ViewModel.ShowChatTextOutline),
+                    nameof(ViewModel.UseMessageBackgroundOpacity),
+                    nameof(ViewModel.MessageBackgroundOpacity),
+                    nameof(ViewModel.FontSize),
+                    nameof(ViewModel.TextOpacity),
+                    nameof(ViewModel.MessageSpacing),
+                    nameof(ViewModel.MessageBackgroundColor));
+                _settingsWindow.NotificationSoundComboBox.SelectedIndex = (int)defaults.NotificationSound;
+                UpdateColorPreview(_settings.HighlightColor, _settingsWindow.AccentColorPreviewDot, _settingsWindow.AccentColorPreviewText);
+                UpdateColorPreview(_settings.MessageBackgroundColor, _settingsWindow.MessageBackgroundColorPreviewDot, _settingsWindow.MessageBackgroundColorPreviewText);
+                UpdateSettingsPreview();
+                ApplyAppearance();
+                RefreshMessageFeed();
+                break;
+
+            case "Chat":
+                _settings.FilterMode = defaults.FilterMode;
+                _settings.HideCommands = defaults.HideCommands;
+                _settings.DimOtherChannelMessages = defaults.DimOtherChannelMessages;
+                _settings.HighlightedUsers = defaults.HighlightedUsers;
+                _settings.HighlightColor = defaults.HighlightColor;
+                ReplaceItems(ViewModel.SelectedChannels, defaults.SelectedChannels);
+                ReplaceItems(ViewModel.BlockedChannels, defaults.BlockedChannels);
+                ReplaceItems(ViewModel.BlockedUsers, defaults.BlockedUsers);
+                ReplaceItems(ViewModel.BlockedTerms, SplitTerms(defaults.BlockedTerms));
+                ReplaceItems(ViewModel.HighlightTerms, SplitTerms(defaults.HighlightTerms));
+                ViewModel.RefreshSettingsBindings(
+                    nameof(ViewModel.FilterMode),
+                    nameof(ViewModel.HideCommands),
+                    nameof(ViewModel.DimOtherChannelMessages),
+                    nameof(ViewModel.HighlightColor));
+                _settingsWindow.FilterModeComboBox.SelectedIndex = (int)defaults.FilterMode;
+                _settingsWindow.TestFilterResult.Text = string.Empty;
+                RefreshMessageFeed();
+                if (_twitchConnectionActive &&
+                    _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc)
+                {
+                    ScheduleChannelUpdate();
+                }
+                break;
+
+            case "Connection":
+                _settingsWindow.ConnectionModeComboBox.SelectedIndex = (int)defaults.ConnectionMode;
+                break;
+
+            case "General":
+                var previousStartWithWindows = _settings.StartWithWindows;
+                _settings.AutoReconnect = defaults.AutoReconnect;
+                _settings.StartMinimized = defaults.StartMinimized;
+                _settings.StartTransparentAndConnected = defaults.StartTransparentAndConnected;
+                _settings.StartWithWindows = defaults.StartWithWindows;
+                _settings.HideSettingsDuringUse = defaults.HideSettingsDuringUse;
+                _settings.MaxVisibleMessages = defaults.MaxVisibleMessages;
+                ViewModel.RefreshSettingsBindings(
+                    nameof(ViewModel.AutoReconnect),
+                    nameof(ViewModel.StartMinimized),
+                    nameof(ViewModel.StartTransparentAndConnected),
+                    nameof(ViewModel.StartWithWindows),
+                    nameof(ViewModel.HideSettingsDuringUse),
+                    nameof(ViewModel.MaxVisibleMessages));
+                try
+                {
+                    WindowsStartupRegistration.SetEnabled(defaults.StartWithWindows);
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+                {
+                    _settings.StartWithWindows = previousStartWithWindows;
+                    ViewModel.RefreshSettingsBindings(nameof(ViewModel.StartWithWindows));
+                    ViewModel.UpdateDiagnostic($"Não foi possível restaurar a inicialização com o Windows: {exception.Message}");
+                }
+                break;
+        }
+
+        QueueSettingsSave();
+    }
+
+    private static void ReplaceItems<T>(ObservableCollection<T> target, IEnumerable<T> values)
+    {
+        target.Clear();
+        foreach (var value in values)
+        {
+            target.Add(value);
+        }
+    }
+
+    private static IEnumerable<string> SplitTerms(string terms) =>
+        terms.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     private void SavePreferences_Changed(object sender, RoutedEventArgs e)
     {
@@ -1339,38 +598,57 @@ public partial class MainWindow : Window
         if (sender is CheckBox checkBox)
         {
             checkBox.GetBindingExpression(ToggleButton.IsCheckedProperty)?.UpdateSource();
+            if (checkBox.Name == "StartWithWindowsCheckBox")
+            {
+                try
+                {
+                    WindowsStartupRegistration.SetEnabled(checkBox.IsChecked == true);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+                {
+                    ViewModel.StartWithWindows = checkBox.IsChecked != true;
+                    checkBox.IsChecked = ViewModel.StartWithWindows;
+                    ViewModel.UpdateDiagnostic($"Não foi possível alterar a inicialização com o Windows: {ex.Message}");
+                    return;
+                }
+            }
         }
 
+        UpdateSettingsPreview();
         ApplyAppearance();
         RefreshMessageFeed();
-        ViewModel.SaveSettings();
+        if (_isConnected && _settings.HideSettingsDuringUse)
+        {
+            HideSettingsDuringUse();
+        }
+
+        QueueSettingsSave();
     }
 
     private void NotificationSoundComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!IsInitialized ||
-            NotificationSoundComboBox.SelectedIndex < 0 ||
-            !Enum.IsDefined((MessageNotificationSound)NotificationSoundComboBox.SelectedIndex))
+            _settingsWindow.NotificationSoundComboBox.SelectedIndex < 0 ||
+            !Enum.IsDefined((MessageNotificationSound)_settingsWindow.NotificationSoundComboBox.SelectedIndex))
         {
             return;
         }
 
-        var selectedSound = (MessageNotificationSound)NotificationSoundComboBox.SelectedIndex;
+        var selectedSound = (MessageNotificationSound)_settingsWindow.NotificationSoundComboBox.SelectedIndex;
         if (_settings.NotificationSound == selectedSound)
         {
             return;
         }
 
         _settings.NotificationSound = selectedSound;
-        ViewModel.SaveSettings();
+        QueueSettingsSave();
         _ = PlayNotificationSoundAsync(selectedSound, _settings.NotificationVolumePercent);
     }
 
     private void ComboBoxSurface_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not Grid grid ||
-            grid.TemplatedParent is not ComboBox comboBox ||
-            e.GetPosition(grid).X >= grid.ActualWidth - 28)
+        if (FindVisualAncestor<ComboBox>(e.OriginalSource as DependencyObject) is not { } comboBox ||
+            e.GetPosition(comboBox).X >= comboBox.ActualWidth - 28)
         {
             return;
         }
@@ -1380,13 +658,28 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private static T? FindVisualAncestor<T>(DependencyObject? element) where T : DependencyObject
+    {
+        while (element is not null)
+        {
+            if (element is T ancestor)
+            {
+                return ancestor;
+            }
+
+            element = VisualTreeHelper.GetParent(element);
+        }
+
+        return null;
+    }
+
     private void NotificationSoundPreviewButton_Click(object sender, RoutedEventArgs e)
     {
-        if (NotificationSoundComboBox.SelectedIndex >= 0 &&
-            Enum.IsDefined((MessageNotificationSound)NotificationSoundComboBox.SelectedIndex))
+        if (_settingsWindow.NotificationSoundComboBox.SelectedIndex >= 0 &&
+            Enum.IsDefined((MessageNotificationSound)_settingsWindow.NotificationSoundComboBox.SelectedIndex))
         {
             _ = PlayNotificationSoundAsync(
-                (MessageNotificationSound)NotificationSoundComboBox.SelectedIndex,
+                (MessageNotificationSound)_settingsWindow.NotificationSoundComboBox.SelectedIndex,
                 _settings.NotificationVolumePercent);
         }
     }
@@ -1395,7 +688,7 @@ public partial class MainWindow : Window
     {
         if (IsInitialized)
         {
-            ViewModel.SaveSettings();
+            QueueSettingsSave();
         }
     }
 
@@ -1403,10 +696,11 @@ public partial class MainWindow : Window
     {
         if (IsInitialized)
         {
+            UpdateSettingsPreview();
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 RefreshMessageFeed();
-                ViewModel.SaveSettings();
+                QueueSettingsSave();
             }), DispatcherPriority.DataBind);
         }
     }
@@ -1417,7 +711,7 @@ public partial class MainWindow : Window
         {
             RefreshMessageFeed();
             QueueSettingsSave();
-            if (ReferenceEquals(sender, SelectedChannelsTextBox))
+            if (ReferenceEquals(sender, _settingsWindow.SelectedChannelsTextBox))
             {
                 ScheduleChannelUpdate();
             }
@@ -1426,24 +720,12 @@ public partial class MainWindow : Window
 
     private void RecentChannelsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (MainChannelComboBox.SelectedItem is string channel)
+        if (_settingsWindow.MainChannelComboBox.SelectedItem is string channel)
         {
             ViewModel.MainChannel = channel;
             ScheduleChannelUpdate();
             QueueSettingsSave();
         }
-    }
-
-    private void MainChannelTextBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (!IsInitialized)
-        {
-            return;
-        }
-
-        RefreshMessageFeed();
-        QueueSettingsSave();
-        ScheduleChannelUpdate();
     }
 
     private void ScheduleChannelUpdate()
@@ -1490,7 +772,7 @@ public partial class MainWindow : Window
                 RefreshMessageFeed();
             }
 
-            ViewModel.SaveSettings();
+            QueueSettingsSave();
         }
         catch (OperationCanceledException) when (_lifetimeCts.IsCancellationRequested)
         {
@@ -1528,8 +810,27 @@ public partial class MainWindow : Window
 
     private void QueueSettingsSave()
     {
+        if (!IsInitialized || Dispatcher.HasShutdownStarted)
+        {
+            return;
+        }
+
         _settingsSaveTimer.Stop();
         _settingsSaveTimer.Start();
+    }
+
+    public void QueueSettingsSaveForExternalChanges() => QueueSettingsSave();
+
+    private void SaveSettingsNow()
+    {
+        try
+        {
+            _settings.Save();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível salvar as configurações: {ex.Message}");
+        }
     }
 
     private void AppearanceSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -1540,26 +841,34 @@ public partial class MainWindow : Window
         }
 
         RefreshMessageFeed();
-        ViewModel.SaveSettings();
+        QueueSettingsSave();
     }
 
-    private void AccentColor_TextChanged(object sender, TextChangedEventArgs e)
+    private void MaxVisibleMessagesSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (IsInitialized)
+        {
+            QueueSettingsSave();
+        }
+    }
+
+    private void HighlightColor_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (!IsInitialized)
         {
             return;
         }
 
-        var isValid = AccentColorInput.Text.Trim() is { Length: 7 } colorText &&
+        var isValid = _settingsWindow.AccentColorInput.Text.Trim() is { Length: 7 } colorText &&
                       colorText.StartsWith('#') &&
                       ParseHexColor(colorText) is not null;
-        AccentColorStatus.Text = isValid ? string.Empty : "Use uma cor hexadecimal como #5EA2FF.";
-        AccentColorStatus.Visibility = isValid ? Visibility.Collapsed : Visibility.Visible;
+        _settingsWindow.AccentColorStatus.Text = isValid ? string.Empty : "Informe uma cor hexadecimal com 6 dígitos.";
+        _settingsWindow.AccentColorStatus.Visibility = isValid ? Visibility.Collapsed : Visibility.Visible;
         if (isValid)
         {
-            var selectedColor = AccentColorInput.Text.Trim();
-            ViewModel.AccentColor = selectedColor;
-            UpdateColorPreview(selectedColor, AccentColorPreviewDot, AccentColorPreviewText);
+            var selectedColor = _settingsWindow.AccentColorInput.Text.Trim();
+            ViewModel.HighlightColor = selectedColor;
+            UpdateColorPreview(selectedColor, _settingsWindow.AccentColorPreviewDot, _settingsWindow.AccentColorPreviewText);
             RefreshMessageFeed();
             QueueSettingsSave();
         }
@@ -1572,16 +881,17 @@ public partial class MainWindow : Window
             return;
         }
 
-        var colorText = MessageBackgroundColorInput.Text.Trim();
+        var colorText = _settingsWindow.MessageBackgroundColorInput.Text.Trim();
         var isValid = colorText.Length == 7 &&
                       colorText.StartsWith('#') &&
                       ParseHexColor(colorText) is not null;
-        MessageBackgroundColorStatus.Text = isValid ? string.Empty : "Use uma cor hexadecimal como #161D2C.";
-        MessageBackgroundColorStatus.Visibility = isValid ? Visibility.Collapsed : Visibility.Visible;
+        _settingsWindow.MessageBackgroundColorStatus.Text = isValid ? string.Empty : "Informe uma cor hexadecimal com 6 dígitos.";
+        _settingsWindow.MessageBackgroundColorStatus.Visibility = isValid ? Visibility.Collapsed : Visibility.Visible;
         if (isValid)
         {
             ViewModel.MessageBackgroundColor = colorText;
-            UpdateColorPreview(colorText, MessageBackgroundColorPreviewDot, MessageBackgroundColorPreviewText);
+            UpdateColorPreview(colorText, _settingsWindow.MessageBackgroundColorPreviewDot, _settingsWindow.MessageBackgroundColorPreviewText);
+            UpdateSettingsPreview();
             RefreshMessageFeed();
             QueueSettingsSave();
         }
@@ -1598,6 +908,26 @@ public partial class MainWindow : Window
         swatch.Background = new SolidColorBrush(color);
         description.Text = $"{GetColorName(color)} {normalizedHex}";
         description.ToolTip = $"Cor selecionada: {GetColorName(color)} {normalizedHex}";
+    }
+
+    private void UpdateSettingsPreview()
+    {
+        if (_settingsWindow?.PreviewMessageText is null)
+        {
+            return;
+        }
+
+        _settingsWindow.PreviewMessageText.FontSize = ViewModel.FontSize;
+        _settingsWindow.PreviewMessageText.Opacity = ViewModel.TextOpacity;
+        _settingsWindow.PreviewMessageText.Effect = _settings.ShowChatTextOutline
+            ? Application.Current.TryFindResource("ChatTextOutline") as System.Windows.Media.Effects.Effect
+            : null;
+        var color = ParseHexColor(_settings.MessageBackgroundColor) ?? Color.FromRgb(22, 29, 44);
+        var opacity = _settings.UseMessageBackgroundOpacity
+            ? Math.Clamp(_settings.MessageBackgroundOpacity, 0.1, 1.0)
+            : 1.0;
+        _settingsWindow.PreviewMessageBorder.Background = new SolidColorBrush(
+            Color.FromArgb((byte)Math.Round(255 * opacity), color.R, color.G, color.B));
     }
 
     private static string GetColorName(Color color)
@@ -1633,32 +963,43 @@ public partial class MainWindow : Window
         return nearest.Name;
     }
 
-    private void ChooseAccentColorButton_Click(object sender, RoutedEventArgs e)
+    private void ChooseHighlightColorButton_Click(object sender, RoutedEventArgs e)
     {
-        OpenColorPalette(AccentColorInput, (UIElement)sender);
+        OpenColorPalette(_settingsWindow.AccentColorInput, (UIElement)sender);
     }
 
     private void ChooseMessageBackgroundColorButton_Click(object sender, RoutedEventArgs e)
     {
-        OpenColorPalette(MessageBackgroundColorInput, (UIElement)sender);
+        OpenColorPalette(_settingsWindow.MessageBackgroundColorInput, (UIElement)sender);
     }
 
     private void OpenColorPalette(TextBox colorInput, UIElement placementTarget)
     {
         _activeColorInput = colorInput;
-        ColorPalettePopup.PlacementTarget = placementTarget;
-        ColorPalettePopup.IsOpen = true;
+        _settingsWindow.ColorPalettePopup.PlacementTarget = placementTarget;
+        _settingsWindow.ColorPalettePopup.IsOpen = true;
     }
 
     private void PaletteColorButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button button || _activeColorInput is null || button.Tag is not string color)
+        if (sender is not Button button || _activeColorInput is null)
+        {
+            return;
+        }
+
+        var color = button.Tag switch
+        {
+            Color selectedColor => $"#{selectedColor.R:X2}{selectedColor.G:X2}{selectedColor.B:X2}",
+            string value => value,
+            _ => null
+        };
+        if (color is null)
         {
             return;
         }
 
         _activeColorInput.Text = color;
-        ColorPalettePopup.IsOpen = false;
+        _settingsWindow.ColorPalettePopup.IsOpen = false;
     }
 
     private void ShowDiagnosticButton_Click(object sender, RoutedEventArgs e)
@@ -1680,7 +1021,7 @@ public partial class MainWindow : Window
 
         ApplyAppearance();
         RefreshMessageFeed();
-        ViewModel.SaveSettings();
+        QueueSettingsSave();
     }
 
     private void DispatchToUi(Action action)
@@ -1709,7 +1050,14 @@ public partial class MainWindow : Window
 
     private void AnimateToolbar(double opacity)
     {
-        Toolbar.BeginAnimation(OpacityProperty, new DoubleAnimation(opacity, TimeSpan.FromMilliseconds(180))
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            Toolbar.BeginAnimation(OpacityProperty, null);
+            Toolbar.Opacity = opacity;
+            return;
+        }
+
+        Toolbar.BeginAnimation(OpacityProperty, new DoubleAnimation(opacity, TimeSpan.FromMilliseconds(160))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         });
@@ -1773,14 +1121,108 @@ public partial class MainWindow : Window
 
     private void MainWindow_StateChanged(object? sender, EventArgs e)
     {
-        MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "□";
+        MaximizeIcon.Data = Geometry.Parse(WindowState == WindowState.Maximized
+            ? "M7,3 L21,3 L21,17 L17,17 M17,7 L3,7 L3,21 L17,21 Z"
+            : "M4,4 L20,4 L20,20 L4,20 Z");
         MaximizeButton.ToolTip = WindowState == WindowState.Maximized ? "Restaurar" : "Maximizar";
+        AutomationProperties.SetName(MaximizeButton, WindowState == WindowState.Maximized ? "Restaurar janela" : "Maximizar janela");
+        UpdateTwitchWebViewMemoryTarget();
         ScheduleWindowPositionSave();
     }
 
     private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
     {
+        ConnectionStatusText.Visibility = e.NewSize.Width < 380 ? Visibility.Collapsed : Visibility.Visible;
         ScheduleWindowPositionSave();
+    }
+
+    private static void EnsureLoadedButtonAutomationNames(DependencyObject element)
+    {
+        if (element is ButtonBase button)
+        {
+            SetButtonAutomationName(button);
+        }
+
+        foreach (var child in LogicalTreeHelper.GetChildren(element).OfType<DependencyObject>())
+        {
+            EnsureLoadedButtonAutomationNames(child);
+        }
+    }
+
+    private void EnsureButtonAutomationName(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is ButtonBase button)
+        {
+            SetButtonAutomationName(button);
+        }
+    }
+
+    private static void SetButtonAutomationName(ButtonBase button)
+    {
+        var existingName = AutomationProperties.GetName(button);
+        if (!string.IsNullOrWhiteSpace(existingName) &&
+            !string.Equals(existingName, "Botão", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var toolTip = button.ToolTip switch
+        {
+            string text => text,
+            ToolTip tip => GetAutomationText(tip.Content),
+            _ => null
+        };
+        var contentText = GetAutomationText((button as ContentControl)?.Content);
+        var name = string.IsNullOrWhiteSpace(toolTip) ? contentText : toolTip;
+        AutomationProperties.SetName(button, string.IsNullOrWhiteSpace(name) ? button.Name : name);
+        if (string.IsNullOrWhiteSpace(AutomationProperties.GetName(button)))
+        {
+            AutomationProperties.SetName(button, "Botão");
+        }
+    }
+
+    private static string? GetAutomationText(object? content)
+    {
+        if (content is string text)
+        {
+            return text;
+        }
+
+        if (content is TextBlock textBlock)
+        {
+            return textBlock.Text;
+        }
+
+        if (content is AccessText accessText)
+        {
+            return accessText.Text;
+        }
+
+        if (content is not DependencyObject element)
+        {
+            return null;
+        }
+
+        foreach (var child in LogicalTreeHelper.GetChildren(element))
+        {
+            var childText = GetAutomationText(child);
+            if (!string.IsNullOrWhiteSpace(childText))
+            {
+                return childText;
+            }
+        }
+
+        return null;
+    }
+
+    private void ChatMessagesScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        foreach (var message in ViewModel.Messages)
+        {
+            message.MaxWidth = Math.Max(
+                0,
+                e.NewSize.Width - GetMessageHorizontalPadding(ViewModel.Settings));
+        }
     }
 
     private void QuickTransparencyToggle_Changed(object sender, RoutedEventArgs e)
@@ -1803,7 +1245,7 @@ public partial class MainWindow : Window
 
         ApplyAppearance();
         RefreshMessageFeed();
-        _settings.Save();
+        QueueSettingsSave();
     }
 
     private void SetConnected(bool connected)
@@ -1812,6 +1254,22 @@ public partial class MainWindow : Window
         ViewModel.IsTwitchConnected = connected;
         UpdateOverallConnectionState();
         UpdateConnectionModeUi();
+        if (connected && _settings.HideSettingsDuringUse)
+        {
+            HideSettingsDuringUse();
+        }
+    }
+
+    private void HideSettingsDuringUse()
+    {
+        if (!_settingsWindow.IsVisible)
+        {
+            return;
+        }
+
+        _settingsWindow.Hide();
+        ViewModel.SetSettingsVisible(false);
+        QueueSettingsSave();
     }
 
     private void UpdateOverallConnectionState()
@@ -1822,6 +1280,7 @@ public partial class MainWindow : Window
 
     private void DisconnectTwitch()
     {
+        _ircReconnectPending = false;
         _chatClient.Disconnect();
         if (_settings.ConnectionMode == ChatConnectionMode.PublicPopout &&
             _twitchPublicChatActive)
@@ -1846,101 +1305,6 @@ public partial class MainWindow : Window
         }
 
         SetChatOnlyMode(false);
-    }
-
-    private void ExitChatOnlyButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        _suppressNextGearClick = false;
-        _suppressGearClickTimer.Stop();
-        if (!NativeMethods.GetCursorPos(out _chatOnlyGearDragStart))
-        {
-            ViewModel.UpdateDiagnostic("Não foi possível iniciar o arrasto do chat transparente.");
-            return;
-        }
-
-        _chatOnlyGearWindowStartLeft = Left;
-        _chatOnlyGearWindowStartTop = Top;
-        _chatOnlyGearHoldTimer.Start();
-    }
-
-    private void ExitChatOnlyButton_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        _chatOnlyGearHoldTimer.Stop();
-        FinishChatOnlyGearDrag();
-    }
-
-    private void ChatOnlyGearHoldTimer_Tick(object? sender, EventArgs e)
-    {
-        if (!_settings.IsTransparent || Mouse.LeftButton != MouseButtonState.Pressed)
-        {
-            _chatOnlyGearHoldTimer.Stop();
-            FinishChatOnlyGearDrag();
-            return;
-        }
-
-        if (!NativeMethods.GetCursorPos(out var cursorPosition))
-        {
-            _chatOnlyGearHoldTimer.Stop();
-            ViewModel.UpdateDiagnostic("Não foi possível acompanhar o movimento do chat transparente.");
-            return;
-        }
-
-        var deltaX = Math.Abs(cursorPosition.X - _chatOnlyGearDragStart.X);
-        var deltaY = Math.Abs(cursorPosition.Y - _chatOnlyGearDragStart.Y);
-        if (deltaX < SystemParameters.MinimumHorizontalDragDistance &&
-            deltaY < SystemParameters.MinimumVerticalDragDistance)
-        {
-            return;
-        }
-
-        _chatOnlyGearDragActive = true;
-        _suppressNextGearClick = true;
-        var dpi = VisualTreeHelper.GetDpi(this);
-        Left = _chatOnlyGearWindowStartLeft +
-               (cursorPosition.X - _chatOnlyGearDragStart.X) / dpi.DpiScaleX;
-        Top = _chatOnlyGearWindowStartTop +
-              (cursorPosition.Y - _chatOnlyGearDragStart.Y) / dpi.DpiScaleY;
-    }
-
-    private void FinishChatOnlyGearDrag()
-    {
-        if (!_chatOnlyGearDragActive)
-        {
-            return;
-        }
-
-        _chatOnlyGearDragActive = false;
-        _suppressNextGearClick = true;
-        _suppressGearClickTimer.Stop();
-        _suppressGearClickTimer.Start();
-    }
-
-    private void ChatOnlyHitTestTimer_Tick(object? sender, EventArgs e)
-    {
-        var gearButton = ChatOnlyGearPopup.IsOpen
-            ? (FrameworkElement)ChatOnlyGearPopupButton
-            : ExitChatOnlyButton;
-        if (!IsLoaded || !NativeMethods.GetCursorPos(out var cursorPosition))
-        {
-            return;
-        }
-
-        var cursorScreenPoint = new Point(cursorPosition.X, cursorPosition.Y);
-        var cursorInWindow = PointFromScreen(cursorScreenPoint);
-        const double resizeBorder = 8;
-        var overResizeEdge = cursorInWindow.X >= 0 && cursorInWindow.Y >= 0 &&
-                             cursorInWindow.X <= ActualWidth && cursorInWindow.Y <= ActualHeight &&
-                             (cursorInWindow.X <= resizeBorder || cursorInWindow.X >= ActualWidth - resizeBorder ||
-                              cursorInWindow.Y <= resizeBorder || cursorInWindow.Y >= ActualHeight - resizeBorder);
-        var overGear = gearButton.IsVisible &&
-                       new Rect(0, 0, gearButton.ActualWidth, gearButton.ActualHeight)
-                           .Contains(gearButton.PointFromScreen(cursorScreenPoint));
-        if (_cursorOverChatOnlyGear != overGear || _cursorOverResizeEdge != overResizeEdge)
-        {
-            _cursorOverChatOnlyGear = overGear;
-            _cursorOverResizeEdge = overResizeEdge;
-            UpdateClickThroughStyle();
-        }
     }
 
     private CustomPopupPlacement[] ChatOnlyGearPopup_Placement(Size popupSize, Size targetSize, Point offset)
@@ -2033,14 +1397,7 @@ public partial class MainWindow : Window
         _settings.WindowTop = bounds.Top;
         _settings.WindowWidth = bounds.Width;
         _settings.WindowHeight = bounds.Height;
-        try
-        {
-            _settings.Save();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            ViewModel.UpdateDiagnostic($"Não foi possível salvar a posição da janela: {ex.Message}");
-        }
+        QueueSettingsSave();
     }
 
     private void FilterModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -2055,7 +1412,7 @@ public partial class MainWindow : Window
         UpdateFilterModeUi();
         _sharedChatFilterWarningShown = false;
         RefreshMessageFeed();
-        ViewModel.SaveSettings();
+        QueueSettingsSave();
         if (_twitchConnectionActive &&
             _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc)
         {
@@ -2087,12 +1444,12 @@ public partial class MainWindow : Window
 
     private async void ConnectionModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!IsInitialized || ConnectionModeComboBox.SelectedIndex < 0)
+        if (!IsInitialized || _settingsWindow.ConnectionModeComboBox.SelectedIndex < 0)
         {
             return;
         }
 
-        var selectedMode = (ChatConnectionMode)ConnectionModeComboBox.SelectedIndex;
+        var selectedMode = (ChatConnectionMode)_settingsWindow.ConnectionModeComboBox.SelectedIndex;
         if (_settings.ConnectionMode == selectedMode)
         {
             UpdateConnectionModeUi();
@@ -2105,6 +1462,7 @@ public partial class MainWindow : Window
                                      Volatile.Read(ref _connectInProgress) != 0;
         var changeVersion = Interlocked.Increment(ref _connectionModeChangeVersion);
         ViewModel.ConnectionMode = selectedMode;
+        SetImageCacheCapacities(selectedMode);
         _authorizationCts?.Cancel();
         UpdateConnectionModeUi();
         ApplyAppearance();
@@ -2120,7 +1478,7 @@ public partial class MainWindow : Window
         ViewModel.ConnectionStatus = resumeTwitchConnection
             ? "Alterando método de conexão..."
             : "Método alterado · clique em Conectar";
-        ViewModel.SaveSettings();
+        QueueSettingsSave();
 
         if (!resumeTwitchConnection)
         {
@@ -2152,18 +1510,18 @@ public partial class MainWindow : Window
     {
         var ircMode = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc;
         var hasTwitchAuthorization = ircMode && _twitchCredentials is not null;
-        ConnectionModeDescription.Text = ircMode
+        _settingsWindow.ConnectionModeDescription.Text = ircMode
             ? "IRC autenticado: requer autorização da Twitch. Só neste modo estão disponíveis Chat Unido e canais adicionais, ignorar mensagens por canal ou usuário, ocultar comandos e diminuir a opacidade de outros canais. Filtros de termos e personalização visual funcionam nos dois modos."
             : "Chat público: não requer autorização e mostra apenas o canal selecionado. Filtros de termos e personalização visual continuam disponíveis; Chat Unido, canais adicionais, ignorar mensagens por canal ou usuário, ocultar comandos e opacidade por canal são exclusivos do IRC.";
-        ChatFilterModeInfo.Visibility = Visibility.Collapsed;
-        AuthenticatedFilterControls.Visibility = hasTwitchAuthorization
+        _settingsWindow.ChatFilterModeInfo.Visibility = Visibility.Collapsed;
+        _settingsWindow.AuthenticatedFilterControls.Visibility = hasTwitchAuthorization
             ? Visibility.Visible
             : Visibility.Collapsed;
-        FilterAuthenticationPrompt.Visibility = ircMode && !hasTwitchAuthorization
+        _settingsWindow.FilterAuthenticationPrompt.Visibility = ircMode && !hasTwitchAuthorization
             ? Visibility.Visible
             : Visibility.Collapsed;
-        TwitchAuthorizationPanel.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;
-        TwitchAuthorizationHelp.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;
+        _settingsWindow.TwitchAuthorizationPanel.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;
+        _settingsWindow.TwitchAuthorizationHelp.Visibility = ircMode ? Visibility.Visible : Visibility.Collapsed;
         UpdateFilterModeUi();
     }
 
@@ -2173,22 +1531,22 @@ public partial class MainWindow : Window
         var hasTwitchAuthorization = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc &&
                                      _twitchCredentials is not null;
 
-        OtherChannelsFilterControls.Visibility = joinedChats && hasTwitchAuthorization
+        _settingsWindow.OtherChannelsFilterControls.Visibility = joinedChats && hasTwitchAuthorization
             ? Visibility.Visible
             : Visibility.Collapsed;
-        AdditionalChannelsFilterControls.Visibility = joinedChats
+        _settingsWindow.AdditionalChannelsFilterControls.Visibility = joinedChats
             ? Visibility.Visible
             : Visibility.Collapsed;
-        BlockedChannelsFilterControls.Visibility = joinedChats
+        _settingsWindow.BlockedChannelsFilterControls.Visibility = joinedChats
             ? Visibility.Visible
             : Visibility.Collapsed;
     }
 
     private void OpenFilterAuthentication_Click(object sender, RoutedEventArgs e)
     {
-        ConnectionModeComboBox.SelectedIndex = (int)ChatConnectionMode.AuthenticatedIrc;
+        _settingsWindow.ConnectionModeComboBox.SelectedIndex = (int)ChatConnectionMode.AuthenticatedIrc;
         ToggleSettingsPopup(true);
-        ShowPreferencesPage(ConnectionsPreferencesPage, ConnectionsPreferencesButton);
+        ShowPreferencesPage(_settingsWindow.ConnectionsPreferencesPage, _settingsWindow.ConnectionsPreferencesButton);
     }
 
     private void UpdateChatOnlyControlsVisibility()
@@ -2218,7 +1576,7 @@ public partial class MainWindow : Window
         {
             using var document = JsonDocument.Parse(e.WebMessageAsJson);
             var root = document.RootElement;
-            if (!_twitchPublicChatActive)
+            if (!_twitchPublicChatActive || root.ValueKind != JsonValueKind.Object)
             {
                 return;
             }
@@ -2231,12 +1589,20 @@ public partial class MainWindow : Window
                 ViewModel.UpdateDiagnostic("Chat público conectado; captura de mensagens ativa.");
                 return;
             }
+            if (string.Equals(kind, "capture-error", StringComparison.Ordinal))
+            {
+                var error = root.TryGetProperty("message", out var errorValue)
+                    ? errorValue.GetString()
+                    : null;
+                ViewModel.UpdateDiagnostic($"Não foi possível iniciar a captura do chat público: {error ?? "erro desconhecido"}");
+                return;
+            }
 
             var displayName = root.TryGetProperty("displayName", out var nameValue)
                 ? nameValue.GetString()?.Trim() ?? string.Empty
                 : string.Empty;
             var text = root.TryGetProperty("message", out var messageValue)
-                ? messageValue.GetString()?.Trim() ?? string.Empty
+                ? messageValue.GetString() ?? string.Empty
                 : string.Empty;
             if (string.IsNullOrWhiteSpace(displayName) || string.IsNullOrWhiteSpace(text))
             {
@@ -2289,6 +1655,39 @@ public partial class MainWindow : Window
                 }
             }
 
+            var emotes = new List<TwitchEmoteRange>();
+            if (root.TryGetProperty("emotes", out var emotesValue) && emotesValue.ValueKind == JsonValueKind.Array)
+            {
+                var lastEmoteEnd = -1;
+                foreach (var emoteValue in emotesValue.EnumerateArray())
+                {
+                    if (emoteValue.ValueKind != JsonValueKind.Object ||
+                        !emoteValue.TryGetProperty("id", out var idValue) ||
+                        idValue.ValueKind != JsonValueKind.String ||
+                        !emoteValue.TryGetProperty("start", out var startValue) ||
+                        !startValue.TryGetInt32(out var start) ||
+                        !emoteValue.TryGetProperty("end", out var endValue) ||
+                        !endValue.TryGetInt32(out var end))
+                    {
+                        continue;
+                    }
+
+                    var emoteId = idValue.GetString();
+                    if (string.IsNullOrWhiteSpace(emoteId) ||
+                        !emoteId.All(char.IsAsciiDigit) ||
+                        start < 0 ||
+                        end < start ||
+                        end >= text.Length ||
+                        start <= lastEmoteEnd)
+                    {
+                        continue;
+                    }
+
+                    emotes.Add(new TwitchEmoteRange(emoteId, start, end));
+                    lastEmoteEnd = end;
+                }
+            }
+
             var message = new ChatMessage
             {
                 DisplayName = displayName,
@@ -2298,9 +1697,12 @@ public partial class MainWindow : Window
                 OriginChannel = channel,
                 ChannelImageUrl = channelImageUrl,
                 Badges = badges,
-                IsModerator = root.TryGetProperty("isModerator", out var moderatorValue) && moderatorValue.GetBoolean(),
-                IsVip = root.TryGetProperty("isVip", out var vipValue) && vipValue.GetBoolean(),
-                IsSubscriber = root.TryGetProperty("isSubscriber", out var subscriberValue) && subscriberValue.GetBoolean(),
+                Emotes = emotes,
+                IsModerator = root.TryGetProperty("isModerator", out var moderatorValue) &&
+                              moderatorValue.ValueKind == JsonValueKind.True,
+                IsVip = root.TryGetProperty("isVip", out var vipValue) && vipValue.ValueKind == JsonValueKind.True,
+                IsSubscriber = root.TryGetProperty("isSubscriber", out var subscriberValue) &&
+                               subscriberValue.ValueKind == JsonValueKind.True,
                 TimestampUtc = DateTimeOffset.UtcNow
             };
 
@@ -2330,7 +1732,8 @@ public partial class MainWindow : Window
                 _lifetimeCts.Token)).ToList();
         }
         catch (Exception ex) when (
-            ex is HttpRequestException or JsonException or OperationCanceledException)
+            ex is HttpRequestException or JsonException or IOException or OperationCanceledException or
+                InvalidOperationException or FormatException or ArgumentException)
         {
             if (_lifetimeCts.IsCancellationRequested)
             {
@@ -2344,7 +1747,7 @@ public partial class MainWindow : Window
                     reference.SetId,
                     string.Empty))
                 .ToList();
-            DispatchToUi(() => ViewModel.UpdateDiagnostic($"Não foi possível carregar os badges da Twitch: {ex.Message}"));
+            DispatchToUi(() => ReportBadgeErrorOncePerMinute($"Não foi possível carregar badges: {ex.Message}"));
         }
     }
 
@@ -2408,7 +1811,16 @@ public partial class MainWindow : Window
             ViewModel.Messages.RemoveAt(0);
         }
 
-        ViewModel.Messages.Add(CreateChatRow(message, ViewModel.Settings));
+        ViewModel.Messages.Add(CreateChatRow(message, ViewModel.Settings, isNewMessage: true));
+        if (_isAutoScrollPaused)
+        {
+            _newMessagesWhilePaused++;
+            UpdateNewMessagesButton();
+        }
+        else
+        {
+            ScrollChatToLatestMessage();
+        }
         if (ViewModel.Settings.NotifyNewMessages)
         {
             PlayNewMessageNotificationSound();
@@ -2417,10 +1829,249 @@ public partial class MainWindow : Window
                  ContainsAnyTerm(message.Message, ViewModel.Settings.HighlightTerms) &&
                  TryAcquireMessageNotificationSoundCooldown())
         {
-            System.Media.SystemSounds.Asterisk.Play();
+            ScheduleMessageNotificationSound(System.Media.SystemSounds.Asterisk.Play);
         }
 
-        ScrollChatToLatestMessage();
+    }
+
+    private void ChatMessage_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (_settings.IsTransparent && _settings.ClickThroughEnabled)
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void CopyChatMessage_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetChatRowFromContextMenu(sender) is not { } row)
+        {
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(row.SourceMessage.Message);
+        }
+        catch (Exception ex) when (ex is System.Runtime.InteropServices.ExternalException or InvalidOperationException)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível copiar a mensagem: {ex.Message}");
+        }
+    }
+
+    private void BlockChatUser_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetChatRowFromContextMenu(sender) is not { } row)
+        {
+            return;
+        }
+
+        var user = GetMessageUserName(row.SourceMessage);
+        if (string.IsNullOrWhiteSpace(user))
+        {
+            return;
+        }
+
+        if (!ViewModel.BlockedUsers.Contains(user, StringComparer.OrdinalIgnoreCase))
+        {
+            ViewModel.BlockedUsers.Add(user);
+            ViewModel.BlockedUsersText = string.Join(", ", ViewModel.BlockedUsers);
+            RefreshMessageFeed();
+            QueueSettingsSave();
+        }
+    }
+
+    private void HighlightChatUser_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetChatRowFromContextMenu(sender) is not { } row)
+        {
+            return;
+        }
+
+        var user = GetMessageUserName(row.SourceMessage);
+        if (string.IsNullOrWhiteSpace(user) ||
+            _settings.HighlightedUsers.Contains(user, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _settings.HighlightedUsers.Add(user);
+        RefreshMessageFeed();
+        QueueSettingsSave();
+    }
+
+    private void OpenChatChannel_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetChatRowFromContextMenu(sender) is not { } row)
+        {
+            return;
+        }
+
+        var channel = NormalizeChannel(row.SourceMessage.EffectiveOrigin);
+        if (string.IsNullOrWhiteSpace(channel))
+        {
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo($"https://www.twitch.tv/{Uri.EscapeDataString(channel)}")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível abrir o canal no navegador: {ex.Message}");
+        }
+    }
+
+    private static ChatRowView? GetChatRowFromContextMenu(object sender) =>
+        (sender as FrameworkElement)?.DataContext as ChatRowView;
+
+    private static string GetMessageUserName(ChatMessage message)
+    {
+        var login = message.LoginName.Trim().TrimStart('@');
+        return string.IsNullOrWhiteSpace(login)
+            ? message.DisplayName.Trim().TrimStart('@')
+            : login;
+    }
+
+    private void AddFilterChip_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not string category)
+        {
+            return;
+        }
+
+        var input = GetFilterInput(category);
+        var items = GetFilterCollection(category);
+        var rawValue = input?.Text.Trim() ?? string.Empty;
+        if (input is null || items is null || string.IsNullOrWhiteSpace(rawValue))
+        {
+            return;
+        }
+
+        var value = category switch
+        {
+            "SelectedChannels" or "BlockedChannels" => NormalizeChannel(rawValue),
+            "BlockedUsers" => rawValue.TrimStart('@').ToLowerInvariant(),
+            _ => rawValue
+        };
+        var isName = category is "SelectedChannels" or "BlockedChannels" or "BlockedUsers";
+        if ((isName && !IsValidTwitchUserName(value)) ||
+            (!isName && value.IndexOfAny([',', ';', '\r', '\n']) >= 0))
+        {
+            ViewModel.UpdateDiagnostic(isName
+                ? "O canal ou usuário deve ter de 1 a 25 letras, números ou sublinhados."
+                : "Adicione um termo por vez; vírgulas e ponto e vírgula são separadores.");
+            return;
+        }
+
+        if (!items.Contains(value, StringComparer.OrdinalIgnoreCase))
+        {
+            items.Add(value);
+            RefreshMessageFeed();
+            QueueSettingsSave();
+            if (category == "SelectedChannels")
+            {
+                ScheduleChannelUpdate();
+            }
+        }
+
+        input.Clear();
+    }
+
+    private void RemoveFilterChip_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string category, CommandParameter: string value })
+        {
+            return;
+        }
+
+        var items = GetFilterCollection(category);
+        if (items is null || !items.Remove(value))
+        {
+            return;
+        }
+
+        if (category == "BlockedUsers")
+        {
+            ViewModel.BlockedUsersText = string.Join(", ", ViewModel.BlockedUsers);
+        }
+
+        RefreshMessageFeed();
+        QueueSettingsSave();
+        if (category == "SelectedChannels")
+        {
+            ScheduleChannelUpdate();
+        }
+    }
+
+    private TextBox? GetFilterInput(string category) => category switch
+    {
+        "SelectedChannels" => _settingsWindow.SelectedChannelsTextBox,
+        "BlockedChannels" => _settingsWindow.BlockedChannelsTextBox,
+        "BlockedUsers" => _settingsWindow.BlockedUsersTextBox,
+        "BlockedTerms" => _settingsWindow.BlockedTermsTextBox,
+        "HighlightTerms" => _settingsWindow.HighlightTermsTextBox,
+        _ => null
+    };
+
+    private ObservableCollection<string>? GetFilterCollection(string category) => category switch
+    {
+        "SelectedChannels" => ViewModel.SelectedChannels,
+        "BlockedChannels" => ViewModel.BlockedChannels,
+        "BlockedUsers" => ViewModel.BlockedUsers,
+        "BlockedTerms" => ViewModel.BlockedTerms,
+        "HighlightTerms" => ViewModel.HighlightTerms,
+        _ => null
+    };
+
+    private static bool IsValidTwitchUserName(string value) =>
+        value.Length is >= 1 and <= 25 &&
+        value.All(character =>
+            character is >= 'a' and <= 'z' or
+                >= 'A' and <= 'Z' or
+                >= '0' and <= '9' or '_');
+
+    private void TestFilter_Click(object sender, RoutedEventArgs e)
+    {
+        var phrase = _settingsWindow.TestFilterInput.Text.Trim();
+        if (string.IsNullOrWhiteSpace(phrase))
+        {
+            _settingsWindow.TestFilterResult.Text = "Digite uma frase para testar.";
+            return;
+        }
+
+        var channel = NormalizeChannel(_settings.MainChannel);
+        if (string.IsNullOrWhiteSpace(channel))
+        {
+            _settingsWindow.TestFilterResult.Text = "Defina o canal principal para testar os filtros.";
+            return;
+        }
+
+        var sample = new ChatMessage
+        {
+            LoginName = "teste",
+            DisplayName = "Teste",
+            Message = phrase,
+            Channel = channel,
+            OriginChannel = channel
+        };
+        if (!ShouldDisplayMessage(sample, _settings))
+        {
+            _settingsWindow.TestFilterResult.Text = "Ocultada pelos filtros atuais.";
+        }
+        else if (ContainsAnyTerm(phrase, _settings.HighlightTerms) ||
+                 _settings.HighlightedUsers.Contains("teste", StringComparer.OrdinalIgnoreCase))
+        {
+            _settingsWindow.TestFilterResult.Text = "Visível e destacada pelos filtros atuais.";
+        }
+        else
+        {
+            _settingsWindow.TestFilterResult.Text = "Visível, sem destaque pelos filtros atuais.";
+        }
     }
 
     private void PlayNewMessageNotificationSound()
@@ -2435,9 +2086,34 @@ public partial class MainWindow : Window
             return;
         }
 
-        _ = PlayNotificationSoundAsync(
-            ViewModel.Settings.NotificationSound,
-            ViewModel.Settings.NotificationVolumePercent);
+        var sound = ViewModel.Settings.NotificationSound;
+        var volumePercent = ViewModel.Settings.NotificationVolumePercent;
+        ScheduleMessageNotificationSound(() => _ = PlayNotificationSoundAsync(sound, volumePercent));
+    }
+
+    private void ScheduleMessageNotificationSound(Action play)
+    {
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.ContextIdle,
+            new Action(() =>
+            {
+                var timer = new DispatcherTimer(DispatcherPriority.Background, Dispatcher)
+                {
+                    Interval = MessageNotificationRenderDelay
+                };
+                void OnTick(object? sender, EventArgs e)
+                {
+                    timer.Stop();
+                    timer.Tick -= OnTick;
+                    if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+                    {
+                        play();
+                    }
+                }
+
+                timer.Tick += OnTick;
+                timer.Start();
+            }));
     }
 
     private bool TryAcquireMessageNotificationSoundCooldown()
@@ -2541,11 +2217,19 @@ public partial class MainWindow : Window
             ViewModel.Messages.Add(row);
         }
 
-        ScrollChatToLatestMessage();
+        if (!_isAutoScrollPaused)
+        {
+            ScrollChatToLatestMessage();
+        }
     }
 
     private void ScrollChatToLatestMessage()
     {
+        if (_isAutoScrollPaused)
+        {
+            return;
+        }
+
         Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
             new Action(() =>
@@ -2553,6 +2237,42 @@ public partial class MainWindow : Window
                 ChatMessagesScrollViewer.UpdateLayout();
                 ChatMessagesScrollViewer.ScrollToEnd();
             }));
+    }
+
+    private void ChatMessagesScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        var isAtEnd = e.VerticalOffset >= e.ExtentHeight - e.ViewportHeight - 1;
+        if (isAtEnd && e.VerticalChange > 0)
+        {
+            _isAutoScrollPaused = false;
+            _newMessagesWhilePaused = 0;
+            UpdateNewMessagesButton();
+        }
+        else if (e.VerticalChange < 0 && e.ExtentHeightChange == 0 && e.ViewportHeightChange == 0)
+        {
+            _isAutoScrollPaused = true;
+        }
+    }
+
+    private void NewMessagesButton_Click(object sender, RoutedEventArgs e)
+    {
+        _isAutoScrollPaused = false;
+        _newMessagesWhilePaused = 0;
+        UpdateNewMessagesButton();
+        ScrollChatToLatestMessage();
+    }
+
+    private void UpdateNewMessagesButton()
+    {
+        NewMessagesCountText.Text = _newMessagesWhilePaused == 1
+            ? "1 nova mensagem"
+            : $"{_newMessagesWhilePaused} novas mensagens";
+        AutomationProperties.SetName(
+            NewMessagesButton,
+            $"Rolar para {_newMessagesWhilePaused} novas mensagens");
+        NewMessagesButton.Visibility = _isAutoScrollPaused && _newMessagesWhilePaused > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private async Task ShowTwitchPopoutAsync(string channel)
@@ -2573,9 +2293,33 @@ public partial class MainWindow : Window
         var core = popoutView.CoreWebView2
             ?? throw new InvalidOperationException("O navegador interno não foi inicializado.");
         core.Settings.AreDefaultContextMenusEnabled = false;
+        core.Settings.AreDevToolsEnabled = false;
+        core.Settings.IsGeneralAutofillEnabled = false;
+        core.Settings.IsPasswordAutosaveEnabled = false;
         core.Settings.IsStatusBarEnabled = false;
         core.Settings.IsZoomControlEnabled = false;
         core.Settings.IsBuiltInErrorPageEnabled = false;
+        if (!_popoutResourceRequestHandlerRegistered)
+        {
+            foreach (var filter in TwitchVideoResourceFilters)
+            {
+                core.AddWebResourceRequestedFilter(
+                    filter,
+                    CoreWebView2WebResourceContext.All,
+                    CoreWebView2WebResourceRequestSourceKinds.All);
+            }
+            foreach (var filter in TwitchTrackingResourceFilters)
+            {
+                core.AddWebResourceRequestedFilter(
+                    filter,
+                    CoreWebView2WebResourceContext.All,
+                    CoreWebView2WebResourceRequestSourceKinds.All);
+            }
+
+            core.WebResourceRequested += TwitchPopout_WebResourceRequested;
+            _popoutResourceRequestHandlerRegistered = true;
+        }
+        UpdateTwitchWebViewMemoryTarget();
         if (!_popoutScriptRegistered)
         {
             await core.AddScriptToExecuteOnDocumentCreatedAsync(TwitchMessagesOnlyScript);
@@ -2626,6 +2370,10 @@ public partial class MainWindow : Window
         {
             core.WebMessageReceived -= PublicChat_WebMessageReceived;
         }
+        if (core is not null && _popoutResourceRequestHandlerRegistered)
+        {
+            core.WebResourceRequested -= TwitchPopout_WebResourceRequested;
+        }
 
         if (_popoutNavigationHandlerRegistered)
         {
@@ -2638,9 +2386,48 @@ public partial class MainWindow : Window
         _twitchPopoutView = null;
         _popoutScriptRegistered = false;
         _popoutNavigationHandlerRegistered = false;
+        _popoutResourceRequestHandlerRegistered = false;
         _twitchCaptureScriptRegistered = false;
         _twitchPublicChatActive = false;
         popoutView.Dispose();
+    }
+
+    private void TwitchPopout_WebResourceRequested(
+        object? sender,
+        CoreWebView2WebResourceRequestedEventArgs e)
+    {
+        var environment = _twitchPopoutView?.CoreWebView2?.Environment;
+        if (environment is null)
+        {
+            return;
+        }
+
+        e.Response = environment.CreateWebResourceResponse(
+            null,
+            204,
+            "Blocked by TransparentChatFilter",
+            "Content-Length: 0\r\n");
+    }
+
+    private void UpdateTwitchWebViewMemoryTarget()
+    {
+        var core = _twitchPopoutView?.CoreWebView2;
+        if (core is null)
+        {
+            return;
+        }
+
+        core.MemoryUsageTargetLevel = IsActive && WindowState != WindowState.Minimized
+            ? CoreWebView2MemoryUsageTargetLevel.Normal
+            : CoreWebView2MemoryUsageTargetLevel.Low;
+    }
+
+    private void SetImageCacheCapacities(ChatConnectionMode connectionMode)
+    {
+        var isIrc = connectionMode == ChatConnectionMode.AuthenticatedIrc;
+        _twitchEmoteImageCache.SetCapacity(isIrc ? IrcEmoteImageCacheCapacity : PublicEmoteImageCacheCapacity);
+        _twitchBadgeImageCache.SetCapacity(isIrc ? IrcBadgeImageCacheCapacity : PublicBadgeImageCacheCapacity);
+        _twitchChannelImageCache.SetCapacity(isIrc ? IrcChannelImageCacheCapacity : PublicChannelImageCacheCapacity);
     }
 
     private void RegisterPopoutNavigationHandler(WebView2 popoutView)
@@ -2761,7 +2548,7 @@ public partial class MainWindow : Window
                 viewModel.ConnectionStatus = "Conectado";
                 viewModel.UpdateDiagnostic($"Chat público da Twitch aberto para #{channel}; as mensagens são integradas ao feed do aplicativo.");
                 RememberRecentChannel(channel);
-                _settings.Save();
+                QueueSettingsSave();
                 return;
             }
 
@@ -2784,7 +2571,7 @@ public partial class MainWindow : Window
             if (credentials is null && !allowAuthorization)
             {
                 viewModel.ConnectionStatus = "Autorização necessária";
-                TwitchAuthorizationStatus.Text = "Clique em Conectar para autorizar sua conta Twitch.";
+                _settingsWindow.TwitchAuthorizationStatus.Text = "Clique em Conectar para autorizar sua conta Twitch.";
                 viewModel.UpdateDiagnostic("A conta Twitch ainda não foi autorizada. Clique em Conectar para iniciar a autorização segura.");
                 return;
             }
@@ -2804,16 +2591,16 @@ public partial class MainWindow : Window
             viewModel.ConnectionStatus = "Conectado";
             viewModel.UpdateDiagnostic($"Conectado a: {string.Join(", ", channels.Select(channel => $"#{channel}"))}. O filtro de canais, usuários e comandos está ativo.");
             RememberRecentChannel(viewModel.MainChannel);
-            _settings.Save();
-            TwitchAuthorizationStatus.Text = $"Autorizado como @{credentials.Username}.";
-            TwitchDeviceCodeText.Visibility = Visibility.Collapsed;
-            TwitchOpenAuthorizationButton.Visibility = Visibility.Collapsed;
+            QueueSettingsSave();
+            _settingsWindow.TwitchAuthorizationStatus.Text = $"Autorizado como @{credentials.Username}.";
+            _settingsWindow.TwitchDeviceCodeText.Visibility = Visibility.Collapsed;
+            _settingsWindow.TwitchOpenAuthorizationButton.Visibility = Visibility.Collapsed;
         }
         catch (OperationCanceledException) when (_lifetimeCts.IsCancellationRequested || _authorizationCts?.IsCancellationRequested == true)
         {
             SetConnected(false);
             ViewModel.ConnectionStatus = "Autorização cancelada";
-            TwitchAuthorizationStatus.Text = "Autorização cancelada.";
+            _settingsWindow.TwitchAuthorizationStatus.Text = "Autorização cancelada.";
         }
         catch (Exception ex)
         {
@@ -2834,7 +2621,7 @@ public partial class MainWindow : Window
         {
             _authorizationCts?.Dispose();
             _authorizationCts = null;
-            TwitchCancelAuthorizationButton.Visibility = Visibility.Collapsed;
+            _settingsWindow.TwitchCancelAuthorizationButton.Visibility = Visibility.Collapsed;
             Interlocked.Exchange(ref _connectInProgress, 0);
             ViewModel.IsConnecting = false;
             if (_channelUpdatePending)
@@ -2849,10 +2636,10 @@ public partial class MainWindow : Window
     {
         var authorizationCts = CancellationTokenSource.CreateLinkedTokenSource(_lifetimeCts.Token);
         _authorizationCts = authorizationCts;
-        TwitchAuthorizationStatus.Text = "Aguardando autorização na Twitch...";
-        TwitchDeviceCodeText.Visibility = Visibility.Collapsed;
-        TwitchOpenAuthorizationButton.Visibility = Visibility.Collapsed;
-        TwitchCancelAuthorizationButton.Visibility = Visibility.Visible;
+        _settingsWindow.TwitchAuthorizationStatus.Text = "Aguardando autorização na Twitch...";
+        _settingsWindow.TwitchDeviceCodeText.Visibility = Visibility.Collapsed;
+        _settingsWindow.TwitchOpenAuthorizationButton.Visibility = Visibility.Collapsed;
+        _settingsWindow.TwitchCancelAuthorizationButton.Visibility = Visibility.Visible;
 
         var progress = new Progress<TwitchDeviceAuthorization>(deviceAuthorization =>
         {
@@ -2863,13 +2650,12 @@ public partial class MainWindow : Window
             }
 
             _twitchVerificationUri = deviceAuthorization.VerificationUri;
-            TwitchAuthorizationStatus.Text = $"Acesse a página da Twitch e informe este código (expira em {Math.Max(1, deviceAuthorization.ExpiresIn / 60)} min):";
-            TwitchDeviceCodeText.Text = deviceAuthorization.UserCode;
-            TwitchDeviceCodeText.Visibility = Visibility.Visible;
-            TwitchOpenAuthorizationButton.Visibility = Visibility.Visible;
-            SettingsPopup.IsOpen = true;
-            ViewModel.SetSettingsVisible(true);
-            ShowPreferencesPage(ConnectionsPreferencesPage, ConnectionsPreferencesButton);
+            _settingsWindow.TwitchAuthorizationStatus.Text = $"Acesse a página da Twitch e informe este código (expira em {Math.Max(1, deviceAuthorization.ExpiresIn / 60)} min):";
+            _settingsWindow.TwitchDeviceCodeText.Text = deviceAuthorization.UserCode;
+            _settingsWindow.TwitchDeviceCodeText.Visibility = Visibility.Visible;
+            _settingsWindow.TwitchOpenAuthorizationButton.Visibility = Visibility.Visible;
+            ToggleSettingsPopup(true);
+            ShowPreferencesPage(_settingsWindow.ConnectionsPreferencesPage, _settingsWindow.ConnectionsPreferencesButton);
             OpenTwitchAuthorizationPage();
         });
 
@@ -2930,13 +2716,14 @@ public partial class MainWindow : Window
         try
         {
             await Task.Delay(2000);
-            if (_isConnected && !_chatClient.IsConnected)
+            if ((_isConnected || _ircReconnectPending) && !_chatClient.IsConnected)
             {
                 await ConnectAsync(showError: false, allowAuthorization: false);
             }
         }
         finally
         {
+            _ircReconnectPending = false;
             Interlocked.Exchange(ref _reconnectScheduled, 0);
         }
     }
@@ -2960,21 +2747,20 @@ public partial class MainWindow : Window
         UpdateChatOnlyControlsVisibility();
         var alpha = (byte)Math.Round(255 * Math.Clamp(_settings.BackgroundOpacity, 0.15, 1.0));
         RootBorder.Background = Brushes.Transparent;
-        RootBorder.BorderBrush = chatOnly
+        var surfaceBorderBrush = chatOnly
             ? Brushes.Transparent
             : new SolidColorBrush(Color.FromArgb(120, 120, 150, 180));
-        RootBorder.BorderThickness = chatOnly ? new Thickness(0) : new Thickness(1);
-        RootBorder.CornerRadius = chatOnly ? new CornerRadius(0) : new CornerRadius(18);
-        RootBorder.Effect = chatOnly ? null : new System.Windows.Media.Effects.DropShadowEffect
-        {
-            Color = Color.FromRgb(141, 91, 218),
-            BlurRadius = 26,
-            ShadowDepth = 0,
-            Opacity = 0.22
-        };
+        var surfaceBorderThickness = chatOnly ? new Thickness(0) : new Thickness(1);
+        var surfaceCornerRadius = chatOnly ? new CornerRadius(0) : new CornerRadius(18);
+        RootBorder.BorderBrush = surfaceBorderBrush;
+        RootBorder.BorderThickness = surfaceBorderThickness;
+        RootBorder.CornerRadius = surfaceCornerRadius;
+        WindowShadow.BorderBrush = surfaceBorderBrush;
+        WindowShadow.BorderThickness = surfaceBorderThickness;
+        WindowShadow.CornerRadius = surfaceCornerRadius;
+        WindowShadow.Visibility = chatOnly ? Visibility.Collapsed : Visibility.Visible;
         MainLayoutGrid.Margin = chatOnly ? new Thickness(0) : new Thickness(8);
         Toolbar.Visibility = chatOnly ? Visibility.Collapsed : Visibility.Visible;
-        SettingsPanel.Visibility = ViewModel.SettingsVisibility;
         var chatBackground = _settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc
             ? Color.FromRgb(24, 24, 27)
             : Color.FromRgb(13, 20, 32);
@@ -2995,26 +2781,6 @@ public partial class MainWindow : Window
         UpdateClickThroughStyle();
     }
 
-    private void UpdateClickThroughStyle()
-    {
-        var handle = new WindowInteropHelper(this).Handle;
-        if (handle == IntPtr.Zero)
-        {
-            return;
-        }
-
-        var extendedStyle = NativeMethods.GetWindowLong(handle, NativeMethods.GwlExStyle);
-        var enableClickThrough = _settings.ClickThroughEnabled &&
-                                 _settings.IsTransparent &&
-                                 !_cursorOverChatOnlyGear &&
-                                 !_cursorOverResizeEdge &&
-                                 !_chatOnlyGearDragActive;
-        extendedStyle = enableClickThrough
-            ? extendedStyle | NativeMethods.WsExTransparent
-            : extendedStyle & ~NativeMethods.WsExTransparent;
-        NativeMethods.SetWindowLong(handle, NativeMethods.GwlExStyle, extendedStyle);
-    }
-
     private static bool ShouldDisplayMessage(ChatMessage message, AppSettings settings)
     {
         var origin = NormalizeChannel(message.EffectiveOrigin);
@@ -3027,9 +2793,8 @@ public partial class MainWindow : Window
             .Where(user => !string.IsNullOrEmpty(user))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        if (ircFiltersEnabled &&
-            (blockedUsers.Contains(message.LoginName.Trim().TrimStart('@')) ||
-             blockedUsers.Contains(message.DisplayName.Trim().TrimStart('@'))))
+        if (blockedUsers.Contains(message.LoginName.Trim().TrimStart('@')) ||
+            blockedUsers.Contains(message.DisplayName.Trim().TrimStart('@')))
         {
             return false;
         }
@@ -3127,10 +2892,13 @@ public partial class MainWindow : Window
                !string.Equals(origin, main, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static ChatRowView CreateChatRow(ChatMessage message, AppSettings settings)
+    private ChatRowView CreateChatRow(
+        ChatMessage message,
+        AppSettings settings,
+        bool isNewMessage = false)
     {
         var color = settings.UseTwitchNameColors
-            ? TryParseColor(message.RawMetadata) ??
+            ? TryParseColor(message.UsernameColor) ??
               (settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc
                   ? GetTwitchUsernameColor(message.LoginName, message.DisplayName)
                   : Colors.White)
@@ -3148,6 +2916,17 @@ public partial class MainWindow : Window
             SourceMessage = message,
             Emotes = message.Emotes,
             IsSystemEvent = message.Kind != ChatMessageKind.Chat,
+            IsNewMessage = isNewMessage,
+            IsAuthenticatedIrc = settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc,
+            IsTransparent = settings.IsTransparent,
+            ShowChatTextOutline = settings.ShowChatTextOutline,
+            FontSize = settings.FontSize,
+            LineHeight = settings.FontSize * 1.3,
+            TextOpacity = settings.TextOpacity,
+            EventAccentBrush = GetSystemEventAccent(message.Kind),
+            MaxWidth = Math.Max(
+                0,
+                ChatMessagesScrollViewer.ActualWidth - GetMessageHorizontalPadding(settings)),
             SystemText = message.Kind == ChatMessageKind.Chat ? string.Empty : message.SystemText,
             RowMargin = new Thickness(0, 0, 0, settings.IsTransparent ? 2 : settings.MessageSpacing),
             PlatformImage = ChatRowView.TwitchImage,
@@ -3168,12 +2947,35 @@ public partial class MainWindow : Window
                 : string.Empty,
             DisplayName = settings.ShowUserNames && message.Kind == ChatMessageKind.Chat ? message.DisplayName : string.Empty,
             BadgeText = string.Empty,
-            NameSeparator = settings.ShowUserNames && message.Kind == ChatMessageKind.Chat ? ": " : string.Empty,
-            DefaultNameBrush = new SolidColorBrush(color),
+            NameSeparator = settings.ShowUserNames && message.Kind == ChatMessageKind.Chat && !settings.UserNameAboveMessage ? ": " : string.Empty,
+            UserNameAboveMessage = settings.UserNameAboveMessage && settings.ShowUserNames && message.Kind == ChatMessageKind.Chat,
+            DefaultNameBrush = new SolidColorBrush(settings.HighlightedUsers.Contains(GetMessageUserName(message), StringComparer.OrdinalIgnoreCase)
+                ? Color.FromRgb(255, 209, 102)
+                : color),
             Text = message.Message
         };
         row.SetTransparentAppearance(settings.IsTransparent);
         return row;
+    }
+
+    private static double GetMessageHorizontalPadding(AppSettings settings)
+    {
+        const double eventStripeAndTextInset = 11;
+        var borderPadding = settings.IsTransparent ? 10 : 16;
+        return borderPadding + eventStripeAndTextInset;
+    }
+
+    private Brush GetSystemEventAccent(ChatMessageKind kind)
+    {
+        var resourceKey = kind switch
+        {
+            ChatMessageKind.Subscription or ChatMessageKind.Resubscription or ChatMessageKind.GiftSubscription => "SubscriptionEventBrush",
+            ChatMessageKind.Raid => "RaidEventBrush",
+            ChatMessageKind.Bits => "BitsEventBrush",
+            ChatMessageKind.Announcement => "AnnouncementEventBrush",
+            _ => "AccentBrush"
+        };
+        return (Brush)FindResource(resourceKey);
     }
 
     private void ChatMessageTextBlock_Loaded(object sender, RoutedEventArgs e)
@@ -3181,12 +2983,88 @@ public partial class MainWindow : Window
         try
         {
             RenderChatMessageTextBlock(sender);
+            if (sender is TextBlock textBlock && textBlock.DataContext is ChatRowView row)
+            {
+                AnimateNewChatMessage(textBlock, row);
+            }
         }
         catch (Exception ex) when (
             ex is InvalidOperationException or ArgumentException or FormatException or NotSupportedException)
         {
             ViewModel.UpdateDiagnostic($"Não foi possível renderizar uma mensagem do chat: {ex.Message}");
         }
+    }
+
+    private void ChatMessageHeaderTextBlock_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not TextBlock textBlock || textBlock.DataContext is not ChatRowView row)
+        {
+            return;
+        }
+
+        try
+        {
+            textBlock.Inlines.Clear();
+            if (!string.IsNullOrWhiteSpace(row.ChannelImageUrl))
+            {
+                textBlock.Inlines.Add(CreateTwitchChannelImageInline(row));
+            }
+
+            foreach (var badge in row.Badges)
+            {
+                textBlock.Inlines.Add(CreateTwitchBadgeInline(badge, VisualTreeHelper.GetDpi(textBlock).DpiScaleX));
+            }
+
+            textBlock.Inlines.Add(new Run(row.DisplayName)
+            {
+                FontWeight = FontWeights.Bold,
+                Foreground = row.NameBrush
+            });
+        }
+        catch (Exception ex) when (
+            ex is InvalidOperationException or ArgumentException or FormatException or NotSupportedException)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível renderizar o nome e os badges da mensagem: {ex.Message}");
+        }
+    }
+
+    private static void AnimateNewChatMessage(TextBlock textBlock, ChatRowView row)
+    {
+        if (!row.IsNewMessage)
+        {
+            return;
+        }
+
+        row.IsNewMessage = false;
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            return;
+        }
+
+        DependencyObject? current = textBlock;
+        while (current is not null && current is not ContentPresenter)
+        {
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        if (current is not ContentPresenter presenter)
+        {
+            return;
+        }
+
+        presenter.Opacity = 0;
+        var transform = new TranslateTransform(0, 6);
+        presenter.RenderTransform = transform;
+        presenter.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        });
+        transform.BeginAnimation(
+            TranslateTransform.YProperty,
+            new DoubleAnimation(6, 0, TimeSpan.FromMilliseconds(160))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            });
     }
 
     private void RenderChatMessageTextBlock(object sender)
@@ -3202,7 +3080,7 @@ public partial class MainWindow : Window
             var systemRun = new Run(row.SystemText)
             {
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(ParseHexColor(_settings.AccentColor) ?? Color.FromRgb(169, 112, 255))
+                Foreground = new SolidColorBrush(ParseHexColor(_settings.HighlightColor) ?? Color.FromRgb(94, 162, 255))
             };
             textBlock.Inlines.Add(systemRun);
             if (!string.IsNullOrWhiteSpace(row.SourceMessage.Message))
@@ -3219,21 +3097,24 @@ public partial class MainWindow : Window
             textBlock.Inlines.Add(new Run(row.TimestampText)
             {
                 Foreground = new SolidColorBrush(Color.FromRgb(155, 176, 200)),
-                FontSize = 10
+                FontSize = 12
             });
         }
 
-        if (!string.IsNullOrWhiteSpace(row.ChannelImageUrl))
+        if (!row.UserNameAboveMessage && !string.IsNullOrWhiteSpace(row.ChannelImageUrl))
         {
             textBlock.Inlines.Add(CreateTwitchChannelImageInline(row));
         }
 
-        foreach (var badge in row.Badges)
+        if (!row.UserNameAboveMessage)
         {
-            textBlock.Inlines.Add(CreateTwitchBadgeInline(badge));
+            foreach (var badge in row.Badges)
+            {
+                textBlock.Inlines.Add(CreateTwitchBadgeInline(badge, VisualTreeHelper.GetDpi(textBlock).DpiScaleX));
+            }
         }
 
-        if (!string.IsNullOrEmpty(row.DisplayName))
+        if (!string.IsNullOrEmpty(row.DisplayName) && !row.UserNameAboveMessage)
         {
             textBlock.Inlines.Add(new Run(row.DisplayName)
             {
@@ -3263,13 +3144,14 @@ public partial class MainWindow : Window
         return new InlineUIContainer(image) { BaselineAlignment = BaselineAlignment.Center };
     }
 
-    private InlineUIContainer CreateTwitchBadgeInline(TwitchChatBadge badge)
+    private InlineUIContainer CreateTwitchBadgeInline(TwitchChatBadge badge, double dpiScale)
     {
         if (string.IsNullOrWhiteSpace(badge.ImageUrl))
         {
             return CreateBadgeTextFallback(badge);
         }
 
+        var (imageUrl, decodePixelWidth) = GetBadgeImageForDpi(badge, dpiScale);
         var image = new Image
         {
             Width = 16,
@@ -3282,8 +3164,25 @@ public partial class MainWindow : Window
         {
             BaselineAlignment = BaselineAlignment.Center
         };
-        _ = LoadTwitchBadgeImageAsync(inline, image, badge);
+        _ = LoadTwitchBadgeImageAsync(inline, image, badge, imageUrl, decodePixelWidth);
         return inline;
+    }
+
+    private static (string ImageUrl, int DecodePixelWidth) GetBadgeImageForDpi(
+        TwitchChatBadge badge,
+        double dpiScale)
+    {
+        if (dpiScale > 2 && !string.IsNullOrWhiteSpace(badge.ImageUrl4x))
+        {
+            return (badge.ImageUrl4x, 64);
+        }
+
+        if (dpiScale > 1 && !string.IsNullOrWhiteSpace(badge.ImageUrl2x))
+        {
+            return (badge.ImageUrl2x, 32);
+        }
+
+        return (badge.ImageUrl, 16);
     }
 
     private static InlineUIContainer CreateBadgeTextFallback(TwitchChatBadge badge)
@@ -3307,7 +3206,7 @@ public partial class MainWindow : Window
         var text = new TextBlock
         {
             Text = label,
-            FontSize = 8,
+            FontSize = 12,
             FontWeight = FontWeights.Bold,
             Foreground = Brushes.White,
             Background = new SolidColorBrush(Color.FromRgb(74, 55, 98)),
@@ -3322,7 +3221,10 @@ public partial class MainWindow : Window
     {
         var text = row.SourceMessage.Message;
         var position = 0;
-        var terms = ParseTerms(_settings.HighlightTerms);
+        var isAction = row.SourceMessage.IsAction;
+        var terms = isAction ? Array.Empty<string>() : ParseTerms(_settings.HighlightTerms);
+        var actionBrush = isAction ? row.NameBrush : null;
+        var bodyFontStyle = isAction ? FontStyles.Italic : FontStyles.Normal;
         foreach (var emote in row.Emotes)
         {
             if (emote.Start < position || emote.End >= text.Length)
@@ -3330,108 +3232,151 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            AddHighlightedText(textBlock, text[position..emote.Start], terms);
+            AddHighlightedText(textBlock, text[position..emote.Start], terms, actionBrush, bodyFontStyle);
             var fallbackText = text[emote.Start..(emote.End + 1)];
             var image = new Image
             {
-                Source = GetTwitchEmoteImage(emote.Id),
                 Width = Math.Max(18, ViewModel.FontSize * 1.6),
                 Height = Math.Max(18, ViewModel.FontSize * 1.6),
                 Stretch = Stretch.Uniform,
                 ToolTip = fallbackText,
                 Margin = new Thickness(1, 0, 1, 0)
             };
-            image.ImageFailed += (_, _) =>
-            {
-                if (image.Parent is InlineUIContainer inline)
-                {
-                    inline.Child = new TextBlock
-                    {
-                        Text = fallbackText,
-                        FontSize = ViewModel.FontSize,
-                        Foreground = new SolidColorBrush(GetChatTextColor())
-                    };
-                }
-
-                ViewModel.UpdateDiagnostic($"Não foi possível carregar o emote da Twitch: {fallbackText}.");
-            };
-            textBlock.Inlines.Add(new InlineUIContainer(image) { BaselineAlignment = BaselineAlignment.Center });
+            var emoteInline = new InlineUIContainer(image) { BaselineAlignment = BaselineAlignment.Center };
+            textBlock.Inlines.Add(emoteInline);
+            var decodePixelWidth = Math.Max(
+                1,
+                (int)Math.Ceiling(image.Width * VisualTreeHelper.GetDpi(textBlock).DpiScaleX));
+            _ = LoadTwitchEmoteImageAsync(emoteInline, image, emote.Id, fallbackText, decodePixelWidth, actionBrush, bodyFontStyle);
             position = emote.End + 1;
         }
 
-        AddHighlightedText(textBlock, text[position..], terms);
+        AddHighlightedText(textBlock, text[position..], terms, actionBrush, bodyFontStyle);
     }
 
-    private ImageSource GetTwitchEmoteImage(string emoteId)
+    private async Task LoadTwitchEmoteImageAsync(
+        InlineUIContainer inline,
+        Image image,
+        string emoteId,
+        string fallbackText,
+        int decodePixelWidth,
+        Brush? foreground,
+        FontStyle fontStyle)
     {
-        var imageKey = emoteId;
-        if (_twitchEmoteImageCache.TryGetValue(imageKey, out var cachedImage))
+        try
         {
-            return cachedImage;
+            var imageUrl = $"https://static-cdn.jtvnw.net/emoticons/v2/{Uri.EscapeDataString(emoteId)}/default/dark/2.0";
+            var emoteImage = await _twitchEmoteImageCache.GetOrCreateAsync(
+                imageUrl,
+                () => DownloadTwitchEmoteImageAsync(imageUrl, decodePixelWidth, _lifetimeCts.Token),
+                _lifetimeCts.Token);
+            emoteImage.ApplyTo(image);
         }
-
-        var uri = new Uri($"https://static-cdn.jtvnw.net/emoticons/v2/{Uri.EscapeDataString(emoteId)}/default/dark/2.0");
-        var image = new BitmapImage();
-        image.BeginInit();
-        image.UriSource = uri;
-        image.CacheOption = BitmapCacheOption.OnDemand;
-        image.EndInit();
-        _twitchEmoteImageCache[imageKey] = image;
-        return image;
+        catch (Exception ex) when (IsImageLoadFailure(ex))
+        {
+            if (!_lifetimeCts.IsCancellationRequested)
+            {
+                inline.Child = new TextBlock
+                {
+                    Text = fallbackText,
+                    FontSize = ViewModel.FontSize,
+                    Foreground = foreground ?? new SolidColorBrush(GetChatTextColor()),
+                    FontStyle = fontStyle
+                };
+                ViewModel.UpdateDiagnostic($"Não foi possível carregar o emote da Twitch: {ex.Message}");
+            }
+        }
     }
 
     private async Task LoadTwitchBadgeImageAsync(
         InlineUIContainer inline,
         Image image,
-        TwitchChatBadge badge)
+        TwitchChatBadge badge,
+        string imageUrl,
+        int decodePixelWidth)
     {
         try
         {
-            if (!_twitchBadgeImageCache.TryGetValue(badge.ImageUrl, out var imageTask))
-            {
-                imageTask = DownloadTwitchBadgeImageAsync(badge.ImageUrl);
-                _twitchBadgeImageCache[badge.ImageUrl] = imageTask;
-            }
-
-            image.Source = await imageTask;
+            image.Source = await _twitchBadgeImageCache.GetOrCreateAsync(
+                $"{imageUrl}|{decodePixelWidth}",
+                () => DownloadTwitchImageAsync(imageUrl, decodePixelWidth, _lifetimeCts.Token),
+                _lifetimeCts.Token);
             inline.Child = image;
         }
-        catch (Exception ex) when (
-            ex is HttpRequestException or IOException or InvalidDataException or NotSupportedException or
-                TaskCanceledException or FormatException or ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (IsImageLoadFailure(ex))
         {
-            _twitchBadgeImageCache.Remove(badge.ImageUrl);
-            ViewModel.UpdateDiagnostic($"Não foi possível carregar a imagem do badge Twitch “{badge.Title}”: {ex.Message}");
+            if (!_lifetimeCts.IsCancellationRequested)
+            {
+                ReportBadgeErrorOncePerMinute($"Não foi possível carregar imagens de badges da Twitch: {ex.Message}");
+            }
         }
     }
 
-    private static async Task<ImageSource> DownloadTwitchBadgeImageAsync(string imageUrl)
+    private static bool IsImageLoadFailure(Exception exception) =>
+        exception is HttpRequestException or IOException or InvalidDataException or NotSupportedException or
+            OperationCanceledException or FormatException or ArgumentException or InvalidOperationException;
+
+    private void ReportBadgeErrorOncePerMinute(string message)
     {
-        for (var attempt = 0; ; attempt++)
+        var now = DateTimeOffset.UtcNow.UtcTicks;
+        while (true)
         {
-            try
+            var lastReported = Volatile.Read(ref _lastBadgeImageErrorReportedUtcTicks);
+            if (lastReported != 0 && now - lastReported < TimeSpan.FromMinutes(1).Ticks)
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, imageUrl);
-                request.Headers.UserAgent.ParseAdd("TransparentChatFilter/1.0");
-                using var response = await TwitchBadgeImageHttpClient.SendAsync(request);
-                response.EnsureSuccessStatusCode();
-                var imageBytes = await response.Content.ReadAsByteArrayAsync();
-                using var stream = new MemoryStream(imageBytes);
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.StreamSource = stream;
-                image.EndInit();
-                image.Freeze();
-                return image;
+                return;
             }
-            catch (Exception ex) when (
-                attempt == 0 &&
-                (ex is HttpRequestException or IOException or InvalidDataException or TaskCanceledException))
+
+            if (Interlocked.CompareExchange(ref _lastBadgeImageErrorReportedUtcTicks, now, lastReported) == lastReported)
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(350));
+                ViewModel.UpdateDiagnostic(message);
+                return;
             }
         }
+    }
+
+    private static async Task<ImageSource> DownloadTwitchImageAsync(
+        string imageUrl,
+        int decodePixelWidth,
+        CancellationToken applicationCancellationToken)
+    {
+        var imageBytes = await DownloadTwitchImageBytesAsync(imageUrl, applicationCancellationToken);
+        using var stream = new MemoryStream(imageBytes);
+        var image = new BitmapImage();
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.DecodePixelWidth = decodePixelWidth;
+        image.StreamSource = stream;
+        image.EndInit();
+        image.Freeze();
+        return image;
+    }
+
+    private static async Task<TwitchEmoteImageAsset> DownloadTwitchEmoteImageAsync(
+        string imageUrl,
+        int decodePixelWidth,
+        CancellationToken applicationCancellationToken)
+    {
+        var imageBytes = await DownloadTwitchImageBytesAsync(imageUrl, applicationCancellationToken);
+        return TwitchEmoteImageAsset.Decode(imageBytes, decodePixelWidth);
+    }
+
+    private static async Task<byte[]> DownloadTwitchImageBytesAsync(
+        string imageUrl,
+        CancellationToken applicationCancellationToken)
+    {
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+            applicationCancellationToken,
+            timeoutCts.Token);
+        using var request = new HttpRequestMessage(HttpMethod.Get, imageUrl);
+        request.Headers.UserAgent.ParseAdd("TransparentChatFilter/1.0");
+        using var response = await TwitchImageHttpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            linkedCts.Token);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsByteArrayAsync(linkedCts.Token);
     }
 
     private InlineUIContainer CreateTwitchChannelImageInline(ChatRowView row)
@@ -3454,32 +3399,34 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (!_twitchChannelImageCache.TryGetValue(imageUrl, out var imageTask))
-            {
-                imageTask = DownloadTwitchBadgeImageAsync(imageUrl);
-                _twitchChannelImageCache[imageUrl] = imageTask;
-            }
-
-            image.Source = await imageTask;
+            image.Source = await _twitchChannelImageCache.GetOrCreateAsync(
+                imageUrl,
+                () => DownloadTwitchImageAsync(imageUrl, 32, _lifetimeCts.Token),
+                _lifetimeCts.Token);
         }
-        catch (Exception ex) when (
-            ex is HttpRequestException or IOException or InvalidDataException or NotSupportedException or
-                TaskCanceledException or FormatException or ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (IsImageLoadFailure(ex))
         {
-            _twitchChannelImageCache.Remove(imageUrl);
             inline.Child = null;
-            ViewModel.UpdateDiagnostic($"Não foi possível carregar a foto do canal Twitch: {ex.Message}");
+            if (!_lifetimeCts.IsCancellationRequested)
+            {
+                ViewModel.UpdateDiagnostic($"Não foi possível carregar a foto do canal Twitch: {ex.Message}");
+            }
         }
     }
 
-    private void AddHighlightedText(TextBlock textBlock, string text, IReadOnlyList<string> terms)
+    private void AddHighlightedText(
+        TextBlock textBlock,
+        string text,
+        IReadOnlyList<string> terms,
+        Brush? foreground = null,
+        FontStyle? fontStyle = null)
     {
         if (text.Length == 0)
         {
             return;
         }
 
-        var accent = ParseHexColor(_settings.AccentColor) ?? Color.FromRgb(94, 162, 255);
+        var accent = ParseHexColor(_settings.HighlightColor) ?? Color.FromRgb(94, 162, 255);
         var matchRanges = terms
             .SelectMany(term => FindTermMatches(text, term))
             .OrderBy(range => range.Start)
@@ -3497,7 +3444,8 @@ public partial class MainWindow : Window
             {
                 textBlock.Inlines.Add(new Run(text[cursor..match.Start])
                 {
-                    Foreground = new SolidColorBrush(GetChatTextColor())
+                    Foreground = foreground ?? new SolidColorBrush(GetChatTextColor()),
+                    FontStyle = fontStyle ?? FontStyles.Normal
                 });
             }
 
@@ -3512,7 +3460,8 @@ public partial class MainWindow : Window
         {
             textBlock.Inlines.Add(new Run(text[cursor..])
             {
-                Foreground = new SolidColorBrush(GetChatTextColor())
+                Foreground = foreground ?? new SolidColorBrush(GetChatTextColor()),
+                FontStyle = fontStyle ?? FontStyles.Normal
             });
         }
     }
@@ -3583,22 +3532,11 @@ public partial class MainWindow : Window
         }
     }
 
-    private static Color? TryParseColor(string rawMetadata)
+    private static Color? TryParseColor(string rawColor)
     {
-        var key = "color=";
-        var index = rawMetadata.IndexOf(key, StringComparison.OrdinalIgnoreCase);
-        if (index >= 0)
+        if (!string.IsNullOrWhiteSpace(rawColor) && rawColor.StartsWith("#") && rawColor.Length == 7)
         {
-            var value = rawMetadata[(index + key.Length)..];
-            if (value.Contains(';', StringComparison.Ordinal))
-            {
-                value = value[..value.IndexOf(';')];
-            }
-
-            if (!string.IsNullOrWhiteSpace(value) && value.StartsWith("#") && value.Length == 7)
-            {
-                return (Color)ColorConverter.ConvertFromString(value)!;
-            }
+            return ParseHexColor(rawColor);
         }
 
         return null;
@@ -3631,51 +3569,5 @@ public partial class MainWindow : Window
 
         return palette[(int)(hash % (uint)palette.Length)];
     }
-
-}
-
-internal static class NativeMethods
-{
-    [StructLayout(LayoutKind.Sequential)]
-    public struct Point
-    {
-        public int X;
-        public int Y;
-    }
-
-    public const int ModAlt = 0x0001;
-    public const int ModControl = 0x0002;
-    public const int ModShift = 0x0004;
-    public const int GwlExStyle = -20;
-    public const int WsExTransparent = 0x00000020;
-    public const int WmNcHitTest = 0x0084;
-    public const int HtLeft = 10;
-    public const int HtRight = 11;
-    public const int HtTop = 12;
-    public const int HtTopLeft = 13;
-    public const int HtTopRight = 14;
-    public const int HtBottom = 15;
-    public const int HtBottomLeft = 16;
-    public const int HtBottomRight = 17;
-
-    [DllImport("user32.dll")]
-    public static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vk);
-
-    [DllImport("user32.dll")]
-    public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool GetCursorPos(out Point point);
-
-    [DllImport("user32.dll", EntryPoint = "GetWindowLongW")]
-    public static extern int GetWindowLong(IntPtr hWnd, int index);
-
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongW")]
-    public static extern int SetWindowLong(IntPtr hWnd, int index, int newStyle);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool SetForegroundWindow(IntPtr hWnd);
 
 }

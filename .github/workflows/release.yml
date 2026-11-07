@@ -36,7 +36,14 @@ jobs:
 
           $archive = Join-Path $env:RUNNER_TEMP "TransparentChatFilterUnited-win-x64.zip"
           Compress-Archive -Path .\publish\TransparentChatFilterUnited.exe -DestinationPath $archive
+          $checksumFile = "$($archive).sha256"
+          $checksum = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -LiteralPath $checksumFile `
+            -Value "$checksum  TransparentChatFilterUnited-win-x64.zip" `
+            -NoNewline `
+            -Encoding ascii
           "RELEASE_ARCHIVE=$archive" >> $env:GITHUB_ENV
+          "RELEASE_CHECKSUM=$checksumFile" >> $env:GITHUB_ENV
 
       - name: Create GitHub release
         env:
@@ -45,9 +52,9 @@ jobs:
         run: |
           gh release view $env:GITHUB_REF_NAME --json tagName 2>$null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $env:GITHUB_REF_NAME $env:RELEASE_ARCHIVE --clobber
+            gh release upload $env:GITHUB_REF_NAME $env:RELEASE_ARCHIVE $env:RELEASE_CHECKSUM --clobber
           } else {
-            gh release create $env:GITHUB_REF_NAME $env:RELEASE_ARCHIVE `
+            gh release create $env:GITHUB_REF_NAME $env:RELEASE_ARCHIVE $env:RELEASE_CHECKSUM `
               --title "TransparentChatFilterUnited $env:GITHUB_REF_NAME" `
               --generate-notes
           }

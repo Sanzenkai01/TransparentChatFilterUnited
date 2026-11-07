@@ -16,7 +16,8 @@ public partial class ReleaseNotesWindow : Window
         new(new Version(1, 1, 7), "Adicionado o popup de novidades após a atualização do aplicativo."),
         new(new Version(1, 1, 8), "Corrigida a exibição das notas de atualização para instalações legadas."),
         new(new Version(1, 1, 9), "Notas de atualização exibidas somente após uma atualização e apenas uma vez por versão após a confirmação."),
-        new(new Version(1, 2, 0), "Textos do popup de novidades centralizados e uso de memória otimizado ao descartar o WebView2 ao mudar do chat público para o IRC.")
+        new(new Version(1, 2, 0), "Textos do popup de novidades centralizados e uso de memória otimizado ao descartar o WebView2 ao mudar do chat público para o IRC."),
+        new(new Version(1, 2, 1), "Configurações e atualizações mais confiáveis, interface reorganizada, animação de emotes GIF e menor retenção de imagens no modo IRC.")
     ];
 
     public ReleaseNotesWindow(Version version, Version? lastSeenVersion)
@@ -51,14 +52,16 @@ public partial class ReleaseNotesWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        var animation = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(240))
+        if (!SystemParameters.ClientAreaAnimation)
         {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        DialogBorder.BeginAnimation(OpacityProperty, animation);
-        ((TranslateTransform)DialogBorder.RenderTransform).BeginAnimation(
-            TranslateTransform.YProperty,
-            new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(280))
+            DialogBorder.Opacity = 1;
+            return;
+        }
+
+        DialogBorder.Opacity = 0;
+        DialogBorder.BeginAnimation(
+            OpacityProperty,
+            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160))
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             });

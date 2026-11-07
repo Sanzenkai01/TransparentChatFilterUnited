@@ -1,0 +1,579 @@
+﻿<Window x:Class="TransparentChatFilter.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configura&#x00E7;&#x00F5;es" Width="600" Height="720" MinWidth="520" MinHeight="480"
+        WindowStartupLocation="CenterOwner" WindowStyle="SingleBorderWindow" ResizeMode="CanResize"
+        Background="{DynamicResource WindowSurfaceBrush}" Topmost="True"
+        KeyDown="SettingsWindow_KeyDown" Closing="SettingsWindow_Closing"
+        KeyboardNavigation.TabNavigation="Cycle">
+    <Window.Resources>
+        <DataTemplate x:Key="CloseGlyphTemplate">
+            <Path Data="M4,4 L12,12 M12,4 L4,12"
+                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"
+                  StrokeThickness="1.5"
+                  Width="16"
+                  Height="16"
+                  Stretch="Uniform"/>
+        </DataTemplate>
+        <DataTemplate x:Key="FilterChipTemplate">
+            <Border Background="{DynamicResource PanelSurfaceBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,4,4" Padding="8,4">
+                <DockPanel LastChildFill="True">
+                    <Button DockPanel.Dock="Right"
+                            ToolTip="Remover filtro"
+                            ContentTemplate="{StaticResource CloseGlyphTemplate}"
+                            Tag="{Binding RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}, Path=Tag}"
+                            CommandParameter="{Binding}"
+                            Click="RemoveFilterChip_Click"
+                            Padding="0"
+                            MinWidth="28"
+                            MinHeight="28"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="{DynamicResource ThemeBrush_F1F5FF}"
+                            AutomationProperties.Name="Remover filtro"/>
+                    <TextBlock Text="{Binding}" Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="CenteredCategoryButtonContent">
+            <TextBlock Text="{Binding}"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Center"
+                       TextAlignment="Left"/>
+        </DataTemplate>
+        <Style x:Key="SettingsHelpText" TargetType="{x:Type TextBlock}">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="8,0,0,8"/>
+        </Style>
+        <Style x:Key="SettingsNavigationButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="12,4"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="NavigationChrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="0"
+                                CornerRadius="4">
+                            <Grid>
+                                <Border x:Name="SelectionIndicator"
+                                        Width="3"
+                                        HorizontalAlignment="Left"
+                                        Background="{DynamicResource AccentBrush}"
+                                        Visibility="Collapsed"/>
+                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="NavigationChrome" Property="Background" Value="{DynamicResource HoverSurfaceBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="NavigationChrome" Property="Background" Value="{DynamicResource PressedSurfaceBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="NavigationChrome" Property="BorderBrush" Value="{DynamicResource FocusBorderBrush}"/>
+                                <Setter TargetName="NavigationChrome" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="Tag" Value="Selected">
+                                <Setter TargetName="NavigationChrome" Property="Background" Value="{DynamicResource SelectedSurfaceBrush}"/>
+                                <Setter TargetName="SelectionIndicator" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Tag" Value="Selected"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="NavigationChrome" Property="Background" Value="{DynamicResource HoverSurfaceBrush}"/>
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Tag" Value="Selected"/>
+                                    <Condition Property="IsPressed" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="NavigationChrome" Property="Background" Value="{DynamicResource PressedSurfaceBrush}"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Source={x:Static SystemParameters.HighContrast}}" Value="True">
+                                <Setter TargetName="NavigationChrome" Property="Background" Value="{DynamicResource SystemControlBrush}"/>
+                                <Setter TargetName="SelectionIndicator" Property="Background" Value="{DynamicResource SystemHighlightBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource SystemWindowTextBrush}"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Border x:Name="SettingsPanel" x:FieldModifier="public" Style="{StaticResource WindowSurfaceBorderStyle}" CornerRadius="8" BorderThickness="1" Padding="16">
+                    <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="144"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="44"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Grid.ColumnSpan="2" Background="Transparent">
+    <Grid>
+        <TextBlock Text="Configurações" HorizontalAlignment="Left" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="16" FontWeight="SemiBold" IsHitTestVisible="False"/>
+        <Button ContentTemplate="{StaticResource CloseGlyphTemplate}" Width="32" Height="32" MinWidth="28" MinHeight="28" Padding="0" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Fechar configurações" Click="CloseSettingsButton_Click" AutomationProperties.Name="Fechar configurações">
+            <Button.Style>
+                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource WindowControlButton}">
+                    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}"/>
+                    <Setter Property="FontSize" Value="13"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource ThemeBrush_FFFFFF}"/>
+                            <Setter Property="Background" Value="{DynamicResource ThemeBrush_A33B4B}"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
+    </Grid>
+</Border>
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,12,0">
+                        <TextBlock Text="Preferências" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryTextBrush}" Margin="8,4,0,8"/>
+                        <Button x:Name="WidgetsPreferencesButton" x:FieldModifier="public" Style="{StaticResource SettingsNavigationButton}" Content="Aparência" Margin="0,0,0,4" Click="WidgetsPreferencesButton_Click" AutomationProperties.Name="Preferências de aparência"/>
+                        <Button x:Name="ChatPreferencesButton" x:FieldModifier="public" Style="{StaticResource SettingsNavigationButton}" Content="Chat" Tag="Selected" Margin="0,0,0,4" Click="ChatPreferencesButton_Click" AutomationProperties.Name="Preferências de chat"/>
+                        <Button x:Name="ConnectionsPreferencesButton" x:FieldModifier="public" Style="{StaticResource SettingsNavigationButton}" Content="Conexão" Margin="0,0,0,4" Click="ConnectionsPreferencesButton_Click" AutomationProperties.Name="Preferências de conexão"/>
+                        <Button x:Name="GeneralPreferencesButton" x:FieldModifier="public" Style="{StaticResource SettingsNavigationButton}" Content="Geral" Margin="0,0,0,4" Click="GeneralPreferencesButton_Click" AutomationProperties.Name="Preferências gerais"/>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" Grid.Column="1">
+                        <ScrollViewer x:Name="ChatPreferencesPage" x:FieldModifier="public" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                        <TextBlock Text="Chat e filtro" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,4"/>
+                        <TextBlock Text="Conecte canais e filtre mensagens." FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,12"/>
+                        <Button Content="Restaurar padrões desta seção" Tag="Chat" HorizontalAlignment="Left" Margin="0,0,0,12" Click="RestoreSectionDefaults_Click"/>
+                        <TextBlock x:Name="ChatFilterModeInfo" x:FieldModifier="public"
+                                   Text="Os filtros locais só funcionam no modo IRC autenticado. O chat público exibe as mensagens direto da Twitch."
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource ThemeBrush_E5C27A}"
+                                   FontSize="12"
+                                   Margin="0,0,0,12"
+                                   Visibility="Collapsed"/>
+                        <Border x:Name="FilterAuthenticationPrompt" x:FieldModifier="public"
+                                Background="{DynamicResource ThemeBrush_182333}"
+                                BorderBrush="{DynamicResource ThemeBrush_47566C}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12"
+                                Margin="0,0,0,12"
+                                Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Text="Quer mais filtros?"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ThemeBrush_F1F5FF}"
+                                           Margin="0,0,0,4"/>
+                                <TextBlock Text="Conecte sua conta Twitch para liberar filtros extras e escolher quais canais e pessoas aparecem no chat."
+                                           TextWrapping="Wrap"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Margin="0,0,0,8"/>
+                                <Button Content="Configurar autenticação"
+                                        HorizontalAlignment="Left"
+                                        Click="OpenFilterAuthentication_Click"/>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Canal da Twitch" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,0,0,4"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="MainChannelComboBox" x:FieldModifier="public"
+                                      ItemsSource="{Binding RecentChannels}"
+                                      IsEditable="True"
+                                      IsTextSearchEnabled="False"
+                                      Text="{Binding MainChannel, UpdateSourceTrigger=PropertyChanged}"
+                                      VerticalContentAlignment="Center"
+                                      Height="32"
+                                      Margin="0,0,8,0"
+                                      SelectionChanged="RecentChannelsComboBox_SelectionChanged"/>
+                            <Button Grid.Column="1"
+                                    Width="136"
+                                    Padding="4,8"
+                                    HorizontalContentAlignment="Center"
+                                    Click="ConnectButton_Click">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Ellipse Width="8"
+                                             Height="8"
+                                             Margin="0,0,8,0"
+                                             Fill="{DynamicResource AccentBrush}">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsConnecting}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="{Binding ConnectButtonText}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="Canal principal usado para conectar e filtrar mensagens." Style="{StaticResource SettingsHelpText}"/>
+
+                        <StackPanel x:Name="AuthenticatedFilterControls" x:FieldModifier="public">
+                            <TextBlock Text="Modo de filtro" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,4"/>
+                            <ComboBox x:Name="FilterModeComboBox" x:FieldModifier="public" Margin="0,0,0,8" SelectionChanged="FilterModeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Meu Chat"/>
+                                <ComboBoxItem Content="Chat Unido"/>
+                            </ComboBox>
+                            <TextBlock Text="Meu Chat limita ao canal principal; Chat Unido inclui os canais adicionais." Style="{StaticResource SettingsHelpText}"/>
+                            <TextBlock Text="Meu Chat mostra apenas o canal principal.&#10;Chat Unido mostra o canal principal e os canais adicionais; os canais ignorados continuam excluídos."
+                                       TextWrapping="Wrap"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource MutedTextBrush}"
+                                       Margin="0,0,0,12"/>
+                            <StackPanel x:Name="OtherChannelsFilterControls" x:FieldModifier="public">
+                                <CheckBox x:Name="DimOtherChannelsCheckBox" x:FieldModifier="public"
+                                          Content="Deixar mensagens de outros canais transparentes"
+                                          IsChecked="{Binding DimOtherChannelMessages}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,0,0,8"
+                                          ToolTip="Mantém as mensagens no chat com 50% de opacidade. Disponível enquanto conectado pelo IRC."/>
+                                <TextBlock Text="Reduz a opacidade das mensagens dos canais adicionais, sem ocultá-las." Style="{StaticResource SettingsHelpText}"/>
+                            </StackPanel>
+
+                            <StackPanel x:Name="AdditionalChannelsFilterControls" x:FieldModifier="public">
+                                <TextBlock Text="Canais adicionais para unir" FontSize="12" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,0,0,4"/>
+                                <ItemsControl ItemsSource="{Binding SelectedChannels}" Tag="SelectedChannels" ItemTemplate="{StaticResource FilterChipTemplate}" Margin="0,0,0,4">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBox x:Name="SelectedChannelsTextBox" x:FieldModifier="public" Height="32" Margin="0,0,8,0" ToolTip="Digite um nome de canal Twitch"/>
+                                    <Button Grid.Column="1" Content="Adicionar" Tag="SelectedChannels" Click="AddFilterChip_Click" AutomationProperties.Name="Adicionar canal à lista"/>
+                                </Grid>
+                                <TextBlock Text="Adicione os canais cujas mensagens devem aparecer junto com o canal principal." Style="{StaticResource SettingsHelpText}"/>
+                            </StackPanel>
+
+                            <StackPanel x:Name="BlockedChannelsFilterControls" x:FieldModifier="public">
+                                <TextBlock Text="Ignorar mensagens destes canais" FontSize="12" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,0,0,4"/>
+                                <ItemsControl ItemsSource="{Binding BlockedChannels}" Tag="BlockedChannels" ItemTemplate="{StaticResource FilterChipTemplate}" Margin="0,0,0,4">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBox x:Name="BlockedChannelsTextBox" x:FieldModifier="public" Height="32" Margin="0,0,8,0" ToolTip="Digite um nome de canal Twitch"/>
+                                    <Button Grid.Column="1" Content="Adicionar" Tag="BlockedChannels" Click="AddFilterChip_Click" AutomationProperties.Name="Adicionar canal ignorado"/>
+                                </Grid>
+                                <TextBlock Text="As mensagens destes canais não serão exibidas." Style="{StaticResource SettingsHelpText}"/>
+                            </StackPanel>
+
+                            <TextBlock Text="Usuários ignorados" FontSize="12" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,0,0,4"/>
+                            <ItemsControl ItemsSource="{Binding BlockedUsers}" Tag="BlockedUsers" ItemTemplate="{StaticResource FilterChipTemplate}" Margin="0,0,0,4">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBox x:Name="BlockedUsersTextBox" x:FieldModifier="public" Height="32" Margin="0,0,8,0" ToolTip="Digite um nome de usuário Twitch"/>
+                                <Button Grid.Column="1" Content="Adicionar" Tag="BlockedUsers" Click="AddFilterChip_Click" AutomationProperties.Name="Adicionar usuário ignorado"/>
+                            </Grid>
+                            <TextBlock Text="Bloqueia mensagens de usuários específicos em todos os canais conectados." Style="{StaticResource SettingsHelpText}"/>
+
+                            <CheckBox Content="Ocultar comandos que começam com !" IsChecked="{Binding HideCommands}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                            <TextBlock Text="Oculta mensagens que começam com !, como comandos de bot." Style="{StaticResource SettingsHelpText}"/>
+                        </StackPanel>
+                        <TextBlock Text="Ignorar mensagens que contenham estes termos" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,4"/>
+                        <ItemsControl ItemsSource="{Binding BlockedTerms}" Tag="BlockedTerms" ItemTemplate="{StaticResource FilterChipTemplate}" Margin="0,0,0,4">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="BlockedTermsTextBox" x:FieldModifier="public" Height="32" Margin="0,0,8,0" ToolTip="Digite um termo e adicione à lista"/>
+                            <Button Grid.Column="1" Content="Adicionar" Tag="BlockedTerms" Click="AddFilterChip_Click" AutomationProperties.Name="Adicionar termo ignorado"/>
+                        </Grid>
+                        <TextBlock Text="Oculta mensagens que contenham qualquer termo da lista." Style="{StaticResource SettingsHelpText}"/>
+                        <TextBlock Text="Destacar termos no chat" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,4,0,4"/>
+                        <ItemsControl ItemsSource="{Binding HighlightTerms}" Tag="HighlightTerms" ItemTemplate="{StaticResource FilterChipTemplate}" Margin="0,0,0,4">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="HighlightTermsTextBox" x:FieldModifier="public" Height="32" Margin="0,0,8,0" ToolTip="Digite um termo e adicione à lista"/>
+                            <Button Grid.Column="1" Content="Adicionar" Tag="HighlightTerms" Click="AddFilterChip_Click" AutomationProperties.Name="Adicionar termo destacado"/>
+                        </Grid>
+                        <TextBlock Text="Destaca as correspondências e pode acionar o alerta sonoro de termos." Style="{StaticResource SettingsHelpText}"/>
+                        <TextBlock Text="Testar filtro" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,8,0,4"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBox x:Name="TestFilterInput" x:FieldModifier="public" Height="32" Margin="0,0,8,0" ToolTip="Digite uma frase de exemplo"/>
+                            <Button Grid.Column="1" Content="Testar" Click="TestFilter_Click" AutomationProperties.Name="Testar frase nos filtros"/>
+                        </Grid>
+                        <TextBlock x:Name="TestFilterResult" x:FieldModifier="public" Foreground="{DynamicResource ThemeBrush_AAB9CE}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <TextBlock Text="Cor dos termos destacados" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="AccentColorInput" x:FieldModifier="public" Text="{Binding HighlightColor, UpdateSourceTrigger=PropertyChanged}" Height="32" TextChanged="HighlightColor_TextChanged"/>
+                            <Button x:Name="AccentColorPaletteButton" x:FieldModifier="public" Grid.Column="1" Content="Paleta de Cores" Width="110" Padding="8,0" Margin="8,0,0,0" Click="ChooseHighlightColorButton_Click" ToolTip="Escolher a cor dos termos destacados"/>
+                        </Grid>
+                        <TextBlock Text="Define a cor aplicada aos termos encontrados nas mensagens." Style="{StaticResource SettingsHelpText}"/>
+                        <TextBlock x:Name="AccentColorStatus" x:FieldModifier="public" Foreground="{DynamicResource ThemeBrush_F0A5A5}" FontSize="12" Margin="0,4,0,0" Visibility="Collapsed"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4,0,0">
+                            <Border x:Name="AccentColorPreviewDot" x:FieldModifier="public" Width="12" Height="12" CornerRadius="6" BorderBrush="{DynamicResource ThemeBrush_9EADC2}" BorderThickness="1" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="AccentColorPreviewText" x:FieldModifier="public" Foreground="{DynamicResource MutedTextBrush}" FontSize="12"/>
+                        </StackPanel>
+                        <TextBlock Text="As regras valem para o feed integrado; mensagens bloqueadas somem e os termos destacados podem emitir alerta sonoro." TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,8"/>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer x:Name="ConnectionsPreferencesPage" x:FieldModifier="public" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="Conexão" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,4"/>
+                                <Button Content="Restaurar padrões desta seção" Tag="Connection" HorizontalAlignment="Left" Margin="0,0,0,12" Click="RestoreSectionDefaults_Click"/>
+                                <TextBlock Text="Método de conexão" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,0,0,4"/>
+                                <ComboBox x:Name="ConnectionModeComboBox" x:FieldModifier="public" SelectionChanged="ConnectionModeComboBox_SelectionChanged" Margin="0,0,0,8">
+                                    <ComboBoxItem Content="Chat público · sem autorização"/>
+                                    <ComboBoxItem Content="IRC autenticado · filtros avançados"/>
+                                </ComboBox>
+                                <TextBlock Text="O modo público não exige autorização; o IRC autenticado libera filtros avançados." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock x:Name="ConnectionModeDescription" x:FieldModifier="public"
+                                           Text="Chat público: não requer autorização e mostra apenas o canal selecionado. Os filtros avançados por canais e usuários são exclusivos do IRC."
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource MutedTextBrush}"
+                                           Margin="0,0,0,12"/>
+                                <Border x:Name="TwitchAuthorizationPanel" x:FieldModifier="public" Background="{DynamicResource PanelSurfaceBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Autorização da Twitch" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                        <TextBlock x:Name="TwitchAuthorizationStatus" x:FieldModifier="public" Text="Ainda não autorizado. Clique em Conectar para iniciar." TextWrapping="Wrap" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,4,0,4"/>
+                                        <TextBlock x:Name="TwitchDeviceCodeText" x:FieldModifier="public" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Visibility="Collapsed"/>
+                                        <WrapPanel Margin="0,4,0,0">
+                                            <Button x:Name="TwitchOpenAuthorizationButton" x:FieldModifier="public" Content="Abrir Twitch" Visibility="Collapsed" Click="TwitchOpenAuthorizationButton_Click" Margin="0,0,8,0"/>
+                                            <Button x:Name="TwitchCancelAuthorizationButton" x:FieldModifier="public" Content="Cancelar autorização" Visibility="Collapsed" Click="TwitchCancelAuthorizationButton_Click"/>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="{DynamicResource PanelSurfaceBrush}" BorderBrush="{DynamicResource ControlBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Canal conectado" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_EAF2FF}"/>
+                                        <TextBlock Text="{Binding MainChannel, StringFormat={}#{0}}" Foreground="{DynamicResource ThemeBrush_AEBBD0}" Margin="0,4,0,0"/>
+                                        <TextBlock Text="{Binding ConnectionStatus}" Foreground="{DynamicResource ThemeBrush_B88BFF}" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Button Content="Diagnóstico" HorizontalAlignment="Left" Margin="0,0,8,8" Click="ShowDiagnosticButton_Click"/>
+                                <TextBlock x:Name="TwitchAuthorizationHelp" x:FieldModifier="public" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}" Margin="0,8,0,0">
+                                    <Run Text="A conexão IRC permite "/>
+                                    <Run Text="somente a leitura do chat" Foreground="{DynamicResource ThemeBrush_FFD166}" FontWeight="Bold"/>
+                                    <Run Text=". O aplicativo não pode enviar mensagens. A conexão é criptografada e o acesso fica protegido pela conta Windows."/>
+                                </TextBlock>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer x:Name="GeneralPreferencesPage" x:FieldModifier="public" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="Geral" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,4"/>
+                                <TextBlock Text="Inicialização e comportamento durante o uso." FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,16"/>
+                                <Button Content="Restaurar padrões desta seção" Tag="General" HorizontalAlignment="Left" Margin="0,0,0,12" Click="RestoreSectionDefaults_Click"/>
+                                <CheckBox Content="Reconectar automaticamente à Twitch"
+                                          IsChecked="{Binding AutoReconnect}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,0,0,8"/>
+                                <TextBlock Text="Tenta restabelecer a conexão se a Twitch ou a rede desconectar." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox x:Name="StartWithWindowsCheckBox" x:FieldModifier="public"
+                                          Content="Iniciar com o Windows (usuário atual)"
+                                          IsChecked="{Binding StartWithWindows}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,0,0,8"/>
+                                <TextBlock Text="Cria ou remove a entrada de inicialização para sua conta do Windows." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Ocultar configurações ao conectar"
+                                          IsChecked="{Binding HideSettingsDuringUse}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,0,0,8"/>
+                                <TextBlock Text="Fecha esta janela de configurações quando o chat conectar." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Iniciar minimizado"
+                                          IsChecked="{Binding StartMinimized}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,0,0,16"/>
+                                <TextBlock Text="Abre o aplicativo minimizado em vez de mostrar o overlay." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Iniciar conectado em modo transparente"
+                                          IsChecked="{Binding StartTransparentAndConnected}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,0,0,8"/>
+                                <TextBlock Text="Conecta ao último canal salvo e abre apenas o chat. Se não houver canal salvo, as configurações serão abertas." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="{Binding MaxVisibleMessages, StringFormat=Máximo de mensagens visíveis: {0}}"
+                                           Foreground="{DynamicResource ThemeBrush_D7E5FF}"
+                                           Margin="0,4,0,8"/>
+                                <Slider Minimum="10"
+                                        Maximum="300"
+                                        TickFrequency="10"
+                                        IsSnapToTickEnabled="True"
+                                        Value="{Binding MaxVisibleMessages, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        ValueChanged="MaxVisibleMessagesSlider_ValueChanged"/>
+                                <TextBlock Text="Limita quantas mensagens permanecem carregadas no feed." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="Sobre o aplicativo" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_E6D5FF}" Margin="0,16,0,4"/>
+                                <TextBlock x:Name="AppVersionText" x:FieldModifier="public" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Text="Overlay leve para acompanhar o chat da Twitch enquanto joga. Configure um canal, escolha um modo de filtragem e ajuste o visual do widget." TextWrapping="Wrap" Foreground="{DynamicResource ThemeBrush_BCC8D9}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Mostrar/ocultar: Ctrl + Alt + T · Alternar chat-only: Ctrl + Alt + Shift + T" TextWrapping="Wrap" Foreground="{DynamicResource ThemeBrush_D7E5FF}"/>
+                                <TextBlock Text="As preferências ficam salvas localmente neste computador." TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <ScrollViewer x:Name="WidgetsPreferencesPage" x:FieldModifier="public" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="Aparência" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,4"/>
+                                <TextBlock Text="Visualize e ajuste o estilo da sobreposição." FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,12"/>
+                                <Border Background="{DynamicResource ThemeBrush_182333}" BorderBrush="{DynamicResource ThemeBrush_53647D}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Prévia ao vivo" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,0,0,8"/>
+                                        <Border x:Name="PreviewMessageBorder" x:FieldModifier="public" Background="{DynamicResource ThemeBrush_182333}" CornerRadius="6" Padding="8">
+                                            <TextBlock x:Name="PreviewMessageText" x:FieldModifier="public" Text="Exemplo: esta mensagem mostra as alterações de aparência." TextWrapping="Wrap" Foreground="{DynamicResource AccentBrush}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                                <Button Content="Restaurar padrões desta seção" Tag="Appearance" HorizontalAlignment="Left" Margin="0,0,0,12" Click="RestoreSectionDefaults_Click"/>
+                                <CheckBox Content="Permitir cliques atravessando o overlay" IsChecked="{Binding ClickThroughEnabled}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Permite interagir com a janela que está atrás do chat." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Mostrar nomes de usuários" IsChecked="{Binding ShowUserNames}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Exibe o nome de quem enviou cada mensagem." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Exibir o nome acima da mensagem"
+                                          IsChecked="{Binding UserNameAboveMessage}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Mostra o nome em uma linha própria, acima do texto da mensagem." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Usar cores individuais dos nomes" IsChecked="{Binding UseTwitchNameColors}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Usa a cor de nome fornecida pela Twitch quando disponível." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Mostrar timestamps" IsChecked="{Binding ShowTimestamps}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Inclui o horário de recebimento antes da mensagem." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Mostrar badges" IsChecked="{Binding ShowBadges}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Exibe os emblemas associados aos usuários." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Mostrar badges de moderadores" IsChecked="{Binding ShowModerators}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Exibe o emblema de moderador quando disponível." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Mostrar badges VIP" IsChecked="{Binding ShowVips}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Exibe o emblema VIP quando disponível." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Som ao receber termo destacado" IsChecked="{Binding EnableSound}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Toca um alerta apenas quando a mensagem contém um termo destacado." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Som ao receber cada nova mensagem" IsChecked="{Binding NotifyNewMessages, Mode=TwoWay}" Checked="SavePreferences_Changed" Unchecked="SavePreferences_Changed"/>
+                                <TextBlock Text="Toca um alerta para todas as mensagens; quando ativo, substitui o alerta por termo." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="Som de notificação" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
+                                <ComboBox x:Name="NotificationSoundComboBox" x:FieldModifier="public" SelectionChanged="NotificationSoundComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="Neutro"/>
+                                    <ComboBoxItem Content="Suave"/>
+                                    <ComboBoxItem Content="Sino"/>
+                                </ComboBox>
+                                <TextBlock Text="Escolhe o som usado pelos alertas habilitados acima." Style="{StaticResource SettingsHelpText}"/>
+                                <Button Content="Ouvir exemplo" HorizontalAlignment="Left" Margin="0,8,0,0" Click="NotificationSoundPreviewButton_Click"/>
+                                <TextBlock Text="{Binding NotificationVolumePercent, StringFormat=Volume do som: {0}%}" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
+                                <Slider Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                        Value="{Binding NotificationVolumePercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        ValueChanged="NotificationVolumeSlider_ValueChanged"/>
+                                <TextBlock Text="Ajusta o volume dos alertas sonoros." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="{Binding FontSize, StringFormat=Fonte do chat: {0} px}" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
+                                <Slider Minimum="10" Maximum="32" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding FontSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="FontSizeSlider_ValueChanged"/>
+                                <TextBlock Text="Controla o tamanho do texto e é refletido na prévia ao vivo." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="Opacidade do Fundo do Aplicativo" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
+                                <Slider Minimum="0.15" Maximum="1" Value="{Binding BackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="OpacitySlider_ValueChanged"/>
+                                <TextBlock Text="Ajusta a opacidade do fundo da janela principal." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Aplicar cor ao fundo das mensagens"
+                                          IsChecked="{Binding UseMessageBackgroundOpacity, Mode=TwoWay}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,12,0,0"/>
+                                <TextBlock Text="Ativa o preenchimento colorido atrás de cada mensagem." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="{Binding MessageBackgroundOpacity, StringFormat=Opacidade do fundo das mensagens: {0:P0}}"
+                                           Foreground="{DynamicResource ThemeBrush_D7E5FF}"
+                                           Margin="0,8,0,8"/>
+                                <Slider Minimum="0.1"
+                                        Maximum="1"
+                                        IsEnabled="{Binding UseMessageBackgroundOpacity}"
+                                        Value="{Binding MessageBackgroundOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        ValueChanged="AppearanceSlider_ValueChanged"/>
+                                <TextBlock Text="Controla a intensidade do fundo individual das mensagens." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="Cor do fundo das mensagens" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="MessageBackgroundColorInput" x:FieldModifier="public" Text="{Binding MessageBackgroundColor, UpdateSourceTrigger=PropertyChanged}" Height="32" TextChanged="MessageBackgroundColor_TextChanged"/>
+                                    <Button x:Name="MessageBackgroundColorPaletteButton" x:FieldModifier="public" Grid.Column="1" Content="Paleta de Cores" Width="110" Padding="8,0" Margin="8,0,0,0" Click="ChooseMessageBackgroundColorButton_Click" ToolTip="Escolher o fundo das mensagens"/>
+                                </Grid>
+                                <TextBlock Text="Escolhe a cor usada atrás do texto quando o fundo individual está habilitado." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock x:Name="MessageBackgroundColorStatus" x:FieldModifier="public" Foreground="{DynamicResource ThemeBrush_F0A5A5}" FontSize="12" Margin="0,4,0,0" Visibility="Collapsed"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,4,0,0">
+                                    <Border x:Name="MessageBackgroundColorPreviewDot" x:FieldModifier="public" Width="12" Height="12" CornerRadius="6" BorderBrush="{DynamicResource ThemeBrush_9EADC2}" BorderThickness="1" Margin="0,0,8,0"/>
+                                    <TextBlock x:Name="MessageBackgroundColorPreviewText" x:FieldModifier="public" Foreground="{DynamicResource MutedTextBrush}" FontSize="12"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding TextOpacity, StringFormat=Opacidade do texto: {0:P0}}" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
+                                <Slider Minimum="0.2" Maximum="1" Value="{Binding TextOpacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
+                                <TextBlock Text="Ajusta a transparência do texto das mensagens." Style="{StaticResource SettingsHelpText}"/>
+                                <CheckBox Content="Contorno do texto"
+                                          IsChecked="{Binding ShowChatTextOutline, Mode=TwoWay}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          ToolTip="Desative para remover a sombra por mensagem e reduzir o trabalho gráfico."
+                                          Margin="0,12,0,0"/>
+                                <TextBlock Text="Melhora a separação do texto sobre fundos variados, com custo adicional de renderização." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="{Binding MessageSpacing, StringFormat=Espaçamento entre mensagens: {0} px}" Foreground="{DynamicResource ThemeBrush_D7E5FF}" Margin="0,12,0,8"/>
+                                <Slider Minimum="0" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding MessageSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ValueChanged="AppearanceSlider_ValueChanged"/>
+                                <TextBlock Text="Aumenta ou reduz a distância vertical entre mensagens." Style="{StaticResource SettingsHelpText}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+
+
+                    </Grid>
+                    </Grid>
+                </Border>
+        <Popup x:Name="ColorPalettePopup" x:FieldModifier="public"
+                   Placement="Bottom"
+                   AllowsTransparency="True"
+                   StaysOpen="False">
+                <Border Background="{DynamicResource ThemeBrush_121B29}" BorderBrush="{DynamicResource ThemeBrush_53647D}" BorderThickness="1" CornerRadius="8" Padding="8">
+                    <StackPanel>
+                        <TextBlock Text="Escolha uma cor" Foreground="{DynamicResource ThemeBrush_EAF2FF}" FontWeight="SemiBold" Margin="4,0,4,8"/>
+                        <WrapPanel Width="224">
+                            <Button Background="{DynamicResource ThemeBrush_000000}" Tag="{DynamicResource ThemeColor_000000}" ToolTip="Preto" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_FFFFFF}" Tag="{DynamicResource ThemeColor_FFFFFF}" ToolTip="Branco" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_808080}" Tag="{DynamicResource ThemeColor_808080}" ToolTip="Cinza" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_C0C0C0}" Tag="{DynamicResource ThemeColor_C0C0C0}" ToolTip="Cinza claro" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_7F0000}" Tag="{DynamicResource ThemeColor_7F0000}" ToolTip="Vinho" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_FF0000}" Tag="{DynamicResource ThemeColor_FF0000}" ToolTip="Vermelho" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_FF7F00}" Tag="{DynamicResource ThemeColor_FF7F00}" ToolTip="Laranja" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_FFFF00}" Tag="{DynamicResource ThemeColor_FFFF00}" ToolTip="Amarelo" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_7F7F00}" Tag="{DynamicResource ThemeColor_7F7F00}" ToolTip="Oliva" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_00FF00}" Tag="{DynamicResource ThemeColor_00FF00}" ToolTip="Verde" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_007F00}" Tag="{DynamicResource ThemeColor_007F00}" ToolTip="Verde escuro" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_00FFFF}" Tag="{DynamicResource ThemeColor_00FFFF}" ToolTip="Ciano" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_007FFF}" Tag="{DynamicResource ThemeColor_007FFF}" ToolTip="Azul claro" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_0000FF}" Tag="{DynamicResource ThemeColor_0000FF}" ToolTip="Azul" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_00007F}" Tag="{DynamicResource ThemeColor_00007F}" ToolTip="Azul escuro" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_7F00FF}" Tag="{DynamicResource ThemeColor_7F00FF}" ToolTip="Violeta" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_FF00FF}" Tag="{DynamicResource ThemeColor_FF00FF}" ToolTip="Magenta" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_FF007F}" Tag="{DynamicResource ThemeColor_FF007F}" ToolTip="Rosa" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource ThemeBrush_5EA2FF}" Tag="{DynamicResource ThemeColor_5EA2FF}" ToolTip="Azul Twitch Filter" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                            <Button Background="{DynamicResource AccentBrush}" Tag="{DynamicResource ThemeColor_A970FF}" ToolTip="Violeta Twitch" Click="PaletteColorButton_Click" Width="28" Height="28" Padding="0" Margin="4"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </Popup>
+    </Grid>
+</Window>

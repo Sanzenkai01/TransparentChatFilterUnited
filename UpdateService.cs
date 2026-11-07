@@ -2,18 +2,33 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TransparentChatFilter;
 
-internal sealed record AvailableUpdate(Version Version, Uri DownloadUri);
+internal sealed record AvailableUpdate(
+    Version Version,
+    Uri DownloadUri,
+    Uri ChecksumUri,
+    string ReleaseNotes);
+
+internal sealed record UpdateCheckResult(
+    AvailableUpdate? Update,
+    string? ETag,
+    bool NotModified = false,
+    bool RateLimited = false);
 
 internal static class UpdateService
 {
     private const string AssetName = "TransparentChatFilterUnited-win-x64.zip";
+    private const string ChecksumAssetName = AssetName + ".sha256";
     private const string LatestReleaseApi =
         "https://api.github.com/repos/Sanzenkai01/TransparentChatFilterUnited/releases/latest";
     private const long MaximumArchiveSize = 500 * 1024 * 1024;
@@ -115,15 +130,53 @@ internal static class UpdateService
             }
         }
         """;
-    private static readonly HttpClient HttpClient = CreateHttpClient();
+    private static readonly HttpClient ApiHttpClient = CreateHttpClient(TimeSpan.FromSeconds(20));
+    private static readonly HttpClient DownloadHttpClient = CreateHttpClient(Timeout.InfiniteTimeSpan);
 
-    internal static async Task<AvailableUpdate?> CheckForUpdateAsync()
+    internal static async Task<UpdateCheckResult> CheckForUpdateAsync(
+        string? etag,
+        CancellationToken cancellationToken = default)
     {
-        using var response = await HttpClient.GetAsync(LatestReleaseApi);
+        using var request = new HttpRequestMessage(HttpMethod.Get, LatestReleaseApi);
+        if (!string.IsNullOrWhiteSpace(etag) &&
+            EntityTagHeaderValue.TryParse(etag, out var entityTag))
+        {
+            request.Headers.IfNoneMatch.Add(entityTag);
+        }
+
+        using var response = await ApiHttpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotModified)
+        {
+            return new UpdateCheckResult(null, response.Headers.ETag?.ToString() ?? etag, NotModified: true);
+        }
+
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            return new UpdateCheckResult(null, response.Headers.ETag?.ToString() ?? etag, RateLimited: true);
+        }
+
+        if (response.StatusCode == HttpStatusCode.Forbidden)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            var rateLimitHeader = response.Headers.TryGetValues("X-RateLimit-Remaining", out var remainingValues)
+                && remainingValues.Any(value => value == "0");
+            if (rateLimitHeader ||
+                response.Headers.RetryAfter is not null ||
+                errorBody.Contains("rate limit", StringComparison.OrdinalIgnoreCase))
+            {
+                return new UpdateCheckResult(null, response.Headers.ETag?.ToString() ?? etag, RateLimited: true);
+            }
+        }
+
         response.EnsureSuccessStatusCode();
 
-        await using var responseStream = await response.Content.ReadAsStreamAsync();
-        using var release = await JsonDocument.ParseAsync(responseStream);
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var release = await JsonDocument.ParseAsync(
+            responseStream,
+            cancellationToken: cancellationToken);
         var root = release.RootElement;
         var tag = root.GetProperty("tag_name").GetString()
             ?? throw new InvalidDataException("A release não contém uma tag de versão.");
@@ -138,42 +191,63 @@ internal static class UpdateService
             ?? throw new InvalidOperationException("Não foi possível determinar a versão instalada.");
         if (latestVersion <= currentVersion)
         {
-            return null;
+            return new UpdateCheckResult(null, response.Headers.ETag?.ToString() ?? etag);
         }
 
+        Uri? downloadUri = null;
+        Uri? checksumUri = null;
         foreach (var asset in root.GetProperty("assets").EnumerateArray())
         {
-            if (!string.Equals(asset.GetProperty("name").GetString(), AssetName, StringComparison.Ordinal))
+            var assetName = asset.GetProperty("name").GetString();
+            if (!string.Equals(assetName, AssetName, StringComparison.Ordinal) &&
+                !string.Equals(assetName, ChecksumAssetName, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            var downloadUrl = asset.GetProperty("browser_download_url").GetString()
-                ?? throw new InvalidDataException("A release não contém um endereço de download.");
-            if (!Uri.TryCreate(downloadUrl, UriKind.Absolute, out var downloadUri)
-                || downloadUri.Scheme != Uri.UriSchemeHttps
-                || !string.Equals(downloadUri.Host, "github.com", StringComparison.OrdinalIgnoreCase))
+            var assetUrl = asset.GetProperty("browser_download_url").GetString()
+                ?? throw new InvalidDataException($"A release não contém um endereço para {assetName}.");
+            if (!Uri.TryCreate(assetUrl, UriKind.Absolute, out var validatedUri)
+                || validatedUri.Scheme != Uri.UriSchemeHttps
+                || !string.Equals(validatedUri.Host, "github.com", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidDataException("O endereço do pacote de atualização não é confiável.");
             }
 
-            return new AvailableUpdate(latestVersion, downloadUri);
+            if (string.Equals(assetName, AssetName, StringComparison.Ordinal))
+            {
+                downloadUri = validatedUri;
+            }
+            else
+            {
+                checksumUri = validatedUri;
+            }
         }
 
-        throw new InvalidDataException($"A release {tag} não contém o pacote {AssetName}.");
+        if (downloadUri is null)
+        {
+            throw new InvalidDataException($"A release {tag} não contém o pacote {AssetName}.");
+        }
+
+        if (checksumUri is null)
+        {
+            throw new InvalidDataException($"A release {tag} não contém a soma de verificação {ChecksumAssetName}.");
+        }
+
+        var releaseNotes = root.TryGetProperty("body", out var bodyElement)
+            ? bodyElement.GetString() ?? string.Empty
+            : string.Empty;
+        return new UpdateCheckResult(
+            new AvailableUpdate(latestVersion, downloadUri, checksumUri, releaseNotes),
+            response.Headers.ETag?.ToString() ?? etag);
     }
 
-    internal static async Task<string> DownloadUpdateAsync(AvailableUpdate update)
+    internal static async Task<string> DownloadUpdateAsync(
+        AvailableUpdate update,
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
     {
-        using var response = await HttpClient.GetAsync(
-            update.DownloadUri,
-            HttpCompletionOption.ResponseHeadersRead);
-        response.EnsureSuccessStatusCode();
-
-        if (response.Content.Headers.ContentLength is > MaximumArchiveSize)
-        {
-            throw new InvalidDataException("O pacote de atualização excede o tamanho permitido.");
-        }
+        var expectedHash = await DownloadExpectedHashAsync(update.ChecksumUri, cancellationToken);
 
         var archivePath = Path.Combine(
             Path.GetTempPath(),
@@ -181,18 +255,68 @@ internal static class UpdateService
 
         try
         {
-            await using var source = await response.Content.ReadAsStreamAsync();
-            await using var destination = new FileStream(
-                archivePath,
-                FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None);
-            await source.CopyToAsync(destination);
-            if (destination.Length > MaximumArchiveSize)
+            using var response = await DownloadHttpClient.GetAsync(
+                update.DownloadUri,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            if (response.Content.Headers.ContentLength is > MaximumArchiveSize)
             {
                 throw new InvalidDataException("O pacote de atualização excede o tamanho permitido.");
             }
 
+            await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using var destination = new FileStream(
+                archivePath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 81920,
+                options: FileOptions.Asynchronous | FileOptions.SequentialScan);
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            var buffer = new byte[81920];
+            long totalBytes = 0;
+            var contentLength = response.Content.Headers.ContentLength;
+            progress?.Report(0);
+
+            while (true)
+            {
+                var bytesRead = await source.ReadAsync(buffer.AsMemory(), cancellationToken);
+                if (bytesRead == 0)
+                {
+                    break;
+                }
+
+                totalBytes += bytesRead;
+                if (totalBytes > MaximumArchiveSize)
+                {
+                    throw new InvalidDataException("O pacote de atualização excede o tamanho permitido.");
+                }
+
+                hash.AppendData(buffer, 0, bytesRead);
+                await destination.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+                if (contentLength is > 0)
+                {
+                    progress?.Report(Math.Clamp((double)totalBytes / contentLength.Value, 0, 1));
+                }
+            }
+
+            if (totalBytes == 0)
+            {
+                throw new InvalidDataException("O pacote de atualização está vazio.");
+            }
+
+            var actualHash = Convert.ToHexString(hash.GetHashAndReset());
+            if (!CryptographicOperations.FixedTimeEquals(
+                    Convert.FromHexString(actualHash),
+                    Convert.FromHexString(expectedHash)))
+            {
+                throw new InvalidDataException(
+                    "A verificação SHA-256 do pacote falhou. O arquivo baixado não corresponde ao publicado; nenhuma atualização foi aplicada.");
+            }
+
+            progress?.Report(1);
             return archivePath;
         }
         catch
@@ -249,11 +373,52 @@ internal static class UpdateService
         }
     }
 
-    private static HttpClient CreateHttpClient()
+    private static async Task<string> DownloadExpectedHashAsync(Uri checksumUri, CancellationToken cancellationToken)
+    {
+        using var response = await DownloadHttpClient.GetAsync(
+            checksumUri,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+        if (response.Content.Headers.ContentLength is > 1024)
+        {
+            throw new InvalidDataException("O arquivo de soma de verificação excede o tamanho permitido.");
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var memory = new MemoryStream();
+        var buffer = new byte[256];
+        while (true)
+        {
+            var bytesRead = await stream.ReadAsync(buffer.AsMemory(), cancellationToken);
+            if (bytesRead == 0)
+            {
+                break;
+            }
+
+            if (memory.Length + bytesRead > 1024)
+            {
+                throw new InvalidDataException("O arquivo de soma de verificação excede o tamanho permitido.");
+            }
+
+            memory.Write(buffer, 0, bytesRead);
+        }
+
+        var checksumText = Encoding.ASCII.GetString(memory.ToArray()).Trim();
+        var hash = checksumText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (hash is null || hash.Length != 64 || !hash.All(Uri.IsHexDigit))
+        {
+            throw new InvalidDataException("A release publicou um arquivo SHA-256 inválido.");
+        }
+
+        return hash;
+    }
+
+    private static HttpClient CreateHttpClient(TimeSpan timeout)
     {
         var client = new HttpClient
         {
-            Timeout = TimeSpan.FromSeconds(20)
+            Timeout = timeout
         };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("TransparentChatFilterUnited/1.0");
         return client;

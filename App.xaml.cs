@@ -1,10 +1,18 @@
 ﻿using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace TransparentChatFilter;
 
 public partial class App : Application
 {
+    private static readonly TimeSpan MinimumUpdateCheckInterval = TimeSpan.FromHours(6);
+    private readonly DispatcherTimer _updateCheckTimer = new()
+    {
+        Interval = MinimumUpdateCheckInterval
+    };
+    private bool _updateCheckInProgress;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -29,18 +37,17 @@ public partial class App : Application
                                          NormalizeReleaseVersion(lastSeenVersion) < releaseVersion;
         var upgradedFromUntrackedLegacyVersion = settingsFileExisted && lastSeenVersion is null;
         var showReleaseNotes = pendingUpdate || updatedFromLegacyInstaller || upgradedFromUntrackedLegacyVersion;
+        TaskCompletionSource? notesDismissed = null;
         if (showReleaseNotes)
         {
             mainWindow.WindowState = WindowState.Normal;
+            notesDismissed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             mainWindow.Loaded += (_, _) =>
             {
                 var releaseNotesWindow = new ReleaseNotesWindow(currentVersion, lastSeenVersion)
                 {
                     Owner = mainWindow
                 };
-                var notesDismissed = new TaskCompletionSource(
-                    TaskCreationOptions.RunContinuationsAsynchronously);
-                _ = CheckForUpdatesAsync(notesDismissed.Task);
                 try
                 {
                     if (releaseNotesWindow.ShowDialog() != true)
@@ -51,7 +58,7 @@ public partial class App : Application
                     settings.LastSeenReleaseNotesVersion = releaseVersion.ToString(3);
                     try
                     {
-                        mainWindow.ViewModel.SaveSettings();
+                        mainWindow.QueueSettingsSaveForExternalChanges();
                         if (pendingUpdate)
                         {
                             File.Delete(AppSettings.PendingReleaseNotesPath);
@@ -71,10 +78,12 @@ public partial class App : Application
         }
 
         mainWindow.Show();
-        if (!showReleaseNotes)
+        _updateCheckTimer.Tick += (_, _) => _ = CheckForUpdatesAsync(mainWindow);
+        mainWindow.ContentRendered += (_, _) =>
         {
-            _ = CheckForUpdatesAsync();
-        }
+            _updateCheckTimer.Start();
+            _ = CheckForUpdatesAsync(mainWindow, notesDismissed?.Task);
+        };
     }
 
     private static Version NormalizeReleaseVersion(Version version)
@@ -109,28 +118,47 @@ public partial class App : Application
         return null;
     }
 
-    private static async Task CheckForUpdatesAsync(Task? waitBeforeShowingUpdateUi = null)
+    private async Task CheckForUpdatesAsync(MainWindow mainWindow, Task? waitBeforeShowingUpdateUi = null)
     {
-        UpdateCheckWindow? progressWindow = null;
+        if (_updateCheckInProgress)
+        {
+            return;
+        }
 
+        var settings = mainWindow.ViewModel.Settings;
+        var checkStartedAt = DateTimeOffset.UtcNow;
+        if (settings.LastUpdateCheckUtc is { } lastCheck &&
+            checkStartedAt - lastCheck < MinimumUpdateCheckInterval)
+        {
+            return;
+        }
+
+        _updateCheckInProgress = true;
+        UpdateCheckWindow? progressWindow = null;
+        var downloading = false;
         try
         {
-            if (waitBeforeShowingUpdateUi is null)
+            var result = await UpdateService.CheckForUpdateAsync(settings.UpdateCheckETag);
+            settings.LastUpdateCheckUtc = checkStartedAt;
+            settings.UpdateCheckETag = result.ETag ?? settings.UpdateCheckETag;
+            mainWindow.QueueSettingsSaveForExternalChanges();
+
+            if (result.RateLimited)
             {
-                progressWindow = new UpdateCheckWindow("Checando atualizações...")
-                {
-                    Owner = Current.MainWindow
-                };
-                progressWindow.Show();
+                mainWindow.ViewModel.UpdateDiagnostic(
+                    "O GitHub limitou temporariamente as consultas de atualização. Uma nova verificação será feita após pelo menos 6 horas.");
+                return;
             }
 
-            var updateTask = UpdateService.CheckForUpdateAsync();
-            await Task.WhenAll(updateTask, Task.Delay(TimeSpan.FromMilliseconds(1500)));
-            var update = await updateTask;
-            progressWindow?.Close();
-            progressWindow = null;
+            if (result.NotModified || result.Update is not { } update)
+            {
+                return;
+            }
 
-            if (update is null)
+            if (string.Equals(
+                    settings.LastSkippedUpdateVersion,
+                    update.Version.ToString(3),
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
@@ -140,43 +168,60 @@ public partial class App : Application
                 await waitBeforeShowingUpdateUi;
             }
 
-            var updatePrompt = new UpdateAvailableWindow(update.Version)
+            var updatePrompt = new UpdateAvailableWindow(update)
             {
-                Owner = Current.MainWindow
+                Owner = mainWindow
             };
-            if (updatePrompt.ShowDialog() != true)
+            updatePrompt.ShowDialog();
+            if (updatePrompt.Choice == UpdatePromptChoice.SkipVersion)
+            {
+                settings.LastSkippedUpdateVersion = update.Version.ToString(3);
+                mainWindow.QueueSettingsSaveForExternalChanges();
+                return;
+            }
+
+            if (updatePrompt.Choice != UpdatePromptChoice.Update)
             {
                 return;
             }
 
-            progressWindow = new UpdateCheckWindow("Baixando atualização...")
+            downloading = true;
+            using var cancellationSource = new CancellationTokenSource();
+            progressWindow = new UpdateCheckWindow("Baixando e verificando a atualização...", cancellationSource)
             {
-                Owner = Current.MainWindow
+                Owner = mainWindow
             };
             progressWindow.Show();
 
-            var archivePath = await UpdateService.DownloadUpdateAsync(update);
+            var progress = new Progress<double>(progressWindow.ReportProgress);
+            var archivePath = await UpdateService.DownloadUpdateAsync(
+                update,
+                progress,
+                cancellationSource.Token);
             UpdateService.StartUpdate(archivePath, update.Version);
             Current.Shutdown();
         }
+        catch (OperationCanceledException) when (progressWindow is not null)
+        {
+            mainWindow.ViewModel.UpdateDiagnostic("O download da atualização foi cancelado.");
+        }
         catch (Exception exception)
         {
-            if (waitBeforeShowingUpdateUi is not null)
+            mainWindow.ViewModel.UpdateDiagnostic(
+                $"Falha ao verificar ou baixar atualizações: {exception.Message}");
+            if (downloading)
             {
-                await waitBeforeShowingUpdateUi;
+                MessageBox.Show(
+                    $"Não foi possível baixar ou verificar a atualização: {exception.Message}",
+                    "Atualização",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
             }
-
-            progressWindow?.Close();
-            progressWindow = null;
-            MessageBox.Show(
-                $"Não foi possível verificar ou baixar atualizações: {exception.Message}",
-                "Atualização",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
         }
         finally
         {
             progressWindow?.Close();
+            _updateCheckInProgress = false;
         }
     }
 }

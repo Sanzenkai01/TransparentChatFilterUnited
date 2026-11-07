@@ -59,7 +59,7 @@ internal static class TwitchCredentialStore
                 }
 
                 Directory.CreateDirectory(directory);
-                File.WriteAllText(TokenPath, Convert.ToBase64String(encrypted));
+                AtomicFile.WriteAllText(TokenPath, Convert.ToBase64String(encrypted));
             }
             finally
             {

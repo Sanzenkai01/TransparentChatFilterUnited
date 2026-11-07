@@ -1,0 +1,180 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <SolidColorBrush x:Key="SurfaceBrush" Color="#202326"/>
+  <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#2B2F33"/>
+  <SolidColorBrush x:Key="AccentBrush" Color="#5EA2FF"/>
+  <Color x:Key="AccentColor">#5EA2FF</Color>
+  <SolidColorBrush x:Key="MutedTextBrush" Color="#C5C9CE"/>
+  <SolidColorBrush x:Key="ThemeBrush_182333" Color="#272B2F"/>
+  <Color x:Key="ThemeColor_182333">#272B2F</Color>
+  <SolidColorBrush x:Key="ThemeBrush_26374D" Color="#343A40"/>
+  <Color x:Key="ThemeColor_26374D">#343A40</Color>
+  <SolidColorBrush x:Key="ThemeBrush_A970FF" Color="#5EA2FF"/>
+  <Color x:Key="ThemeColor_A970FF">#5EA2FF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_9EADC2" Color="#C5C9CE"/>
+  <Color x:Key="ThemeColor_9EADC2">#C5C9CE</Color>
+  <SolidColorBrush x:Key="ThemeBrush_8B9AB0" Color="#C5C9CE"/>
+  <Color x:Key="ThemeColor_8B9AB0">#C5C9CE</Color>
+  <SolidColorBrush x:Key="ThemeBrush_53647D" Color="#70777D"/>
+  <Color x:Key="ThemeColor_53647D">#70777D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_F1F5FF" Color="#F1F3F4"/>
+  <Color x:Key="ThemeColor_F1F5FF">#F1F3F4</Color>
+  <SolidColorBrush x:Key="ThemeBrush_000000" Color="#000000"/>
+  <Color x:Key="ThemeColor_000000">#000000</Color>
+  <SolidColorBrush x:Key="ThemeBrush_EAF2FF" Color="#F1F3F4"/>
+  <Color x:Key="ThemeColor_EAF2FF">#F1F3F4</Color>
+  <SolidColorBrush x:Key="ThemeBrush_202D40" Color="#272B2F"/>
+  <Color x:Key="ThemeColor_202D40">#272B2F</Color>
+  <SolidColorBrush x:Key="ThemeBrush_34445B" Color="#70777D"/>
+  <Color x:Key="ThemeColor_34445B">#70777D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_30425D" Color="#343A40"/>
+  <Color x:Key="ThemeColor_30425D">#343A40</Color>
+  <SolidColorBrush x:Key="ThemeBrush_62799B" Color="#70777D"/>
+  <Color x:Key="ThemeColor_62799B">#70777D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_392D56" Color="#3D444B"/>
+  <Color x:Key="ThemeColor_392D56">#3D444B</Color>
+  <SolidColorBrush x:Key="ThemeBrush_382954" Color="#303C49"/>
+  <Color x:Key="ThemeColor_382954">#303C49</Color>
+  <SolidColorBrush x:Key="ThemeBrush_E9D9FF" Color="#E7EAED"/>
+  <Color x:Key="ThemeColor_E9D9FF">#E7EAED</Color>
+  <SolidColorBrush x:Key="ThemeBrush_C39AFF" Color="#D2D7DC"/>
+  <Color x:Key="ThemeColor_C39AFF">#D2D7DC</Color>
+  <SolidColorBrush x:Key="ThemeBrush_E6D5FF" Color="#E7EAED"/>
+  <Color x:Key="ThemeColor_E6D5FF">#E7EAED</Color>
+  <SolidColorBrush x:Key="ThemeBrush_EFF5FF" Color="#EFF5FF"/>
+  <Color x:Key="ThemeColor_EFF5FF">#EFF5FF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_0E1724" Color="#171A1D"/>
+  <Color x:Key="ThemeColor_0E1724">#171A1D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_B88BFF" Color="#CBD1D7"/>
+  <Color x:Key="ThemeColor_B88BFF">#CBD1D7</Color>
+  <SolidColorBrush x:Key="ThemeBrush_7040A5" Color="#394047"/>
+  <Color x:Key="ThemeColor_7040A5">#394047</Color>
+  <SolidColorBrush x:Key="ThemeBrush_FFFFFF" Color="#FFFFFF"/>
+  <Color x:Key="ThemeColor_FFFFFF">#FFFFFF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_78869A" Color="#78869A"/>
+  <Color x:Key="ThemeColor_78869A">#78869A</Color>
+  <SolidColorBrush x:Key="ThemeBrush_D4DFEF" Color="#D4DFEF"/>
+  <Color x:Key="ThemeColor_D4DFEF">#D4DFEF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_8B5BD6" Color="#41484F"/>
+  <Color x:Key="ThemeColor_8B5BD6">#41484F</Color>
+  <SolidColorBrush x:Key="ThemeBrush_D6BCFF" Color="#E0E4E8"/>
+  <Color x:Key="ThemeColor_D6BCFF">#E0E4E8</Color>
+  <SolidColorBrush x:Key="ThemeBrush_0D1420" Color="#171A1D"/>
+  <Color x:Key="ThemeColor_0D1420">#171A1D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_5A6474" Color="#70777D"/>
+  <Color x:Key="ThemeColor_5A6474">#70777D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_8D5BDA" Color="#000000"/>
+  <Color x:Key="ThemeColor_8D5BDA">#000000</Color>
+  <SolidColorBrush x:Key="ThemeBrush_0F1723" Color="#0F1723"/>
+  <Color x:Key="ThemeColor_0F1723">#0F1723</Color>
+  <SolidColorBrush x:Key="ThemeBrush_1A2330" Color="#1A2330"/>
+  <Color x:Key="ThemeColor_1A2330">#1A2330</Color>
+  <SolidColorBrush x:Key="ThemeBrush_121B29" Color="#171A1D"/>
+  <Color x:Key="ThemeColor_121B29">#171A1D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_AAB9CE" Color="#AAB9CE"/>
+  <Color x:Key="ThemeColor_AAB9CE">#AAB9CE</Color>
+  <SolidColorBrush x:Key="ThemeBrush_E5F0FF" Color="#E5F0FF"/>
+  <Color x:Key="ThemeColor_E5F0FF">#E5F0FF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_748095" Color="#748095"/>
+  <Color x:Key="ThemeColor_748095">#748095</Color>
+  <SolidColorBrush x:Key="ThemeBrush_7EE0A1" Color="#7EE0A1"/>
+  <Color x:Key="ThemeColor_7EE0A1">#7EE0A1</Color>
+  <SolidColorBrush x:Key="ThemeBrush_C2CEE0" Color="#C2CEE0"/>
+  <Color x:Key="ThemeColor_C2CEE0">#C2CEE0</Color>
+  <SolidColorBrush x:Key="ThemeBrush_2D3747" Color="#2D3747"/>
+  <Color x:Key="ThemeColor_2D3747">#2D3747</Color>
+  <SolidColorBrush x:Key="ThemeBrush_18181B" Color="#18181B"/>
+  <Color x:Key="ThemeColor_18181B">#18181B</Color>
+  <SolidColorBrush x:Key="ThemeBrush_6D7890" Color="#70777D"/>
+  <Color x:Key="ThemeColor_6D7890">#70777D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_47566C" Color="#70777D"/>
+  <Color x:Key="ThemeColor_47566C">#70777D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_00A970FF" Color="#000000"/>
+  <Color x:Key="ThemeColor_00A970FF">#000000</Color>
+  <SolidColorBrush x:Key="ThemeBrush_71819A" Color="#71819A"/>
+  <Color x:Key="ThemeColor_71819A">#71819A</Color>
+  <SolidColorBrush x:Key="ThemeBrush_A33B4B" Color="#A33B4B"/>
+  <Color x:Key="ThemeColor_A33B4B">#A33B4B</Color>
+  <SolidColorBrush x:Key="ThemeBrush_302544" Color="#30353A"/>
+  <Color x:Key="ThemeColor_302544">#30353A</Color>
+  <SolidColorBrush x:Key="ThemeBrush_8054C5" Color="#5EA2FF"/>
+  <Color x:Key="ThemeColor_8054C5">#5EA2FF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_F1E8FF" Color="#E7EAED"/>
+  <Color x:Key="ThemeColor_F1E8FF">#E7EAED</Color>
+  <SolidColorBrush x:Key="ThemeBrush_E5C27A" Color="#E5C27A"/>
+  <Color x:Key="ThemeColor_E5C27A">#E5C27A</Color>
+  <SolidColorBrush x:Key="ThemeBrush_D7E5FF" Color="#D7E5FF"/>
+  <Color x:Key="ThemeColor_D7E5FF">#D7E5FF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_D7C2FF" Color="#D2D7DC"/>
+  <Color x:Key="ThemeColor_D7C2FF">#D2D7DC</Color>
+  <SolidColorBrush x:Key="ThemeBrush_F0A5A5" Color="#F0A5A5"/>
+  <Color x:Key="ThemeColor_F0A5A5">#F0A5A5</Color>
+  <SolidColorBrush x:Key="ThemeBrush_2D3B50" Color="#70777D"/>
+  <Color x:Key="ThemeColor_2D3B50">#70777D</Color>
+  <SolidColorBrush x:Key="ThemeBrush_C5A2FF" Color="#D2D7DC"/>
+  <Color x:Key="ThemeColor_C5A2FF">#D2D7DC</Color>
+  <SolidColorBrush x:Key="ThemeBrush_AEBBD0" Color="#AEBBD0"/>
+  <Color x:Key="ThemeColor_AEBBD0">#AEBBD0</Color>
+  <SolidColorBrush x:Key="ThemeBrush_FFD166" Color="#FFD166"/>
+  <Color x:Key="ThemeColor_FFD166">#FFD166</Color>
+  <SolidColorBrush x:Key="ThemeBrush_BCC8D9" Color="#BCC8D9"/>
+  <Color x:Key="ThemeColor_BCC8D9">#BCC8D9</Color>
+  <SolidColorBrush x:Key="ThemeBrush_808080" Color="#808080"/>
+  <Color x:Key="ThemeColor_808080">#808080</Color>
+  <SolidColorBrush x:Key="ThemeBrush_C0C0C0" Color="#C0C0C0"/>
+  <Color x:Key="ThemeColor_C0C0C0">#C0C0C0</Color>
+  <SolidColorBrush x:Key="ThemeBrush_7F0000" Color="#7F0000"/>
+  <Color x:Key="ThemeColor_7F0000">#7F0000</Color>
+  <SolidColorBrush x:Key="ThemeBrush_FF0000" Color="#FF0000"/>
+  <Color x:Key="ThemeColor_FF0000">#FF0000</Color>
+  <SolidColorBrush x:Key="ThemeBrush_FF7F00" Color="#FF7F00"/>
+  <Color x:Key="ThemeColor_FF7F00">#FF7F00</Color>
+  <SolidColorBrush x:Key="ThemeBrush_FFFF00" Color="#FFFF00"/>
+  <Color x:Key="ThemeColor_FFFF00">#FFFF00</Color>
+  <SolidColorBrush x:Key="ThemeBrush_7F7F00" Color="#7F7F00"/>
+  <Color x:Key="ThemeColor_7F7F00">#7F7F00</Color>
+  <SolidColorBrush x:Key="ThemeBrush_00FF00" Color="#00FF00"/>
+  <Color x:Key="ThemeColor_00FF00">#00FF00</Color>
+  <SolidColorBrush x:Key="ThemeBrush_007F00" Color="#007F00"/>
+  <Color x:Key="ThemeColor_007F00">#007F00</Color>
+  <SolidColorBrush x:Key="ThemeBrush_00FFFF" Color="#00FFFF"/>
+  <Color x:Key="ThemeColor_00FFFF">#00FFFF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_007FFF" Color="#007FFF"/>
+  <Color x:Key="ThemeColor_007FFF">#007FFF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_0000FF" Color="#0000FF"/>
+  <Color x:Key="ThemeColor_0000FF">#0000FF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_00007F" Color="#00007F"/>
+  <Color x:Key="ThemeColor_00007F">#00007F</Color>
+  <SolidColorBrush x:Key="ThemeBrush_7F00FF" Color="#5EA2FF"/>
+  <Color x:Key="ThemeColor_7F00FF">#5EA2FF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_FF00FF" Color="#FF00FF"/>
+  <Color x:Key="ThemeColor_FF00FF">#FF00FF</Color>
+  <SolidColorBrush x:Key="ThemeBrush_FF007F" Color="#FF007F"/>
+  <Color x:Key="ThemeColor_FF007F">#FF007F</Color>
+  <SolidColorBrush x:Key="ThemeBrush_5EA2FF" Color="#5EA2FF"/>
+  <Color x:Key="ThemeColor_5EA2FF">#5EA2FF</Color>
+  <SolidColorBrush x:Key="WindowSurfaceBrush" Color="#202326"/>
+  <SolidColorBrush x:Key="PanelSurfaceBrush" Color="#272B2F"/>
+  <SolidColorBrush x:Key="FieldSurfaceBrush" Color="#171A1D"/>
+  <SolidColorBrush x:Key="PrimaryTextBrush" Color="#F1F3F4"/>
+  <SolidColorBrush x:Key="SecondaryTextBrush" Color="#C5C9CE"/>
+  <SolidColorBrush x:Key="DisabledTextBrush" Color="#8B9299"/>
+  <SolidColorBrush x:Key="ControlBorderBrush" Color="#70777D"/>
+  <SolidColorBrush x:Key="HoverSurfaceBrush" Color="#343A40"/>
+  <SolidColorBrush x:Key="PressedSurfaceBrush" Color="#3D444B"/>
+  <SolidColorBrush x:Key="SelectedSurfaceBrush" Color="#303C49"/>
+  <SolidColorBrush x:Key="FocusBorderBrush" Color="#5EA2FF"/>
+  <SolidColorBrush x:Key="ErrorBrush" Color="#F0A5A5"/>
+  <SolidColorBrush x:Key="CloseHoverBrush" Color="#A33B4B"/>
+  <SolidColorBrush x:Key="SuccessBrush" Color="#7EE0A1"/>
+  <SolidColorBrush x:Key="SubscriptionEventBrush" Color="#55B87A"/>
+  <SolidColorBrush x:Key="RaidEventBrush" Color="#5799D8"/>
+  <SolidColorBrush x:Key="BitsEventBrush" Color="#D0A84D"/>
+  <SolidColorBrush x:Key="AnnouncementEventBrush" Color="#8B7AD1"/>
+  <DropShadowEffect x:Key="WindowShadowEffect" Color="#000000" BlurRadius="12" ShadowDepth="2" Opacity="0.18"/>
+  <SolidColorBrush x:Key="SystemWindowBrush" Color="{DynamicResource {x:Static SystemColors.WindowColorKey}}"/>
+  <SolidColorBrush x:Key="SystemWindowTextBrush" Color="{DynamicResource {x:Static SystemColors.WindowTextColorKey}}"/>
+  <SolidColorBrush x:Key="SystemHighlightBrush" Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}"/>
+  <SolidColorBrush x:Key="SystemHighlightTextBrush" Color="{DynamicResource {x:Static SystemColors.HighlightTextColorKey}}"/>
+  <SolidColorBrush x:Key="SystemControlBrush" Color="{DynamicResource {x:Static SystemColors.ControlColorKey}}"/>
+  <SolidColorBrush x:Key="SystemGrayTextBrush" Color="{DynamicResource {x:Static SystemColors.GrayTextColorKey}}"/>
+</ResourceDictionary>

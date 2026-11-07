@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Atualização disponível"
         Width="440"
-        Height="236"
+        Height="470"
         MinWidth="400"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
@@ -13,55 +13,27 @@
         Background="Transparent"
         WindowStyle="None">
     <Window.Resources>
-        <Style x:Key="UpdateActionButton" TargetType="{x:Type Button}">
-            <Setter Property="Foreground" Value="#EAF2FF"/>
-            <Setter Property="Background" Value="#202D40"/>
-            <Setter Property="BorderBrush" Value="#34445B"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="12,7"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Button}">
-                        <Border x:Name="Chrome"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="7">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#30425D"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#62799B"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Chrome" Property="Background" Value="#392D56"/>
-                                <Setter TargetName="Chrome" Property="BorderBrush" Value="#A970FF"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Chrome" Property="Opacity" Value="0.45"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <Style x:Key="UpdateActionButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Padding" Value="12,4"/>
+        </Style>
+        <Style x:Key="PrimaryUpdateButton" TargetType="{x:Type Button}" BasedOn="{StaticResource UpdateActionButton}">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
         </Style>
     </Window.Resources>
-    <Border CornerRadius="14"
+    <Grid>
+    <Border CornerRadius="8"
+            BorderThickness="0"
+            Background="Transparent"
+            Effect="{StaticResource WindowShadowEffect}"
+            IsHitTestVisible="False"/>
+    <Border Style="{StaticResource WindowSurfaceBorderStyle}" CornerRadius="8"
             BorderThickness="1"
-            BorderBrush="#5A6474"
-            Background="#121B29"
-            Padding="20">
-        <Border.Effect>
-            <DropShadowEffect Color="#8D5BDA" BlurRadius="26" ShadowDepth="0" Opacity="0.28"/>
-        </Border.Effect>
+            Padding="16">
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
@@ -73,42 +45,16 @@
                     ToolTip="Arraste para mover esta janela">
                 <DockPanel LastChildFill="True">
                     <Button DockPanel.Dock="Right"
-                            Content="×"
-                            Width="26"
-                            Height="26"
-                            Padding="0"
+                            Style="{StaticResource DialogCloseButton}"
                             Margin="8,0,0,0"
                             Click="DeclineButton_Click"
-                            ToolTip="Fechar">
-                        <Button.Style>
-                            <Style TargetType="{x:Type Button}">
-                                <Setter Property="Foreground" Value="#9EADC2"/>
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="BorderBrush" Value="Transparent"/>
-                                <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="FontSize" Value="18"/>
-                                <Setter Property="Cursor" Value="Hand"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="{x:Type Button}">
-                                            <Border Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                                    CornerRadius="6">
-                                                <ContentPresenter HorizontalAlignment="Center"
-                                                                  VerticalAlignment="Center"/>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Foreground" Value="#FFFFFF"/>
-                                        <Setter Property="Background" Value="#A33B4B"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
+                            ToolTip="Fechar"
+                            AutomationProperties.Name="Fechar">
+                        <Path Data="M4,4 L12,12 M12,4 L4,12"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}"
+                              StrokeThickness="1.5"
+                              Width="16"
+                              Height="16"/>
                     </Button>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Grid Width="10" Height="8" Margin="0,0,8,0">
@@ -121,22 +67,22 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
-                            <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0"/>
-                            <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0"/>
-                            <Ellipse Grid.Row="0" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0"/>
-                            <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0"/>
-                            <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0"/>
-                            <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0"/>
+                            <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                            <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                            <Ellipse Grid.Row="0" Grid.Column="2" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                            <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                            <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                            <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
                         </Grid>
-                        <TextBlock Text="ATUALIZAÇÃO DISPONÍVEL"
-                                   Foreground="#C39AFF"
-                                   FontSize="10"
-                                   FontWeight="Bold"/>
+                        <TextBlock Text="Atualização disponível"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
 
-            <Grid Grid.Row="1" VerticalAlignment="Center" Margin="2,16,2,18">
+            <Grid Grid.Row="1" VerticalAlignment="Center" Margin="4,16,4,12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="38"/>
                     <ColumnDefinition Width="14"/>
@@ -145,44 +91,59 @@
                 <Border Grid.Column="0"
                         Width="38"
                         Height="38"
-                        CornerRadius="19"
-                        Background="#382954"
-                        BorderBrush="#8054C5"
+                        CornerRadius="4"
+                        Background="{DynamicResource SelectedSurfaceBrush}"
+                        BorderBrush="{DynamicResource ControlBorderBrush}"
                         BorderThickness="1">
-                    <TextBlock Text="↑"
-                               Foreground="#E6D5FF"
-                               FontSize="22"
-                               FontWeight="SemiBold"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
+                    <Path Data="M10,16 L10,4 M5,9 L10,4 L15,9"
+                          Stroke="{DynamicResource AccentBrush}"
+                          StrokeThickness="1.75"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          Width="16"
+                          Height="16"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel Grid.Column="2">
                     <TextBlock x:Name="VersionText"
-                               Foreground="#F1F5FF"
-                               FontSize="15"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               FontSize="16"
                                FontWeight="SemiBold"
                                TextWrapping="Wrap"/>
                     <TextBlock Text="Deseja baixar e instalar agora? O programa será fechado durante a atualização."
-                               Foreground="#BCC8D9"
-                               FontSize="11"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               FontSize="12"
                                TextWrapping="Wrap"
-                               Margin="0,6,0,0"/>
+                               Margin="0,8,0,0"/>
                 </StackPanel>
             </Grid>
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Agora não"
+            <ScrollViewer Grid.Row="2" MaxHeight="210" VerticalScrollBarVisibility="Auto" Margin="4,0,4,12">
+                <TextBlock x:Name="ReleaseNotesText"
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontSize="13"
+                           TextWrapping="Wrap"/>
+            </ScrollViewer>
+
+            <Grid Grid.Row="3">
+                <Button Content="Pular esta versão"
                         Style="{StaticResource UpdateActionButton}"
-                        MinWidth="92"
+                        HorizontalAlignment="Left"
+                        Click="SkipVersionButton_Click"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Lembrar mais tarde"
+                        Style="{StaticResource UpdateActionButton}"
+                        MinWidth="130"
                         Margin="0,0,8,0"
                         Click="DeclineButton_Click"/>
                 <Button Content="Atualizar"
-                        Style="{StaticResource UpdateActionButton}"
+                        Style="{StaticResource PrimaryUpdateButton}"
                         MinWidth="92"
-                        Background="#7040A5"
-                        BorderBrush="#A970FF"
                         Click="AcceptButton_Click"/>
-            </StackPanel>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
+    </Grid>
 </Window>

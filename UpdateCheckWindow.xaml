@@ -3,29 +3,30 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Procurando atualizações"
         Width="360"
-        Height="150"
+        Height="190"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         Topmost="True"
         AllowsTransparency="True"
         Background="Transparent"
-        Foreground="#EAF2FF"
+        Foreground="{DynamicResource PrimaryTextBrush}"
         WindowStyle="None">
-    <Border CornerRadius="14"
+    <Grid>
+    <Border CornerRadius="8"
+            BorderThickness="0"
+            Background="Transparent"
+            Effect="{StaticResource WindowShadowEffect}"
+            IsHitTestVisible="False"/>
+    <Border Style="{StaticResource WindowSurfaceBorderStyle}" CornerRadius="8"
             BorderThickness="1"
-            BorderBrush="#5A6474"
-            Background="#121B29"
-            Padding="22">
-        <Border.Effect>
-            <DropShadowEffect Color="#8D5BDA" BlurRadius="24" ShadowDepth="0" Opacity="0.28"/>
-        </Border.Effect>
+            Padding="16">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="12"/>
-                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Border Grid.Row="0"
                     Background="Transparent"
@@ -44,32 +45,44 @@
                             <RowDefinition/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
-                        <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0"/>
-                        <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0"/>
-                        <Ellipse Grid.Row="0" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0"/>
-                        <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="#8B9AB0"/>
-                        <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="#8B9AB0"/>
-                        <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="#8B9AB0"/>
+                        <Ellipse Grid.Row="0" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                        <Ellipse Grid.Row="0" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                        <Ellipse Grid.Row="0" Grid.Column="2" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                        <Ellipse Grid.Row="1" Grid.Column="0" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                        <Ellipse Grid.Row="1" Grid.Column="1" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
+                        <Ellipse Grid.Row="1" Grid.Column="2" Width="2" Height="2" Fill="{DynamicResource SecondaryTextBrush}"/>
                     </Grid>
-                    <TextBlock Text="ATUALIZAÇÕES"
-                               Foreground="#C39AFF"
-                               FontSize="10"
-                               FontWeight="Bold"/>
+                    <TextBlock Text="Atualizações"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
+                               FontSize="14"
+                               FontWeight="SemiBold"/>
                 </StackPanel>
             </Border>
             <TextBlock x:Name="StatusText"
                        Grid.Row="1"
-                       FontSize="15"
+                       FontSize="16"
                        FontWeight="SemiBold"
                        VerticalAlignment="Center"/>
-            <ProgressBar Grid.Row="3"
-                         IsIndeterminate="True"
+            <Grid Grid.Row="2" Margin="0,12,0,8">
+                <ProgressBar x:Name="DownloadProgress"
+                             IsIndeterminate="False"
                          Minimum="0"
                          Maximum="100"
                          Height="8"
-                         Foreground="#A970FF"
-                         Background="#26374D"
+                         Foreground="{DynamicResource AccentBrush}"
+                         Background="{DynamicResource PanelSurfaceBrush}"
                          BorderThickness="0"/>
+                <TextBlock x:Name="ProgressText" Text="0%" HorizontalAlignment="Right" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,12,0,0"/>
+            </Grid>
+            <Button x:Name="CancelButton"
+                    Grid.Row="3"
+                    Content="Cancelar"
+                    HorizontalAlignment="Right"
+                    MinWidth="84"
+                    Padding="12,4"
+                    Margin="0,4,0,0"
+                    Click="CancelButton_Click"/>
         </Grid>
     </Border>
+    </Grid>
 </Window>
