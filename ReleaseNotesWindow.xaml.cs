@@ -18,7 +18,8 @@ public partial class ReleaseNotesWindow : Window
         new(new Version(1, 1, 9), "Notas de atualização exibidas somente após uma atualização e apenas uma vez por versão após a confirmação."),
         new(new Version(1, 2, 0), "Textos do popup de novidades centralizados e uso de memória otimizado ao descartar o WebView2 ao mudar do chat público para o IRC."),
         new(new Version(1, 2, 1), "Configurações e atualizações mais confiáveis, interface reorganizada, animação de emotes GIF e menor retenção de imagens no modo IRC."),
-        new(new Version(1, 2, 2), "Ajustes no espaçamento e no limite de mensagens, alertas configuráveis para canais adicionais e novo ícone do aplicativo.")
+        new(new Version(1, 2, 2), "Ajustes no espaçamento e no limite de mensagens, alertas configuráveis para canais adicionais e novo ícone do aplicativo."),
+        new(new Version(1, 2, 3), "Verificação de atualizações em segundo plano uma vez a cada abertura, sem intervalo mínimo entre inicializações.")
     ];
 
     public ReleaseNotesWindow(Version version, Version? lastSeenVersion)

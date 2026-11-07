@@ -1,16 +1,10 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
-using System.Windows.Threading;
 
 namespace TransparentChatFilter;
 
 public partial class App : Application
 {
-    private static readonly TimeSpan MinimumUpdateCheckInterval = TimeSpan.FromHours(6);
-    private readonly DispatcherTimer _updateCheckTimer = new()
-    {
-        Interval = MinimumUpdateCheckInterval
-    };
     private bool _updateCheckInProgress;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -78,10 +72,8 @@ public partial class App : Application
         }
 
         mainWindow.Show();
-        _updateCheckTimer.Tick += (_, _) => _ = CheckForUpdatesAsync(mainWindow);
         mainWindow.ContentRendered += (_, _) =>
         {
-            _updateCheckTimer.Start();
             _ = CheckForUpdatesAsync(mainWindow, notesDismissed?.Task);
         };
     }
@@ -127,12 +119,6 @@ public partial class App : Application
 
         var settings = mainWindow.ViewModel.Settings;
         var checkStartedAt = DateTimeOffset.UtcNow;
-        if (settings.LastUpdateCheckUtc is { } lastCheck &&
-            checkStartedAt - lastCheck < MinimumUpdateCheckInterval)
-        {
-            return;
-        }
-
         _updateCheckInProgress = true;
         UpdateCheckWindow? progressWindow = null;
         var downloading = false;
@@ -146,7 +132,7 @@ public partial class App : Application
             if (result.RateLimited)
             {
                 mainWindow.ViewModel.UpdateDiagnostic(
-                    "O GitHub limitou temporariamente as consultas de atualização. Uma nova verificação será feita após pelo menos 6 horas.");
+                    "O GitHub limitou temporariamente as consultas de atualização. Tente novamente ao abrir o aplicativo mais tarde.");
                 return;
             }
 
