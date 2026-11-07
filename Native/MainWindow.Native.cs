@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
 
 namespace TransparentChatFilter;
 
@@ -132,54 +131,45 @@ public partial class MainWindow : Window
     {
         _suppressNextGearClick = false;
         _suppressGearClickTimer.Stop();
-        if (!NativeMethods.GetCursorPos(out _chatOnlyGearDragStart))
-        {
-            ViewModel.UpdateDiagnostic("Não foi possível iniciar o arrasto do chat transparente.");
-            return;
-        }
-
-        _chatOnlyGearWindowStartLeft = Left;
-        _chatOnlyGearWindowStartTop = Top;
-        _chatOnlyGearHoldTimer.Start();
+        _chatOnlyGearDragStart = e.GetPosition(this);
     }
 
-    private void ExitChatOnlyButton_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void ExitChatOnlyButton_PreviewMouseMove(object sender, MouseEventArgs e)
     {
-        _chatOnlyGearHoldTimer.Stop();
-        FinishChatOnlyGearDrag();
-    }
-
-    private void ChatOnlyGearHoldTimer_Tick(object? sender, EventArgs e)
-    {
-        if (!_settings.IsTransparent || Mouse.LeftButton != MouseButtonState.Pressed)
+        if (!_settings.IsTransparent ||
+            _chatOnlyGearDragActive ||
+            e.LeftButton != MouseButtonState.Pressed)
         {
-            _chatOnlyGearHoldTimer.Stop();
-            FinishChatOnlyGearDrag();
             return;
         }
 
-        if (!NativeMethods.GetCursorPos(out var cursorPosition))
-        {
-            _chatOnlyGearHoldTimer.Stop();
-            ViewModel.UpdateDiagnostic("Não foi possível acompanhar o movimento do chat transparente.");
-            return;
-        }
-
-        var deltaX = Math.Abs(cursorPosition.X - _chatOnlyGearDragStart.X);
-        var deltaY = Math.Abs(cursorPosition.Y - _chatOnlyGearDragStart.Y);
-        if (deltaX < SystemParameters.MinimumHorizontalDragDistance &&
-            deltaY < SystemParameters.MinimumVerticalDragDistance)
+        var currentPosition = e.GetPosition(this);
+        if (Math.Abs(currentPosition.X - _chatOnlyGearDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(currentPosition.Y - _chatOnlyGearDragStart.Y) < SystemParameters.MinimumVerticalDragDistance)
         {
             return;
         }
 
         _chatOnlyGearDragActive = true;
         _suppressNextGearClick = true;
-        var dpi = VisualTreeHelper.GetDpi(this);
-        Left = _chatOnlyGearWindowStartLeft +
-               (cursorPosition.X - _chatOnlyGearDragStart.X) / dpi.DpiScaleX;
-        Top = _chatOnlyGearWindowStartTop +
-              (cursorPosition.Y - _chatOnlyGearDragStart.Y) / dpi.DpiScaleY;
+        UpdateClickThroughStyle();
+        try
+        {
+            DragMove();
+        }
+        catch (InvalidOperationException exception)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível arrastar a janela transparente: {exception.Message}");
+        }
+        finally
+        {
+            FinishChatOnlyGearDrag();
+        }
+    }
+
+    private void ExitChatOnlyButton_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        FinishChatOnlyGearDrag();
     }
 
     private void FinishChatOnlyGearDrag()
@@ -191,6 +181,7 @@ public partial class MainWindow : Window
 
         _chatOnlyGearDragActive = false;
         _suppressNextGearClick = true;
+        UpdateClickThroughStyle();
         _suppressGearClickTimer.Stop();
         _suppressGearClickTimer.Start();
     }

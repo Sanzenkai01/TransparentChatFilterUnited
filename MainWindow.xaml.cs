@@ -78,7 +78,6 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _settingsSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private readonly DispatcherTimer _channelUpdateTimer = new() { Interval = TimeSpan.FromMilliseconds(450) };
     private readonly DispatcherTimer _chatOnlyHitTestTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
-    private readonly DispatcherTimer _chatOnlyGearHoldTimer = new() { Interval = TimeSpan.FromMilliseconds(5) };
     private readonly DispatcherTimer _suppressGearClickTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
     private bool _cursorOverChatOnlyGear;
     private bool _chatOnlyGearDragActive;
@@ -86,9 +85,7 @@ public partial class MainWindow : Window
     private TextBox? _activeColorInput;
     private SettingsWindow _settingsWindow = null!;
     private bool _chatOnlyGearPopupOffsetNudge;
-    private NativeMethods.Point _chatOnlyGearDragStart;
-    private double _chatOnlyGearWindowStartLeft;
-    private double _chatOnlyGearWindowStartTop;
+    private Point _chatOnlyGearDragStart;
     private bool _popoutScriptRegistered;
     private bool _popoutNavigationHandlerRegistered;
     private bool _popoutResourceRequestHandlerRegistered;
@@ -135,7 +132,6 @@ public partial class MainWindow : Window
         ChatOnlyGearPopup.CustomPopupPlacementCallback = ChatOnlyGearPopup_Placement;
         LocationChanged += MainWindow_LocationChanged;
         _chatOnlyHitTestTimer.Tick += ChatOnlyHitTestTimer_Tick;
-        _chatOnlyGearHoldTimer.Tick += ChatOnlyGearHoldTimer_Tick;
         _suppressGearClickTimer.Tick += (_, _) =>
         {
             _suppressNextGearClick = false;
@@ -324,7 +320,6 @@ public partial class MainWindow : Window
         _lifetimeCts.Cancel();
         _authorizationCts?.Cancel();
         _chatOnlyHitTestTimer.Stop();
-        _chatOnlyGearHoldTimer.Stop();
         _suppressGearClickTimer.Stop();
         DisposeTwitchPopoutView();
         _chatClient.Dispose();

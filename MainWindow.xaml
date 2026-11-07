@@ -440,6 +440,7 @@
                     Opacity="0.75"
                     Visibility="Collapsed"
                     PreviewMouseLeftButtonDown="ExitChatOnlyButton_PreviewMouseLeftButtonDown"
+                    PreviewMouseMove="ExitChatOnlyButton_PreviewMouseMove"
                     PreviewMouseLeftButtonUp="ExitChatOnlyButton_PreviewMouseLeftButtonUp"
                     Click="ExitChatOnlyButton_Click">
                 <Button.Content>
@@ -486,6 +487,7 @@
                         Padding="4,4"
                         ToolTip="Segure para arrastar · clique para sair do modo somente chat"
                         PreviewMouseLeftButtonDown="ExitChatOnlyButton_PreviewMouseLeftButtonDown"
+                        PreviewMouseMove="ExitChatOnlyButton_PreviewMouseMove"
                         PreviewMouseLeftButtonUp="ExitChatOnlyButton_PreviewMouseLeftButtonUp"
                         Click="ExitChatOnlyButton_Click"
                         Opacity="0.75">
