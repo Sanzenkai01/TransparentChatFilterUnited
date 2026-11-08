@@ -11,3 +11,5 @@ publish/
 *.tmp
 *.cache
 *.zip
+.github/agents/
+.github/skills/
