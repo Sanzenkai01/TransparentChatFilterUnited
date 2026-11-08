@@ -17,7 +17,8 @@ internal sealed record AvailableUpdate(
     Version Version,
     Uri DownloadUri,
     Uri ChecksumUri,
-    string ReleaseNotes);
+    string ReleaseNotes,
+    string Changelog);
 
 internal sealed record UpdateCheckResult(
     AvailableUpdate? Update,
@@ -38,6 +39,7 @@ internal static class UpdateService
             [string]$ArchivePath,
             [string]$ExecutablePath,
             [string]$ReleaseNotesMarkerPath,
+            [string]$ReleaseNotesContentPath,
             [string]$UpdatedVersion)
         $ErrorActionPreference = 'Stop'
         $updateId = [Guid]::NewGuid().ToString('N')
@@ -80,6 +82,7 @@ internal static class UpdateService
             catch {
                 try {
                     [IO.File]::Delete($ReleaseNotesMarkerPath)
+                    [IO.File]::Delete($ReleaseNotesContentPath)
                 }
                 catch {
                     Write-Warning "Nao foi possivel remover o marcador de novidades."
@@ -103,6 +106,12 @@ internal static class UpdateService
             }
         }
         catch {
+            try {
+                [IO.File]::Delete($ReleaseNotesContentPath)
+            }
+            catch {
+                Write-Warning "Nao foi possivel remover o conteudo das novidades."
+            }
             try {
                 Add-Type -AssemblyName PresentationFramework
                 [System.Windows.MessageBox]::Show(
@@ -237,9 +246,96 @@ internal static class UpdateService
         var releaseNotes = root.TryGetProperty("body", out var bodyElement)
             ? bodyElement.GetString() ?? string.Empty
             : string.Empty;
+        var changelog = await FetchChangelogAsync(
+            currentVersion,
+            latestVersion,
+            releaseNotes,
+            cancellationToken);
         return new UpdateCheckResult(
-            new AvailableUpdate(latestVersion, downloadUri, checksumUri, releaseNotes),
+            new AvailableUpdate(latestVersion, downloadUri, checksumUri, releaseNotes, changelog),
             response.Headers.ETag?.ToString() ?? etag);
+    }
+
+    private static async Task<string> FetchChangelogAsync(
+        Version currentVersion,
+        Version latestVersion,
+        string releaseNotes,
+        CancellationToken cancellationToken)
+    {
+        var commitMessages = new List<string>();
+        var totalCommitCount = 0;
+        try
+        {
+            var comparisonUrl =
+                $"https://api.github.com/repos/Sanzenkai01/TransparentChatFilterUnited/compare/" +
+                $"v{currentVersion.ToString(3)}...v{latestVersion.ToString(3)}";
+            for (var page = 1; page <= 3; page++)
+            {
+                var separator = comparisonUrl.Contains('?') ? '&' : '?';
+                using var response = await ApiHttpClient.GetAsync(
+                    $"{comparisonUrl}{separator}per_page=100&page={page}",
+                    HttpCompletionOption.ResponseHeadersRead,
+                    cancellationToken);
+                response.EnsureSuccessStatusCode();
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var comparison = await JsonDocument.ParseAsync(
+                    stream,
+                    cancellationToken: cancellationToken);
+                totalCommitCount = ReleaseChangelog.ReadTotalCommitCount(comparison.RootElement);
+                var pageMessages = ReleaseChangelog.ReadCommitMessages(comparison.RootElement);
+                commitMessages.AddRange(pageMessages);
+                if (pageMessages.Count < 100 || commitMessages.Count >= totalCommitCount)
+                {
+                    break;
+                }
+            }
+
+            var returnedCount = Math.Min(commitMessages.Count, ReleaseChangelog.MaximumCommits);
+            return ReleaseChangelog.Format(
+                currentVersion.ToString(3),
+                latestVersion.ToString(3),
+                releaseNotes,
+                commitMessages.Take(returnedCount).ToArray(),
+                totalCommitCount);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException exception)
+        {
+            return BuildUnavailableChangelog(currentVersion, latestVersion, releaseNotes, commitMessages, totalCommitCount, exception);
+        }
+        catch (Exception exception) when (
+            exception is HttpRequestException or IOException or JsonException or InvalidOperationException or
+                InvalidDataException)
+        {
+            return BuildUnavailableChangelog(
+                currentVersion,
+                latestVersion,
+                releaseNotes,
+                commitMessages,
+                totalCommitCount,
+                exception);
+        }
+    }
+
+    private static string BuildUnavailableChangelog(
+        Version currentVersion,
+        Version latestVersion,
+        string releaseNotes,
+        IReadOnlyList<string> commitMessages,
+        int totalCommitCount,
+        Exception exception)
+    {
+        var fallback = ReleaseChangelog.Format(
+            currentVersion.ToString(3),
+            latestVersion.ToString(3),
+            releaseNotes,
+            commitMessages.Take(ReleaseChangelog.MaximumCommits).ToArray(),
+            totalCommitCount);
+        return $"Não foi possível carregar a lista completa de alterações do GitHub: {exception.Message}" +
+               $"{Environment.NewLine}{Environment.NewLine}{fallback}";
     }
 
     internal static async Task<string> DownloadUpdateAsync(
@@ -326,7 +422,7 @@ internal static class UpdateService
         }
     }
 
-    internal static void StartUpdate(string archivePath, Version updatedVersion)
+    internal static void StartUpdate(string archivePath, AvailableUpdate update)
     {
         var executablePath = Environment.ProcessPath
             ?? throw new InvalidOperationException("Não foi possível localizar o executável atual.");
@@ -358,9 +454,11 @@ internal static class UpdateService
         startInfo.ArgumentList.Add(archivePath);
         startInfo.ArgumentList.Add(executablePath);
         startInfo.ArgumentList.Add(AppSettings.PendingReleaseNotesPath);
-        startInfo.ArgumentList.Add(updatedVersion.ToString(3));
+        startInfo.ArgumentList.Add(AppSettings.PendingReleaseNotesContentPath);
+        startInfo.ArgumentList.Add(update.Version.ToString(3));
         try
         {
+            AtomicFile.WriteAllText(AppSettings.PendingReleaseNotesContentPath, update.Changelog);
             if (Process.Start(startInfo) is null)
             {
                 throw new InvalidOperationException("Não foi possível iniciar o processo de atualização.");
@@ -369,6 +467,11 @@ internal static class UpdateService
         catch
         {
             File.Delete(scriptPath);
+            if (File.Exists(AppSettings.PendingReleaseNotesContentPath))
+            {
+                File.Delete(AppSettings.PendingReleaseNotesContentPath);
+            }
+
             throw;
         }
     }

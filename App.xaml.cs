@@ -27,6 +27,9 @@ public partial class App : Application
         var pendingUpdate = pendingUpdateVersion is not null &&
                             NormalizeReleaseVersion(pendingUpdateVersion) == releaseVersion &&
                             hasUnseenReleaseNotes;
+        var pendingChangelog = pendingUpdate
+            ? ReadPendingReleaseNotesContent(mainWindow)
+            : null;
         var updatedFromLegacyInstaller = lastSeenVersion is not null &&
                                          NormalizeReleaseVersion(lastSeenVersion) < releaseVersion;
         var upgradedFromUntrackedLegacyVersion = settingsFileExisted && lastSeenVersion is null;
@@ -38,7 +41,10 @@ public partial class App : Application
             notesDismissed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             mainWindow.Loaded += (_, _) =>
             {
-                var releaseNotesWindow = new ReleaseNotesWindow(currentVersion, lastSeenVersion)
+                var releaseNotesWindow = new ReleaseNotesWindow(
+                    currentVersion,
+                    lastSeenVersion,
+                    pendingChangelog)
                 {
                     Owner = mainWindow
                 };
@@ -55,6 +61,7 @@ public partial class App : Application
                         mainWindow.QueueSettingsSaveForExternalChanges();
                         if (pendingUpdate)
                         {
+                            File.Delete(AppSettings.PendingReleaseNotesContentPath);
                             File.Delete(AppSettings.PendingReleaseNotesPath);
                         }
                     }
@@ -108,6 +115,33 @@ public partial class App : Application
         }
 
         return null;
+    }
+
+    private static string? ReadPendingReleaseNotesContent(MainWindow mainWindow)
+    {
+        try
+        {
+            if (!File.Exists(AppSettings.PendingReleaseNotesContentPath))
+            {
+                return null;
+            }
+
+            var fileInfo = new FileInfo(AppSettings.PendingReleaseNotesContentPath);
+            if (fileInfo.Length > 1024 * 1024)
+            {
+                mainWindow.ViewModel.UpdateDiagnostic(
+                    "O changelog da atualização excede o tamanho permitido e não será exibido.");
+                return null;
+            }
+
+            return File.ReadAllText(AppSettings.PendingReleaseNotesContentPath);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            mainWindow.ViewModel.UpdateDiagnostic(
+                $"Não foi possível ler o changelog da atualização: {exception.Message}");
+            return null;
+        }
     }
 
     private async Task CheckForUpdatesAsync(MainWindow mainWindow, Task? waitBeforeShowingUpdateUi = null)
@@ -184,7 +218,7 @@ public partial class App : Application
                 update,
                 progress,
                 cancellationSource.Token);
-            UpdateService.StartUpdate(archivePath, update.Version);
+            UpdateService.StartUpdate(archivePath, update);
             Current.Shutdown();
         }
         catch (OperationCanceledException) when (progressWindow is not null)

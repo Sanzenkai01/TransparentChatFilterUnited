@@ -16,9 +16,9 @@ public partial class UpdateAvailableWindow : Window
     {
         InitializeComponent();
         VersionText.Text = $"A versão {update.Version} está disponível.";
-        ReleaseNotesText.Text = string.IsNullOrWhiteSpace(update.ReleaseNotes)
-            ? "Esta release não publicou notas da versão."
-            : update.ReleaseNotes;
+        ReleaseNotesText.Text = string.IsNullOrWhiteSpace(update.Changelog)
+            ? "Esta release não publicou um changelog."
+            : update.Changelog;
     }
 
     internal UpdatePromptChoice Choice { get; private set; } = UpdatePromptChoice.Later;

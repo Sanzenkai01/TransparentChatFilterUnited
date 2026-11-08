@@ -94,6 +94,11 @@ public sealed class AppSettings
         "TransparentChatFilter",
         "pending-release-notes.txt");
 
+    internal static string PendingReleaseNotesContentPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "TransparentChatFilter",
+        "pending-release-notes-content.txt");
+
     public static AppSettings Load(string? path = null)
     {
         var targetPath = path ?? Path.Combine(

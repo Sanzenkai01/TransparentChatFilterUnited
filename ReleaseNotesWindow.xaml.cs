@@ -22,11 +22,19 @@ public partial class ReleaseNotesWindow : Window
         new(new Version(1, 2, 3), "Verificação de atualizações em segundo plano uma vez a cada abertura, sem intervalo mínimo entre inicializações.")
     ];
 
-    public ReleaseNotesWindow(Version version, Version? lastSeenVersion)
+    public ReleaseNotesWindow(Version version, Version? lastSeenVersion, string? changelog = null)
     {
         InitializeComponent();
         Title = $"Novidades da versão {version.ToString(3)}";
         VersionTitle.Text = $"Versão {version.ToString(3)}";
+        if (!string.IsNullOrWhiteSpace(changelog))
+        {
+            ReleaseNotesIntro.Text = "Changelog completo desta atualização:";
+            ReleaseNotesItems.ItemsSource =
+                new[] { new ReleaseNoteItem(version.ToString(3), changelog) };
+            return;
+        }
+
         var previousVersion = lastSeenVersion is null
             ? new Version(0, 0)
             : NormalizeVersion(lastSeenVersion);

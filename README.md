@@ -19,7 +19,7 @@ Como usar:
 
 ## Atualizações
 
-O programa verifica as atualizações ao iniciar. Quando uma nova versão estiver disponível, ele pedirá confirmação, baixará o pacote da release oficial no GitHub e reiniciará já atualizado.
+O programa verifica as atualizações ao iniciar. Quando uma nova versão estiver disponível, ele pedirá confirmação, baixará o pacote da release oficial no GitHub e reiniciará já atualizado. O changelog completo é exibido em uma janela do aplicativo após a atualização.
 
 Para publicar uma versão, atualize a versão em `TransparentChatFilter.csproj`, crie e envie uma tag correspondente (por exemplo, `v1.2.3`). O GitHub Actions compilará o executável e publicará o ZIP usado pelo atualizador:
 
