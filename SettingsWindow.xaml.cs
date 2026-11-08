@@ -56,7 +56,6 @@ public partial class SettingsWindow : Window
     }
 
     private void RemoveFilterChip_Click(object sender, RoutedEventArgs e) => OwnerMainWindow.InvokeSettingsHandler(nameof(RemoveFilterChip_Click), sender, e);
-    private void CloseSettingsButton_Click(object sender, RoutedEventArgs e) => OwnerMainWindow.InvokeSettingsHandler(nameof(CloseSettingsButton_Click), sender, e);
     private void ChatPreferencesButton_Click(object sender, RoutedEventArgs e) => OwnerMainWindow.InvokeSettingsHandler(nameof(ChatPreferencesButton_Click), sender, e);
     private void ConnectionsPreferencesButton_Click(object sender, RoutedEventArgs e) => OwnerMainWindow.InvokeSettingsHandler(nameof(ConnectionsPreferencesButton_Click), sender, e);
     private void GeneralPreferencesButton_Click(object sender, RoutedEventArgs e) => OwnerMainWindow.InvokeSettingsHandler(nameof(GeneralPreferencesButton_Click), sender, e);

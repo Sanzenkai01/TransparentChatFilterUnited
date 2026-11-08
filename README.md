@@ -37,6 +37,7 @@ Quem já usa uma versão anterior a `1.0.3` precisa baixar esta versão manualme
 - esconde mensagens que você não quer ver
 - permite bloquear usuários, canais e termos
 - ajuda a destacar mensagens importantes
+- pode exibir prévias de imagens compartilhadas em links HTTPS diretos e páginas individuais do Imgur, com opacidade ajustável
 - funciona bem enquanto você assiste ou joga
 
 ## Requisitos

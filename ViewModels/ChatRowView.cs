@@ -10,6 +10,9 @@ public sealed class ChatRowView : INotifyPropertyChanged
     private Brush _nameBrush = Brushes.White;
     private string _timestampText = string.Empty;
     private double _maxWidth = double.PositiveInfinity;
+    private ImageSource? _imagePreview;
+    private int _imagePreviewLinkStart;
+    private int _imagePreviewLinkLength;
 
     public static ImageSource TwitchImage { get; } = new BitmapImage(new Uri("pack://application:,,,/twitch.png"));
     public ImageSource PlatformImage { get; set; } = TwitchImage;
@@ -20,6 +23,31 @@ public sealed class ChatRowView : INotifyPropertyChanged
     public string PlatformName { get; set; } = "Twitch";
     public ChatMessage SourceMessage { get; set; } = new();
     public IReadOnlyList<TwitchEmoteRange> Emotes { get; set; } = Array.Empty<TwitchEmoteRange>();
+    public ImageSource? ImagePreview
+    {
+        get => _imagePreview;
+        set
+        {
+            if (ReferenceEquals(_imagePreview, value))
+            {
+                return;
+            }
+
+            _imagePreview = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ImagePreview)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsImagePreviewOnly)));
+        }
+    }
+    public int ImagePreviewLinkStart => _imagePreviewLinkStart;
+    public int ImagePreviewLinkLength => _imagePreviewLinkLength;
+    public double ImagePreviewOpacity { get; set; } = 1;
+    public bool IsImagePreviewOnly =>
+        ImagePreview is not null &&
+        ImagePreviewOpacity > 0 &&
+        ImagePreviewService.IsOnlyPreviewLinkText(
+            SourceMessage.Message,
+            ImagePreviewLinkStart,
+            ImagePreviewLinkLength);
     public bool IsSystemEvent { get; set; }
     public bool IsNewMessage { get; set; }
     public bool IsAuthenticatedIrc { get; set; }
@@ -81,6 +109,13 @@ public sealed class ChatRowView : INotifyPropertyChanged
         }
     }
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    internal void SetImagePreview(ImageSource image, int linkStart, int linkLength)
+    {
+        _imagePreviewLinkStart = linkStart;
+        _imagePreviewLinkLength = linkLength;
+        ImagePreview = image;
+    }
 
     public void SetTransparentAppearance(bool enabled)
     {

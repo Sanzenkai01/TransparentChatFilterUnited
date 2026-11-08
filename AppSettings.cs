@@ -68,6 +68,8 @@ public sealed class AppSettings
     public double BackgroundOpacity { get; set; } = 0.86;
     public double TextOpacity { get; set; } = 1.0;
     public bool ShowChatTextOutline { get; set; }
+    public bool ShowImagePreviews { get; set; }
+    public int ImagePreviewOpacityPercent { get; set; } = 100;
     public bool UseMessageBackgroundOpacity { get; set; } = true;
     public double MessageBackgroundOpacity { get; set; } = 0.75;
     public int FontSize { get; set; } = 14;
@@ -241,6 +243,7 @@ public sealed class AppSettings
         }
 
         settings.NotificationVolumePercent = Math.Clamp(settings.NotificationVolumePercent, 0, 100);
+        settings.ImagePreviewOpacityPercent = Math.Clamp(settings.ImagePreviewOpacityPercent, 0, 100);
         settings.TextOpacity = Math.Clamp(settings.TextOpacity, 0.2, 1.0);
         settings.MessageBackgroundOpacity = Math.Clamp(settings.MessageBackgroundOpacity, 0.1, 1.0);
         settings.MessageSpacing = Math.Clamp(settings.MessageSpacing, 0, 20);

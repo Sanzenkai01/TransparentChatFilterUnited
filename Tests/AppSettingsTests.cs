@@ -19,6 +19,7 @@ public sealed class AppSettingsTests
         Assert.Equal(20, settings.MaxVisibleMessages);
         Assert.True(settings.NotifyOtherChannelMessages);
         Assert.False(settings.ShowChatTextOutline);
+        Assert.False(settings.ShowImagePreviews);
         Assert.False(settings.StartTransparentAndConnected);
         Assert.Null(settings.LoadWarning);
         Assert.False(File.Exists(path));
@@ -114,6 +115,7 @@ public sealed class AppSettingsTests
         Assert.True(settings.ShowChatTextOutline);
         Assert.True(settings.StartTransparentAndConnected);
         Assert.True(settings.UserNameAboveMessage);
+        Assert.Equal(100, settings.ImagePreviewOpacityPercent);
     }
 
     [Fact]
@@ -124,6 +126,40 @@ public sealed class AppSettingsTests
         File.WriteAllText(path, """{"SettingsVersion":9}""");
 
         Assert.True(AppSettings.Load(path).NotifyOtherChannelMessages);
+    }
+
+    [Fact]
+    public void ImagePreviewPreferenceDefaultsDisabledAndPersists()
+    {
+        using var directory = new TemporaryDirectory();
+        var path = Path.Combine(directory.Path, "settings.json");
+        var settings = AppSettings.Load(path);
+
+        Assert.False(settings.ShowImagePreviews);
+        Assert.Equal(100, settings.ImagePreviewOpacityPercent);
+
+        settings.ShowImagePreviews = true;
+        settings.ImagePreviewOpacityPercent = 72;
+        settings.Save();
+
+        var reloaded = AppSettings.Load(path);
+        Assert.True(reloaded.ShowImagePreviews);
+        Assert.Equal(72, reloaded.ImagePreviewOpacityPercent);
+    }
+
+    [Theory]
+    [InlineData(-25, 0)]
+    [InlineData(45, 45)]
+    [InlineData(125, 100)]
+    public void LoadedImagePreviewOpacityIsClampedAndPreserved(int configuredOpacity, int expectedOpacity)
+    {
+        using var directory = new TemporaryDirectory();
+        var path = Path.Combine(directory.Path, "settings.json");
+        File.WriteAllText(
+            path,
+            $$"""{"SettingsVersion":9,"ImagePreviewOpacityPercent":{{configuredOpacity}}}""");
+
+        Assert.Equal(expectedOpacity, AppSettings.Load(path).ImagePreviewOpacityPercent);
     }
 
     [Theory]

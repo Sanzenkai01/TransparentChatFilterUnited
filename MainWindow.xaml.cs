@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -54,6 +55,7 @@ public partial class MainWindow : Window
     private readonly TwitchBadgeClient _twitchBadgeClient = new();
     private readonly TwitchChannelClient _twitchChannelClient = new();
     private readonly TwitchOAuthClient _twitchOAuthClient = new();
+    private readonly ImagePreviewService _imagePreviewService;
     private readonly AppSettings _settings;
     private readonly CancellationTokenSource _lifetimeCts = new();
     private readonly List<ChatMessage> _chatHistory = new();
@@ -105,6 +107,10 @@ public partial class MainWindow : Window
         _settings.IsTransparent = false;
         DataContext = new OverlayViewModel(_settings);
         InitializeComponent();
+        _imagePreviewService = new ImagePreviewService(Dispatcher, _lifetimeCts.Token);
+        _imagePreviewService.ErrorReported += (_, message) =>
+            DispatchToUi(() => ViewModel.UpdateDiagnostic(message));
+        _imagePreviewService.SetEnabled(_settings.ShowImagePreviews);
         _settingsWindow = new SettingsWindow(this);
         _settingsWindow.AddHandler(
             ComboBox.PreviewMouseLeftButtonDownEvent,
@@ -318,6 +324,7 @@ public partial class MainWindow : Window
         SaveWindowPosition();
         SaveSettingsNow();
         _lifetimeCts.Cancel();
+        _imagePreviewService.SetEnabled(false);
         _authorizationCts?.Cancel();
         _chatOnlyHitTestTimer.Stop();
         _suppressGearClickTimer.Stop();
@@ -340,11 +347,6 @@ public partial class MainWindow : Window
     private void ToggleSettingsButton_Click(object sender, RoutedEventArgs e)
     {
         ToggleSettingsPopup(!_settingsWindow.IsVisible);
-    }
-
-    private void CloseSettingsButton_Click(object sender, RoutedEventArgs e)
-    {
-        ToggleSettingsPopup(false);
     }
 
     private void ToggleSettingsPopup(bool isOpen)
@@ -544,6 +546,8 @@ public partial class MainWindow : Window
 
             case "General":
                 var previousStartWithWindows = _settings.StartWithWindows;
+                _settings.ShowImagePreviews = defaults.ShowImagePreviews;
+                _settings.ImagePreviewOpacityPercent = defaults.ImagePreviewOpacityPercent;
                 _settings.AutoReconnect = defaults.AutoReconnect;
                 _settings.StartMinimized = defaults.StartMinimized;
                 _settings.StartTransparentAndConnected = defaults.StartTransparentAndConnected;
@@ -551,12 +555,15 @@ public partial class MainWindow : Window
                 _settings.HideSettingsDuringUse = defaults.HideSettingsDuringUse;
                 _settings.MaxVisibleMessages = defaults.MaxVisibleMessages;
                 ViewModel.RefreshSettingsBindings(
+                    nameof(ViewModel.ShowImagePreviews),
+                    nameof(ViewModel.ImagePreviewOpacityPercent),
                     nameof(ViewModel.AutoReconnect),
                     nameof(ViewModel.StartMinimized),
                     nameof(ViewModel.StartTransparentAndConnected),
                     nameof(ViewModel.StartWithWindows),
                     nameof(ViewModel.HideSettingsDuringUse),
                     nameof(ViewModel.MaxVisibleMessages));
+                _imagePreviewService.SetEnabled(defaults.ShowImagePreviews);
                 TrimMessageHistory(_chatHistory, ViewModel.MaxVisibleMessages);
                 RefreshMessageFeed();
                 try
@@ -613,6 +620,7 @@ public partial class MainWindow : Window
             }
         }
 
+        _imagePreviewService.SetEnabled(ViewModel.ShowImagePreviews);
         UpdateSettingsPreview();
         ApplyAppearance();
         RefreshMessageFeed();
@@ -2941,6 +2949,7 @@ public partial class MainWindow : Window
             IsAuthenticatedIrc = settings.ConnectionMode == ChatConnectionMode.AuthenticatedIrc,
             IsTransparent = settings.IsTransparent,
             ShowChatTextOutline = settings.ShowChatTextOutline,
+            ImagePreviewOpacity = Math.Clamp(settings.ImagePreviewOpacityPercent, 0, 100) / 100.0,
             FontSize = settings.FontSize,
             LineHeight = settings.FontSize * 1.3,
             TextOpacity = settings.TextOpacity,
@@ -2976,6 +2985,13 @@ public partial class MainWindow : Window
             Text = message.Message
         };
         row.SetTransparentAppearance(settings.IsTransparent);
+        if (settings.ShowImagePreviews &&
+            settings.ImagePreviewOpacityPercent > 0 &&
+            !row.IsSystemEvent)
+        {
+            _ = _imagePreviewService.LoadForRowAsync(row, message.Message);
+        }
+
         return row;
     }
 
@@ -3015,6 +3031,25 @@ public partial class MainWindow : Window
             ex is InvalidOperationException or ArgumentException or FormatException or NotSupportedException)
         {
             ViewModel.UpdateDiagnostic($"Não foi possível renderizar uma mensagem do chat: {ex.Message}");
+        }
+    }
+
+    private void ChatMessageImagePreview_TargetUpdated(object sender, DataTransferEventArgs e)
+    {
+        if (sender is not TextBlock { IsLoaded: true } textBlock ||
+            textBlock.DataContext is not ChatRowView { ImagePreview: not null })
+        {
+            return;
+        }
+
+        try
+        {
+            RenderChatMessageTextBlock(textBlock);
+        }
+        catch (Exception ex) when (
+            ex is InvalidOperationException or ArgumentException or FormatException or NotSupportedException)
+        {
+            ViewModel.UpdateDiagnostic($"Não foi possível ocultar o link da prévia: {ex.Message}");
         }
     }
 
@@ -3243,6 +3278,9 @@ public partial class MainWindow : Window
     private void AddMessageBodyInlines(TextBlock textBlock, ChatRowView row)
     {
         var text = row.SourceMessage.Message;
+        var shouldHidePreviewLink = row.ImagePreview is not null && row.ImagePreviewOpacity > 0;
+        var hiddenLinkStart = shouldHidePreviewLink ? row.ImagePreviewLinkStart : -1;
+        var hiddenLinkLength = shouldHidePreviewLink ? row.ImagePreviewLinkLength : 0;
         var position = 0;
         var isAction = row.SourceMessage.IsAction;
         var terms = isAction ? Array.Empty<string>() : ParseTerms(_settings.HighlightTerms);
@@ -3255,7 +3293,16 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            AddHighlightedText(textBlock, text[position..emote.Start], terms, actionBrush, bodyFontStyle);
+            AddVisibleMessageText(
+                textBlock,
+                text,
+                position,
+                emote.Start - position,
+                hiddenLinkStart,
+                hiddenLinkLength,
+                terms,
+                actionBrush,
+                bodyFontStyle);
             var fallbackText = text[emote.Start..(emote.End + 1)];
             var image = new Image
             {
@@ -3274,7 +3321,42 @@ public partial class MainWindow : Window
             position = emote.End + 1;
         }
 
-        AddHighlightedText(textBlock, text[position..], terms, actionBrush, bodyFontStyle);
+        AddVisibleMessageText(
+            textBlock,
+            text,
+            position,
+            text.Length - position,
+            hiddenLinkStart,
+            hiddenLinkLength,
+            terms,
+            actionBrush,
+            bodyFontStyle);
+    }
+
+    private void AddVisibleMessageText(
+        TextBlock textBlock,
+        string text,
+        int start,
+        int length,
+        int hiddenLinkStart,
+        int hiddenLinkLength,
+        IReadOnlyList<string> terms,
+        Brush? foreground,
+        FontStyle fontStyle)
+    {
+        foreach (var range in ImagePreviewService.GetVisibleTextRanges(
+                     start,
+                     length,
+                     hiddenLinkStart,
+                     hiddenLinkLength))
+        {
+            AddHighlightedText(
+                textBlock,
+                text.Substring(range.Start, range.Length),
+                terms,
+                foreground,
+                fontStyle);
+        }
     }
 
     private async Task LoadTwitchEmoteImageAsync(

@@ -258,7 +258,7 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <Grid>
+                                    <StackPanel>
                                     <Grid x:Name="InlineMessageLayout">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="3"/>
@@ -292,6 +292,8 @@
                                                        LineHeight="{Binding LineHeight}"
                                                        VerticalAlignment="Center"
                                                        Loaded="ChatMessageTextBlock_Loaded"
+                                                       Tag="{Binding ImagePreview, NotifyOnTargetUpdated=True}"
+                                                       TargetUpdated="ChatMessageImagePreview_TargetUpdated"
                                                        Opacity="{Binding TextOpacity}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="{x:Type TextBlock}">
@@ -312,7 +314,8 @@
                                         </StackPanel>
                                     </Grid>
                                     <Grid x:Name="FloatingMessageLayout" Visibility="Collapsed">
-                                        <Border Background="{Binding MessageBackgroundBrush}"
+                                        <Border x:Name="FloatingMessageBodyBorder"
+                                                Background="{Binding MessageBackgroundBrush}"
                                                 CornerRadius="4"
                                                 Padding="8,20,8,5"
                                                 Margin="0,10,0,0">
@@ -332,6 +335,8 @@
                                                            LineHeight="{Binding LineHeight}"
                                                            VerticalAlignment="Center"
                                                            Loaded="ChatMessageTextBlock_Loaded"
+                                                           Tag="{Binding ImagePreview, NotifyOnTargetUpdated=True}"
+                                                           TargetUpdated="ChatMessageImagePreview_TargetUpdated"
                                                            Opacity="{Binding TextOpacity}">
                                                     <TextBlock.Style>
                                                         <Style TargetType="{x:Type TextBlock}">
@@ -366,11 +371,38 @@
                                                        TextWrapping="NoWrap"/>
                                         </Border>
                                     </Grid>
-                                    </Grid>
+                                    <Image Source="{Binding ImagePreview}"
+                                           MaxWidth="{Binding MaxWidth}"
+                                           MaxHeight="180"
+                                           Opacity="{Binding ImagePreviewOpacity}"
+                                           Stretch="Uniform"
+                                           HorizontalAlignment="Left"
+                                           IsHitTestVisible="False"
+                                           Margin="0,6,0,0"
+                                           ToolTip="Prévia da imagem compartilhada na mensagem"
+                                           AutomationProperties.Name="Prévia de imagem da mensagem">
+                                        <Image.Style>
+                                            <Style TargetType="{x:Type Image}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ImagePreview}" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ImagePreviewOpacity}" Value="0">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    </StackPanel>
                                 </Border>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding IsSystemEvent}" Value="True">
                                         <Setter TargetName="SystemEventStripe" Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsImagePreviewOnly}" Value="True">
+                                        <Setter TargetName="FloatingMessageBodyBorder" Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding UserNameAboveMessage}" Value="True">
                                         <Setter TargetName="InlineMessageLayout" Property="Visibility" Value="Collapsed"/>

@@ -130,20 +130,6 @@
                     <Border Grid.Row="0" Grid.ColumnSpan="2" Background="Transparent">
     <Grid>
         <TextBlock Text="Configurações" HorizontalAlignment="Left" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="16" FontWeight="SemiBold" IsHitTestVisible="False"/>
-        <Button ContentTemplate="{StaticResource CloseGlyphTemplate}" Width="32" Height="32" MinWidth="28" MinHeight="28" Padding="0" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="Fechar configurações" Click="CloseSettingsButton_Click" AutomationProperties.Name="Fechar configurações">
-            <Button.Style>
-                <Style TargetType="{x:Type Button}" BasedOn="{StaticResource WindowControlButton}">
-                    <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}"/>
-                    <Setter Property="FontSize" Value="13"/>
-                    <Style.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Foreground" Value="{DynamicResource ThemeBrush_FFFFFF}"/>
-                            <Setter Property="Background" Value="{DynamicResource ThemeBrush_A33B4B}"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </Button.Style>
-        </Button>
     </Grid>
 </Border>
 
@@ -384,6 +370,24 @@
                                 <TextBlock Text="Geral" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,4"/>
                                 <TextBlock Text="Inicialização e comportamento durante o uso." FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,16"/>
                                 <Button Content="Restaurar padrões desta seção" Tag="General" HorizontalAlignment="Left" Margin="0,0,0,12" Click="RestoreSectionDefaults_Click"/>
+                                <CheckBox Content="Exibir prévias de imagens"
+                                          IsChecked="{Binding ShowImagePreviews}"
+                                          Checked="SavePreferences_Changed"
+                                          Unchecked="SavePreferences_Changed"
+                                          Margin="0,0,0,8"
+                                          AutomationProperties.Name="Exibir prévias de imagens no chat"/>
+                                <TextBlock Text="Carrega uma miniatura para links HTTPS diretos e páginas individuais do Imgur; endereços privados são bloqueados." Style="{StaticResource SettingsHelpText}"/>
+                                <TextBlock Text="{Binding ImagePreviewOpacityPercent, StringFormat=Opacidade das imagens: {0}%}"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           Margin="8,0,0,4"/>
+                                <Slider Minimum="0"
+                                        Maximum="100"
+                                        TickFrequency="10"
+                                        IsSnapToTickEnabled="True"
+                                        Value="{Binding ImagePreviewOpacityPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        ValueChanged="SavePreferences_Changed"
+                                        AutomationProperties.Name="Opacidade das prévias de imagem"
+                                        Margin="8,0,0,12"/>
                                 <CheckBox Content="Reconectar automaticamente à Twitch"
                                           IsChecked="{Binding AutoReconnect}"
                                           Checked="SavePreferences_Changed"

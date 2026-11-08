@@ -277,6 +277,37 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool ShowImagePreviews
+    {
+        get => _settings.ShowImagePreviews;
+        set
+        {
+            if (_settings.ShowImagePreviews == value)
+            {
+                return;
+            }
+
+            _settings.ShowImagePreviews = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public int ImagePreviewOpacityPercent
+    {
+        get => Math.Clamp(_settings.ImagePreviewOpacityPercent, 0, 100);
+        set
+        {
+            var opacityPercent = Math.Clamp(value, 0, 100);
+            if (_settings.ImagePreviewOpacityPercent == opacityPercent)
+            {
+                return;
+            }
+
+            _settings.ImagePreviewOpacityPercent = opacityPercent;
+            OnPropertyChanged();
+        }
+    }
+
     public bool UseMessageBackgroundOpacity
     {
         get => _settings.UseMessageBackgroundOpacity;
