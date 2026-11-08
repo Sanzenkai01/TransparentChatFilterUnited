@@ -144,7 +144,26 @@ public partial class App : Application
         }
     }
 
-    private async Task CheckForUpdatesAsync(MainWindow mainWindow, Task? waitBeforeShowingUpdateUi = null)
+    internal async Task CheckForUpdatesManuallyAsync(MainWindow mainWindow)
+    {
+        if (_updateCheckInProgress)
+        {
+            MessageBox.Show(
+                mainWindow,
+                "A verificação de atualizações já está em andamento.",
+                "Atualizações",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        await CheckForUpdatesAsync(mainWindow, manualCheck: true);
+    }
+
+    private async Task CheckForUpdatesAsync(
+        MainWindow mainWindow,
+        Task? waitBeforeShowingUpdateUi = null,
+        bool manualCheck = false)
     {
         if (_updateCheckInProgress)
         {
@@ -165,17 +184,39 @@ public partial class App : Application
 
             if (result.RateLimited)
             {
-                mainWindow.ViewModel.UpdateDiagnostic(
-                    "O GitHub limitou temporariamente as consultas de atualização. Tente novamente ao abrir o aplicativo mais tarde.");
+                const string rateLimitMessage =
+                    "O GitHub limitou temporariamente as consultas de atualização. Tente novamente mais tarde.";
+                mainWindow.ViewModel.UpdateDiagnostic(rateLimitMessage);
+                if (manualCheck)
+                {
+                    MessageBox.Show(
+                        mainWindow,
+                        rateLimitMessage,
+                        "Atualizações",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+
                 return;
             }
 
             if (result.NotModified || result.Update is not { } update)
             {
+                if (manualCheck)
+                {
+                    MessageBox.Show(
+                        mainWindow,
+                        "Você está usando a versão mais recente.",
+                        "Atualizações",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+
                 return;
             }
 
-            if (string.Equals(
+            if (!manualCheck &&
+                string.Equals(
                     settings.LastSkippedUpdateVersion,
                     update.Version.ToString(3),
                     StringComparison.OrdinalIgnoreCase))
@@ -229,9 +270,10 @@ public partial class App : Application
         {
             mainWindow.ViewModel.UpdateDiagnostic(
                 $"Falha ao verificar ou baixar atualizações: {exception.Message}");
-            if (downloading)
+            if (downloading || manualCheck)
             {
                 MessageBox.Show(
+                    mainWindow,
                     $"Não foi possível baixar ou verificar a atualização: {exception.Message}",
                     "Atualização",
                     MessageBoxButton.OK,

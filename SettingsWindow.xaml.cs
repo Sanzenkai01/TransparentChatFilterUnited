@@ -41,6 +41,20 @@ public partial class SettingsWindow : Window
         OwnerMainWindow.SettingsWindowHidden();
     }
 
+    private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
+    {
+        CheckForUpdatesButton.IsEnabled = false;
+        try
+        {
+            var app = (App)Application.Current;
+            await app.CheckForUpdatesManuallyAsync(OwnerMainWindow);
+        }
+        finally
+        {
+            CheckForUpdatesButton.IsEnabled = true;
+        }
+    }
+
     private void RemoveFilterChip_Click(object sender, RoutedEventArgs e) => OwnerMainWindow.InvokeSettingsHandler(nameof(RemoveFilterChip_Click), sender, e);
     private void CloseSettingsButton_Click(object sender, RoutedEventArgs e) => OwnerMainWindow.InvokeSettingsHandler(nameof(CloseSettingsButton_Click), sender, e);
     private void ChatPreferencesButton_Click(object sender, RoutedEventArgs e) => OwnerMainWindow.InvokeSettingsHandler(nameof(ChatPreferencesButton_Click), sender, e);

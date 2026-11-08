@@ -426,7 +426,14 @@
                                         ValueChanged="MaxVisibleMessagesSlider_ValueChanged"/>
                                 <TextBlock Text="Limita quantas mensagens permanecem carregadas no feed." Style="{StaticResource SettingsHelpText}"/>
                                 <TextBlock Text="Sobre o aplicativo" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeBrush_E6D5FF}" Margin="0,16,0,4"/>
-                                <TextBlock x:Name="AppVersionText" x:FieldModifier="public" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,8"/>
+                                <StackPanel Margin="0,0,0,12">
+                                    <TextBlock x:Name="AppVersionText" x:FieldModifier="public" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" Margin="0,0,0,8"/>
+                                    <Button x:Name="CheckForUpdatesButton"
+                                            Content="Checar Atualizações"
+                                            HorizontalAlignment="Left"
+                                            Click="CheckForUpdatesButton_Click"
+                                            AutomationProperties.Name="Checar atualizações do aplicativo"/>
+                                </StackPanel>
                                 <TextBlock Text="Overlay leve para acompanhar o chat da Twitch enquanto joga. Configure um canal, escolha um modo de filtragem e ajuste o visual do widget." TextWrapping="Wrap" Foreground="{DynamicResource ThemeBrush_BCC8D9}" Margin="0,0,0,12"/>
                                 <TextBlock Text="Mostrar/ocultar: Ctrl + Alt + T · Alternar chat-only: Ctrl + Alt + Shift + T" TextWrapping="Wrap" Foreground="{DynamicResource ThemeBrush_D7E5FF}"/>
                                 <TextBlock Text="As preferências ficam salvas localmente neste computador." TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}" Margin="0,8,0,0"/>
